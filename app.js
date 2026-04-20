@@ -686,6 +686,19 @@ async function handleFileSelect(e) {
   const isImage = file.type.startsWith('image');
   if (!isVideo && !isImage) { alert('이미지 또는 영상만 전송 가능합니다'); return; }
 
+  // 인증 완료까지 대기
+  if (!currentUser) {
+    showInAppNotif('인증 중...');
+    await new Promise((resolve) => {
+      const check = setInterval(() => {
+        if (currentUser) { clearInterval(check); resolve(); }
+      }, 200);
+      setTimeout(() => { clearInterval(check); resolve(); }, 5000);
+    });
+  }
+
+  if (!currentUser) { alert('인증 실패 - 새로고침 후 다시 시도하세요'); return; }
+
   showInAppNotif('업로드 중...');
   try {
     const path = `media/${chatRoomId}/${Date.now()}`;
