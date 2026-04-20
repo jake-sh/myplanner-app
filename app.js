@@ -10,7 +10,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
-const storage = firebase.storage();
+const storage = firebase.app().storage('gs://chat-f2661.firebasestorage.app');
 
 auth.signInAnonymously().catch(e => console.log('Auth error:', e));
 let currentUser = null;
