@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"/>
+  <title>MyPlanner</title>
+  <link rel="manifest" href="manifest.json"/>
+  <meta name="theme-color" content="#4A90D9"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <meta name="apple-mobile-web-app-title" content="MyPlanner"/>
+  <link rel="apple-touch-icon" href="icons/icon-192.png"/>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+<!-- ===== FAKE HOME ===== -->
+<div id="fakeApp" class="screen active">
+  <div class="fake-header">
+    <span class="fake-title" id="appTitle">MyPlanner</span>
+    <button class="icon-btn" onclick="openSettings()">⚙️</button>
+  </div>
+  <div class="fake-date-banner">
+    <div id="fakeDate" class="fake-date"></div>
+    <div class="fake-subtitle">오늘의 일정을 확인하세요</div>
+  </div>
+  <div class="menu-grid" id="menuGrid">
+    <div class="menu-item" data-dot="0" ontouchstart="dotStart(event,0)" onmousedown="dotStart(event,0)"><div class="menu-icon">📋</div><div class="menu-label">할 일</div></div>
+    <div class="menu-item" data-dot="1" ontouchstart="dotStart(event,1)" onmousedown="dotStart(event,1)"><div class="menu-icon">📅</div><div class="menu-label">일정표</div></div>
+    <div class="menu-item" data-dot="2" ontouchstart="dotStart(event,2)" onmousedown="dotStart(event,2)"><div class="menu-icon">⏰</div><div class="menu-label">알림</div></div>
+    <div class="menu-item" data-dot="3" ontouchstart="dotStart(event,3)" onmousedown="dotStart(event,3)"><div class="menu-icon">📝</div><div class="menu-label">메모</div></div>
+    <div class="menu-item" data-dot="4" ontouchstart="dotStart(event,4)" onmousedown="dotStart(event,4)"><div class="menu-icon">🎯</div><div class="menu-label">목표</div></div>
+    <div class="menu-item" data-dot="5" ontouchstart="dotStart(event,5)" onmousedown="dotStart(event,5)"><div class="menu-icon">📊</div><div class="menu-label">통계</div></div>
+    <div class="menu-item" data-dot="6" ontouchstart="dotStart(event,6)" onmousedown="dotStart(event,6)"><div class="menu-icon">🗂️</div><div class="menu-label">프로젝트</div></div>
+    <div class="menu-item" data-dot="7" ontouchstart="dotStart(event,7)" onmousedown="dotStart(event,7)"><div class="menu-icon">🏷️</div><div class="menu-label">태그</div></div>
+    <div class="menu-item" data-dot="8" ontouchstart="dotStart(event,8)" onmousedown="dotStart(event,8)"><div class="menu-icon">📆</div><div class="menu-label">달력</div></div>
+  </div>
+</div>
+
+<!-- ===== FAKE SETTINGS ===== -->
+<div id="settingsScreen" class="screen">
+  <div class="sub-header">
+    <button onclick="showScreen('fakeApp')" class="back-btn">← 뒤로</button>
+    <span class="sub-title">설정</span>
+  </div>
+  <div class="settings-content">
+    <div class="settings-section">
+      <div class="settings-label">앱 이름</div>
+      <input id="appNameInput" class="settings-input" type="text" placeholder="MyPlanner"/>
+      <button class="settings-btn" onclick="saveAppName()">저장</button>
+    </div>
+    <div class="settings-section">
+      <div class="settings-label">테마 색상</div>
+      <div class="theme-options">
+        <button class="theme-btn" style="background:#4A90D9" onclick="setTheme('#4A90D9')">블루</button>
+        <button class="theme-btn" style="background:#22c55e" onclick="setTheme('#22c55e')">그린</button>
+        <button class="theme-btn" style="background:#8b5cf6" onclick="setTheme('#8b5cf6')">퍼플</button>
+        <button class="theme-btn" style="background:#f59e0b" onclick="setTheme('#f59e0b')">옐로</button>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-label">알림</div>
+      <div class="settings-row"><span>일정 알림</span><label class="toggle"><input type="checkbox" checked/><span class="slider"></span></label></div>
+      <div class="settings-row"><span>할 일 알림</span><label class="toggle"><input type="checkbox"/><span class="slider"></span></label></div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-label">언어</div>
+      <select class="settings-select"><option>한국어</option><option>English</option><option>日本語</option></select>
+    </div>
+    <div class="settings-section">
+      <div class="settings-label">정보</div>
+      <div class="settings-desc">MyPlanner v1.0.0</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 할 일 ===== -->
+<div id="todoScreen" class="screen">
+  <div class="sub-header">
+    <button onclick="showScreen('fakeApp')" class="back-btn">← 뒤로</button>
+    <span class="sub-title">할 일</span>
+    <span id="todoCount" class="todo-count"></span>
+  </div>
+  <div class="todo-add-bar">
+    <input id="todoInput" class="todo-add-input" type="text" placeholder="새 할 일 추가..." onkeydown="if(event.key==='Enter')addTodo()"/>
+    <button class="todo-add-btn" onclick="addTodo()">+</button>
+  </div>
+  <div id="todoList" class="todo-list"></div>
+</div>
+
+<!-- ===== 메모 ===== -->
+<div id="memoScreen" class="screen">
+  <div class="sub-header">
+    <button onclick="showScreen('fakeApp')" class="back-btn">← 뒤로</button>
+    <span class="sub-title">메모</span>
+    <button class="sub-action-btn" onclick="openNewMemo()">+ 새 메모</button>
+  </div>
+  <div id="memoList" class="memo-list"></div>
+</div>
+
+<!-- ===== 메모 에디터 ===== -->
+<div id="memoEditorScreen" class="screen">
+  <div class="sub-header">
+    <button onclick="closeMemoEditor()" class="back-btn">← 목록</button>
+    <span class="sub-title" id="memoEditorTitle">새 메모</span>
+    <button class="sub-action-btn" onclick="saveMemo()">저장</button>
+  </div>
+  <div class="memo-editor-wrap">
+    <input id="memoTitleInput" class="memo-title-input" type="text" placeholder="제목"/>
+    <textarea id="memoContentInput" class="memo-content-input" placeholder="내용을 입력하세요..."></textarea>
+  </div>
+</div>
+
+<!-- ===== 달력 ===== -->
+<div id="calendarScreen" class="screen">
+  <div class="sub-header">
+    <button onclick="showScreen('fakeApp')" class="back-btn">← 뒤로</button>
+    <span class="sub-title">달력</span>
+  </div>
+  <div class="calendar-wrap">
+    <div class="cal-nav-bar">
+      <button class="cal-nav" onclick="changeMonth(-1)">‹</button>
+      <span class="cal-title" id="calTitle"></span>
+      <button class="cal-nav" onclick="changeMonth(1)">›</button>
+      <button class="cal-nav" onclick="refreshCalendar()" style="font-size:18px;">↻</button>
+    </div>
+    <div class="cal-weekdays">
+      <div class="cal-wd sun">일</div><div class="cal-wd">월</div><div class="cal-wd">화</div>
+      <div class="cal-wd">수</div><div class="cal-wd">목</div><div class="cal-wd">금</div>
+      <div class="cal-wd sat">토</div>
+    </div>
+    <div id="calGrid" class="cal-grid"></div>
+    <div class="cal-stats">
+      <div class="cal-stat-box"><div id="calDoneCount" class="cal-stat-num">0</div><div class="cal-stat-label">달성일</div></div>
+      <div class="cal-stat-box"><div id="calRate" class="cal-stat-num">0%</div><div class="cal-stat-label">달성률</div></div>
+      <div class="cal-stat-box"><div id="calStreak" class="cal-stat-num">0</div><div class="cal-stat-label">연속 달성</div></div>
+    </div>
+    <div class="cal-hint">날짜를 탭하면 달성 표시 / 해제</div>
+    <div id="calSyncStatus" class="cal-sync-status"></div>
+  </div>
+</div>
+
+<!-- ===== FAKE FEATURE ===== -->
+<div id="fakeFeature" class="screen">
+  <div class="sub-header">
+    <button onclick="showScreen('fakeApp')" class="back-btn">← 뒤로</button>
+    <span id="featureTitle" class="sub-title"></span>
+  </div>
+  <div id="featureContent" class="feature-content"></div>
+</div>
+
+<!-- ===== SECRET CHAT ===== -->
+<div id="chatApp" class="screen">
+  <!-- Setup -->
+  <div id="chatSetup" class="chat-setup">
+    <p class="chat-setup-desc" style="font-size:22px;font-weight:700;color:#f1f5f9;">닉네임을 설정하세요</p>
+    <input id="myCodeInput" class="chat-input-field" type="text" maxlength="20" placeholder="닉네임 입력"/>
+    <button class="chat-action-btn" onclick="saveMyCode()">설정</button>
+    <button class="chat-exit-btn" onclick="exitChat()">← 나가기</button>
+  </div>
+
+  <!-- Friend list -->
+  <div id="friendListView" style="display:none;flex-direction:column;height:100%;">
+    <div class="chat-header">
+      <button class="chat-header-btn" onclick="exitChat()">✕</button>
+      <div class="chat-header-center"><div class="chat-friend-name">보안 채팅</div></div>
+      <div class="chat-header-actions">
+        <button class="chat-header-btn" onclick="openSecretSettings()">⚙️</button>
+        <button class="chat-header-btn" onclick="openAddFriend()">👤+</button>
+      </div>
+    </div>
+    <div id="friendList" class="friend-list"></div>
+  </div>
+
+  <!-- Active chat -->
+  <div id="activeChatView" style="display:none;flex-direction:column;height:100%;">
+    <div class="chat-header">
+      <button class="chat-header-btn" onclick="backToFriendList()">←</button>
+      <div class="chat-header-center">
+        <div id="chatFriendName" class="chat-friend-name"></div>
+        <div id="autoDeleteLabel" class="auto-delete-label">자동삭제: 5분</div>
+      </div>
+      <div class="chat-header-actions">
+        <button class="chat-header-btn" onclick="openTimerSetting()">⏱</button>
+        <button class="chat-header-btn danger-btn" onclick="deleteAllNow()">🗑</button>
+      </div>
+    </div>
+    <div id="messageList" class="message-list"></div>
+    <div class="chat-input-bar">
+      <input id="msgInput" class="msg-input" type="text" placeholder="메시지 입력..." onkeydown="if(event.key==='Enter')sendMessage()"/>
+      <button class="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+
+  <!-- Add Friend Modal -->
+  <div id="addFriendModal" class="modal" style="display:none">
+    <div class="modal-box">
+      <div class="modal-title">친구 추가</div>
+      <div class="add-friend-tabs">
+        <button class="tab-btn active" id="tabBtnCode" onclick="switchAddTab('code')">코드</button>
+        <button class="tab-btn" id="tabBtnQr" onclick="switchAddTab('qr')">QR 스캔</button>
+        <button class="tab-btn" id="tabBtnMyqr" onclick="switchAddTab('myqr')">내 QR</button>
+      </div>
+      <div id="addTabCode">
+        <p class="modal-desc">친구의 식별 코드를 입력하세요</p>
+        <input id="friendCodeInput" class="chat-input-field" type="text" placeholder="친구 코드 입력"/>
+        <button class="chat-action-btn" onclick="addFriendByCode()">추가</button>
+      </div>
+      <div id="addTabQr" style="display:none">
+        <p class="modal-desc">친구의 QR코드를 스캔하세요</p>
+        <div id="qrScannerWrap"></div>
+        <div id="qrScanResult" style="color:#60a5fa;font-size:13px;text-align:center;margin-top:8px;"></div>
+      </div>
+      <div id="addTabMyqr" style="display:none;flex-direction:column;align-items:center;gap:12px;">
+        <p class="modal-desc">내 QR코드를 친구에게 보여주세요</p>
+        <div id="myQrCode"></div>
+        <div class="my-code-display" id="myCodeDisplay2"></div>
+        <button class="settings-btn" onclick="regenerateCode()">🔄 코드 재생성</button>
+      </div>
+      <button class="modal-cancel" onclick="closeAddFriend()">닫기</button>
+    </div>
+  </div>
+
+  <!-- Timer Modal -->
+  <div id="timerModal" class="modal" style="display:none">
+    <div class="modal-box">
+      <div class="modal-title">자동삭제 시간</div>
+      <p class="modal-desc" style="color:#94a3b8;font-size:12px;">변경 시 상대방 동의가 필요합니다</p>
+      <div class="timer-options">
+        <button class="timer-opt" onclick="setAutoDelete(1)">1분</button>
+        <button class="timer-opt" onclick="setAutoDelete(2)">2분</button>
+        <button class="timer-opt" onclick="setAutoDelete(3)">3분</button>
+        <button class="timer-opt" onclick="setAutoDelete(5)">5분</button>
+        <button class="timer-opt" onclick="setAutoDelete(7)">7분</button>
+        <button class="timer-opt" onclick="setAutoDelete(10)">10분</button>
+      </div>
+      <button class="modal-cancel" onclick="closeTimerModal()">닫기</button>
+    </div>
+  </div>
+
+  <!-- Secret Settings Modal -->
+  <div id="secretSettingsModal" class="modal" style="display:none">
+    <div class="modal-box">
+      <div class="modal-title">보안 설정</div>
+      <div class="secret-setting-item">
+        <div class="settings-label" style="color:#f1f5f9;font-size:14px;">채팅 알림</div>
+        <button id="notifToggleBtn" class="settings-btn" style="background:#475569;font-size:13px;padding:8px 14px;" onclick="toggleNotification()">🔕 알림 꺼짐</button>
+      </div>
+      <div class="secret-setting-item">
+        <div class="settings-label" style="color:#f1f5f9;font-size:14px;">채팅 폰트 크기</div>
+        <div style="display:flex;gap:6px;">
+          <button class="font-size-btn" onclick="setChatFontSize(12)">소</button>
+          <button class="font-size-btn" onclick="setChatFontSize(15)">중</button>
+          <button class="font-size-btn" onclick="setChatFontSize(18)">대</button>
+        </div>
+      </div>
+        <button class="settings-btn" style="font-size:13px;padding:8px 14px;" onclick="closeSecretSettings();openPatternSetup();">패턴 변경</button>
+      </div>
+      <div class="secret-setting-item">
+        <div class="settings-label" style="color:#f1f5f9;font-size:14px;">내 코드</div>
+        <div class="my-code-display" id="myCodeDisplaySettings" style="font-size:13px;padding:8px;"></div>
+      </div>
+      <button class="settings-btn" style="background:#f59e0b;width:100%;font-size:13px;" onclick="closeSecretSettings();openChangeCode();">🔑 식별 코드 변경</button>
+      <button class="modal-cancel" onclick="closeSecretSettings()">닫기</button>
+    </div>
+  </div>
+
+  <!-- Change Code Modal -->
+  <div id="changeCodeModal" class="modal" style="display:none">
+    <div class="modal-box">
+      <div class="modal-title">🔑 식별 코드 변경</div>
+      <p class="modal-desc">⚠️ 변경 시 모든 친구가 양측에서 삭제됩니다</p>
+      <input id="newCodeInput" class="chat-input-field" type="text" maxlength="20" placeholder="새 식별 코드 입력"/>
+      <button class="chat-action-btn" style="background:#f59e0b;" onclick="confirmChangeCode()">변경 확인</button>
+      <button class="modal-cancel" onclick="closeChangeCode()">취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PATTERN SETUP ===== -->
+<div id="patternSetup" class="screen" style="background:#0f172a;">
+  <div class="sub-header" style="background:#1e293b;">
+    <button onclick="cancelPatternSetup()" class="back-btn" style="color:#60a5fa;">← 취소</button>
+    <span class="sub-title" style="color:#f1f5f9;">패턴 변경</span>
+  </div>
+  <p style="color:#64748b;text-align:center;padding:14px 20px 0;font-size:13px;">메뉴를 드래그해서 새 패턴 입력 (최소 4개)</p>
+  <div class="menu-grid" id="setupGrid">
+    <div class="menu-item" data-dot="0" ontouchstart="setupDotStart(event,0)" onmousedown="setupDotStart(event,0)"><div class="menu-icon">📋</div><div class="menu-label">할 일</div></div>
+    <div class="menu-item" data-dot="1" ontouchstart="setupDotStart(event,1)" onmousedown="setupDotStart(event,1)"><div class="menu-icon">📅</div><div class="menu-label">일정표</div></div>
+    <div class="menu-item" data-dot="2" ontouchstart="setupDotStart(event,2)" onmousedown="setupDotStart(event,2)"><div class="menu-icon">⏰</div><div class="menu-label">알림</div></div>
+    <div class="menu-item" data-dot="3" ontouchstart="setupDotStart(event,3)" onmousedown="setupDotStart(event,3)"><div class="menu-icon">📝</div><div class="menu-label">메모</div></div>
+    <div class="menu-item" data-dot="4" ontouchstart="setupDotStart(event,4)" onmousedown="setupDotStart(event,4)"><div class="menu-icon">🎯</div><div class="menu-label">목표</div></div>
+    <div class="menu-item" data-dot="5" ontouchstart="setupDotStart(event,5)" onmousedown="setupDotStart(event,5)"><div class="menu-icon">📊</div><div class="menu-label">통계</div></div>
+    <div class="menu-item" data-dot="6" ontouchstart="setupDotStart(event,6)" onmousedown="setupDotStart(event,6)"><div class="menu-icon">🗂️</div><div class="menu-label">프로젝트</div></div>
+    <div class="menu-item" data-dot="7" ontouchstart="setupDotStart(event,7)" onmousedown="setupDotStart(event,7)"><div class="menu-icon">🏷️</div><div class="menu-label">태그</div></div>
+    <div class="menu-item" data-dot="8" ontouchstart="setupDotStart(event,8)" onmousedown="setupDotStart(event,8)"><div class="menu-icon">📆</div><div class="menu-label">달력</div></div>
+  </div>
+  <div id="setupStatus" style="color:#60a5fa;text-align:center;font-size:14px;min-height:20px;padding:0 20px;"></div>
+  <button id="savePatternBtn" class="settings-btn save-pattern-btn" onclick="savePattern()" style="display:none;">패턴 저장</button>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
