@@ -10,8 +10,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
+const storage = firebase.storage();
 
-// 익명 로그인 자동 실행
 auth.signInAnonymously().catch(e => console.log('Auth error:', e));
 let currentUser = null;
 auth.onAuthStateChanged(user => { currentUser = user; });
@@ -633,8 +633,19 @@ function renderMessage(data, id) {
     div.className = 'msg-bubble system-msg'; div.textContent = data.text;
   } else {
     div.className = `msg-bubble ${mine ? 'mine' : 'theirs'}`;
-    div.textContent = data.text;
     div.style.fontSize = (localStorage.getItem('chatFontSize') || '14') + 'px';
+    if (data.type === 'image') {
+      const img = document.createElement('img');
+      img.src = data.url; img.className = 'msg-media';
+      img.onclick = () => window.open(data.url, '_blank');
+      div.appendChild(img);
+    } else if (data.type === 'video') {
+      const vid = document.createElement('video');
+      vid.src = data.url; vid.controls = true; vid.className = 'msg-media';
+      div.appendChild(vid);
+    } else {
+      div.textContent = data.text;
+    }
     const footer = document.createElement('div'); footer.className = 'msg-footer';
     const sent = document.createElement('span'); sent.className = 'msg-time';
     const d = data.ts?.toDate ? data.ts.toDate() : new Date();
@@ -667,6 +678,33 @@ function scheduleAutoDelete(msgId, data) {
   }, Math.max(0, target - Date.now()));
 }
 
+async function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (!file || !chatRoomId) return;
+  e.target.value = '';
+  const isVideo = file.type.startsWith('video');
+  const isImage = file.type.startsWith('image');
+  if (!isVideo && !isImage) { alert('이미지 또는 영상만 전송 가능합니다'); return; }
+
+  // 업로드 중 표시
+  showInAppNotif('업로드 중...');
+  try {
+    const path = `media/${chatRoomId}/${Date.now()}_${file.name}`;
+    const ref = storage.ref(path);
+    await ref.put(file);
+    const url = await ref.getDownloadURL();
+    await db.collection('rooms').doc(chatRoomId).collection('messages').add({
+      sender: myCode, receiverId: activeFriendCode,
+      type: isVideo ? 'video' : 'image',
+      url, storagePath: path,
+      ts: firebase.firestore.Timestamp.now(),
+      deleteAt: firebase.firestore.Timestamp.fromMillis(Date.now() + autoDeleteMinutes * 60000)
+    });
+  } catch(err) {
+    alert('전송 실패: ' + err.message);
+  }
+}
+
 async function sendMessage() {
   const input = document.getElementById('msgInput'); const text = input.value.trim();
   if (!text || !chatRoomId) return; input.value = '';
@@ -681,7 +719,13 @@ async function deleteAllNow() {
   if (!chatRoomId) return;
   if (!confirm('모든 채팅을 즉시 삭제합니다. 복구 불가입니다.')) return;
   const snap = await db.collection('rooms').doc(chatRoomId).collection('messages').get();
-  const batch = db.batch(); snap.docs.forEach(d => batch.delete(d.ref)); await batch.commit();
+  const batch = db.batch();
+  snap.docs.forEach(d => {
+    const data = d.data();
+    if (data.storagePath) storage.ref(data.storagePath).delete().catch(() => {});
+    batch.delete(d.ref);
+  });
+  await batch.commit();
   Object.values(deleteTimers).forEach(t => clearTimeout(t)); deleteTimers = {};
   Object.values(countdownTimers).forEach(t => clearInterval(t)); countdownTimers = {};
 }

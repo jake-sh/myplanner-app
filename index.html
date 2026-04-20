@@ -188,6 +188,8 @@
     </div>
     <div id="messageList" class="message-list"></div>
     <div class="chat-input-bar">
+      <button class="attach-btn" onclick="document.getElementById('fileInput').click()">📎</button>
+      <input type="file" id="fileInput" accept="image/*,video/*" style="display:none" onchange="handleFileSelect(event)"/>
       <input id="msgInput" class="msg-input" type="text" placeholder="메시지 입력..." onkeydown="if(event.key==='Enter')sendMessage()"/>
       <button class="send-btn" onclick="sendMessage()">➤</button>
     </div>
@@ -305,6 +307,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="app.js"></script>

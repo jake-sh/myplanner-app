@@ -189,3 +189,7 @@ input:checked+.slider:before{transform:translateX(20px);}
 /* 폰트 크기 버튼 */
 .font-size-btn { background:#0f172a; border:1.5px solid #334155; color:#f1f5f9; padding:6px 14px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; transition:background .15s; }
 .font-size-btn:active { background:#3b82f6; }
+
+/* 미디어 메시지 */
+.msg-media { max-width: 220px; border-radius: 12px; display: block; cursor: pointer; margin-top: 4px; }
+.attach-btn { background: none; border: none; font-size: 22px; cursor: pointer; padding: 4px; flex-shrink: 0; }
