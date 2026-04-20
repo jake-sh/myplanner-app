@@ -10,7 +10,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
-const storage = firebase.app().storage('gs://chat-f2661.firebasestorage.app');
+const storage = firebase.storage();
 
 auth.signInAnonymously().catch(e => console.log('Auth error:', e));
 let currentUser = null;
@@ -686,19 +686,12 @@ async function handleFileSelect(e) {
   const isImage = file.type.startsWith('image');
   if (!isVideo && !isImage) { alert('이미지 또는 영상만 전송 가능합니다'); return; }
 
-  // 인증 대기
-  if (!currentUser) {
-    try {
-      await auth.signInAnonymously();
-    } catch(e) { alert('인증 실패: ' + e.message); return; }
-  }
-
   showInAppNotif('업로드 중...');
   try {
-    const path = `media/${chatRoomId}/${Date.now()}_${file.name}`;
-    const ref = storage.ref(path);
-    await ref.put(file);
-    const url = await ref.getDownloadURL();
+    const path = `media/${chatRoomId}/${Date.now()}`;
+    const ref = storage.ref().child(path);
+    const snap = await ref.put(file);
+    const url = await snap.ref.getDownloadURL();
     await db.collection('rooms').doc(chatRoomId).collection('messages').add({
       sender: myCode, receiverId: activeFriendCode,
       type: isVideo ? 'video' : 'image',
