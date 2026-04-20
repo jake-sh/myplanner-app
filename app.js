@@ -686,7 +686,13 @@ async function handleFileSelect(e) {
   const isImage = file.type.startsWith('image');
   if (!isVideo && !isImage) { alert('이미지 또는 영상만 전송 가능합니다'); return; }
 
-  // 업로드 중 표시
+  // 인증 대기
+  if (!currentUser) {
+    try {
+      await auth.signInAnonymously();
+    } catch(e) { alert('인증 실패: ' + e.message); return; }
+  }
+
   showInAppNotif('업로드 중...');
   try {
     const path = `media/${chatRoomId}/${Date.now()}_${file.name}`;
@@ -700,6 +706,7 @@ async function handleFileSelect(e) {
       ts: firebase.firestore.Timestamp.now(),
       deleteAt: firebase.firestore.Timestamp.fromMillis(Date.now() + autoDeleteMinutes * 60000)
     });
+    showInAppNotif('전송 완료!');
   } catch(err) {
     alert('전송 실패: ' + err.message);
   }
