@@ -209,7 +209,7 @@ input:checked+.slider:before{transform:translateX(20px);}
 .cal-sync-status { text-align:center; font-size:13px; font-weight:600; color:var(--primary); padding:6px; }
 
 /* 친구 삭제 버튼 */
-.friend-del-btn { background:none; border:none; font-size:18px; cursor:pointer; padding:8px; color:#475569; flex-shrink:0; }
+.friend-del-btn { background:none; border:none; cursor:pointer; padding:8px; color:#94a3b8; flex-shrink:0; display:flex; align-items:center; justify-content:center; border-radius:8px; }
 .friend-del-btn:active { color:#ef4444; }
 
 /* 폰트 크기 버튼 */
