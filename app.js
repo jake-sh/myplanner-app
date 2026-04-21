@@ -370,7 +370,7 @@ function renderCalendar() {
   document.getElementById('calStreak').textContent = streak;
 }
 
-let selectedPalette = 'done';
+let selectedPalette = null;
 
 function selectPalette(color) {
   if (selectedPalette === color) {
@@ -384,6 +384,7 @@ function selectPalette(color) {
 }
 
 async function toggleHabit(day) {
+  if (!selectedPalette) return; // 파레트 미선택 시 아무 동작 안 함
   const habits = JSON.parse(localStorage.getItem('habits') || '{}');
   const key = `${calYear}-${calMonth}`;
   if (!habits[key]) habits[key] = {};
@@ -391,10 +392,7 @@ async function toggleHabit(day) {
     const arr = habits[key]; habits[key] = {};
     arr.forEach(d => { habits[key][d] = 'done'; });
   }
-  if (!selectedPalette) {
-    if (habits[key][day]) delete habits[key][day];
-    else { habits[key][day] = 'done'; sendNotification('📅 일정 알림', '일정이 추가되었어요'); }
-  } else if (selectedPalette === 'clear') {
+  if (selectedPalette === 'clear') {
     delete habits[key][day];
   } else {
     habits[key][day] = selectedPalette;
