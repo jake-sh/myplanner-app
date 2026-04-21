@@ -215,7 +215,7 @@ input:checked+.slider:before{transform:translateX(20px);}
 .font-size-btn:active { background:#3b82f6; }
 
 /* 미디어 메시지 */
-.msg-media { width: 220px; height: 220px; object-fit: cover; border-radius: 12px; display: block; cursor: pointer; }
+.msg-media { max-width: 220px; max-height: 220px; width: auto; height: auto; border-radius: 12px; display: block; cursor: pointer; }
 .msg-bubble.media-bubble { padding: 0 !important; overflow: hidden; background: transparent !important; border: none !important; line-height: 0; }
 .attach-btn { background: none; border: none; font-size: 22px; cursor: pointer; padding: 4px; flex-shrink: 0; }
 
