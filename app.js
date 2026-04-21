@@ -357,7 +357,7 @@ function renderCalendar() {
     const today = d===now.getDate() && calMonth===now.getMonth() && calYear===now.getFullYear();
     const color = dayMap[d];
     const dow = (firstDay+d-1)%7;
-    const cls = ['cal-day', today?'cal-today':'', color?`cal-color-${color}`:'', dow===0?'sun':dow===6?'sat':''].filter(Boolean).join(' ');
+    const cls = ['cal-day', today?'cal-today':(color?`cal-color-${color}`:''), dow===0?'sun':dow===6?'sat':''].filter(Boolean).join(' ');
     html += `<div class="${cls}" onclick="toggleHabit(${d})">${d}</div>`;
   }
   document.getElementById('calGrid').innerHTML = html;

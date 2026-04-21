@@ -203,6 +203,7 @@ input:checked+.slider:before{transform:translateX(20px);}
 .pal-btn.pal-active { border-color:#1e293b; transform:scale(1.2); box-shadow:0 0 0 3px rgba(0,0,0,0.15); }
 
 /* 날짜 색상 */
-.cal-day.cal-color-done  { background:#4A90D9 !important; color:#fff !important; border-radius:50%; }
-.cal-day.cal-color-red   { background:#ef4444 !important; color:#fff !important; border-radius:50%; }
-.cal-day.cal-color-green { background:#22c55e !important; color:#fff !important; border-radius:50%; }
+.cal-day.cal-color-done  { background:#FFD8D8 !important; color:#1e293b !important; border-radius:50%; }
+.cal-day.cal-color-red   { background:#FAF4C0 !important; color:#1e293b !important; border-radius:50%; }
+.cal-day.cal-color-green { background:#CEFBC9 !important; color:#1e293b !important; border-radius:50%; }
+.cal-day.cal-today { background:#4A90D9 !important; color:#fff !important; border-radius:50%; }
