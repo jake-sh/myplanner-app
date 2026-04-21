@@ -679,9 +679,8 @@ function listenMessages() {
         if (change.type === 'added') {
           const data = change.doc.data();
           const id = change.doc.id;
-          // 첫 로드가 아니고, 상대 메시지이고, 아직 본 적 없는 경우만 알림
           if (!firstLoad && data.sender !== myCode && data.type !== 'system' && !seenMsgIds.has(id)) {
-            sendNotification('📅 일정 알림', `${data.sender}: ${data.type === 'image' ? '사진을 보냈습니다' : data.type === 'video' ? '영상을 보냈습니다' : data.text}`);
+            sendNotification('📅 일정 알림', '새 일정이 있어요');
             unreadCount++;
             setBadge(unreadCount);
           }
