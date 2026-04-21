@@ -718,11 +718,13 @@ function renderMessage(data, id) {
   bubble.className = `msg-bubble ${mine ? 'mine' : 'theirs'}`;
   bubble.style.fontSize = (localStorage.getItem('chatFontSize') || '14') + 'px';
   if (data.type === 'image') {
+    bubble.classList.add('media-bubble');
     const img = document.createElement('img');
     img.src = data.url; img.className = 'msg-media';
     img.onclick = () => window.open(data.url, '_blank');
     bubble.appendChild(img);
   } else if (data.type === 'video') {
+    bubble.classList.add('media-bubble');
     const vid = document.createElement('video');
     vid.src = data.url; vid.controls = true; vid.className = 'msg-media';
     bubble.appendChild(vid);
