@@ -372,9 +372,9 @@ async function toggleHabit(day) {
   const idx = habits[key].indexOf(day);
   if (idx>=0) habits[key].splice(idx,1); else habits[key].push(day);
   localStorage.setItem('habits', JSON.stringify(habits));
+  renderCalendar();
   const sid = getSharedCalId();
-  if (sid) await db.collection('calendars').doc(sid).set({ habits, updatedBy: myCode, ts: firebase.firestore.Timestamp.now() });
-  else renderCalendar();
+  if (sid) await db.collection('calendars').doc(sid).set({ habits, updatedBy: myCode, ts: firebase.firestore.Timestamp.now() }).catch(() => {});
 }
 
 function refreshCalendar() {
