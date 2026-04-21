@@ -436,6 +436,7 @@ function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').re
 
 // ── SECRET CHAT ─────────────────────────────────────
 function enterChatApp() {
+  applyChatTheme();
   showScreen('chatApp');
   if (!myCode) {
     document.getElementById('chatSetup').style.display = 'flex';
@@ -869,10 +870,39 @@ function updateFontSizeBtns() {
   });
 }
 
+function setChatTheme(theme) {
+  localStorage.setItem('chatTheme', theme);
+  applyChatTheme();
+  updateThemeBtns();
+}
+
+function applyChatTheme() {
+  const theme = localStorage.getItem('chatTheme') || 'dark';
+  const chatApp = document.getElementById('chatApp');
+  const patternSetup = document.getElementById('patternSetup');
+  if (theme === 'light') {
+    chatApp.classList.add('chat-light');
+    patternSetup.classList.add('chat-light');
+  } else {
+    chatApp.classList.remove('chat-light');
+    patternSetup.classList.remove('chat-light');
+  }
+}
+
+function updateThemeBtns() {
+  const theme = localStorage.getItem('chatTheme') || 'dark';
+  const darkBtn = document.getElementById('themeDarkBtn');
+  const lightBtn = document.getElementById('themeLightBtn');
+  if (!darkBtn) return;
+  darkBtn.style.background = theme === 'dark' ? '#3b82f6' : '';
+  lightBtn.style.background = theme === 'light' ? '#3b82f6' : '';
+}
+
 function openSecretSettings() {
   document.getElementById('myCodeDisplaySettings').textContent = myCode;
   updateNotifBtn();
   updateFontSizeBtns();
+  updateThemeBtns();
   document.getElementById('secretSettingsModal').style.display = 'flex';
 }
 function closeSecretSettings() { document.getElementById('secretSettingsModal').style.display = 'none'; }
