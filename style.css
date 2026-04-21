@@ -193,3 +193,16 @@ input:checked+.slider:before{transform:translateX(20px);}
 /* 미디어 메시지 */
 .msg-media { max-width: 220px; border-radius: 12px; display: block; cursor: pointer; margin-top: 4px; }
 .attach-btn { background: none; border: none; font-size: 22px; cursor: pointer; padding: 4px; flex-shrink: 0; }
+
+/* 달력 리프레시 버튼 */
+.cal-refresh-btn { background:none; border:none; font-size:24px; cursor:pointer; color:var(--primary); padding:4px 8px; margin-left:auto; }
+
+/* 팔레트 */
+.cal-palette { display:flex; gap:10px; justify-content:center; padding:10px 0; }
+.pal-btn { width:36px; height:36px; border-radius:50%; border:3px solid transparent; font-size:14px; font-weight:700; color:#fff; cursor:pointer; transition:transform .15s, border-color .15s; }
+.pal-btn.pal-active { border-color:#f1f5f9; transform:scale(1.2); }
+
+/* 날짜 색상 */
+.cal-day.cal-color-done { background:#4A90D9 !important; color:#fff !important; border-radius:50%; }
+.cal-day.cal-color-red  { background:#ef4444 !important; color:#fff !important; border-radius:50%; }
+.cal-day.cal-color-green{ background:#22c55e !important; color:#fff !important; border-radius:50%; }

@@ -342,7 +342,9 @@ function renderCalendar() {
   const now = new Date();
   const habits = JSON.parse(localStorage.getItem('habits') || '{}');
   const key = `${calYear}-${calMonth}`;
-  const checked = habits[key] || [];
+  let dayMap = habits[key] || {};
+  // 이전 버전 배열 호환
+  if (Array.isArray(dayMap)) { const tmp = {}; dayMap.forEach(d => { tmp[d] = 'done'; }); dayMap = tmp; }
   const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
   const firstDay = new Date(calYear, calMonth, 1).getDay();
   const months = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
@@ -353,24 +355,47 @@ function renderCalendar() {
   for (let i = 0; i < firstDay; i++) html += '<div class="cal-empty"></div>';
   for (let d = 1; d <= daysInMonth; d++) {
     const today = d===now.getDate() && calMonth===now.getMonth() && calYear===now.getFullYear();
-    const done = checked.includes(d);
+    const color = dayMap[d];
     const dow = (firstDay+d-1)%7;
-    const cls = ['cal-day', today?'cal-today':'', done?'cal-done':'', dow===0?'sun':dow===6?'sat':''].filter(Boolean).join(' ');
+    const cls = ['cal-day', today?'cal-today':'', color?`cal-color-${color}`:'', dow===0?'sun':dow===6?'sat':''].filter(Boolean).join(' ');
     html += `<div class="${cls}" onclick="toggleHabit(${d})">${d}</div>`;
   }
   document.getElementById('calGrid').innerHTML = html;
-  const streak = (() => { const s=[...checked].sort((a,b)=>b-a); if(!s.length)return 0; let c=1; for(let i=0;i<s.length-1;i++){if(s[i]-s[i+1]===1)c++;else break;} return c; })();
-  document.getElementById('calDoneCount').textContent = checked.length;
-  document.getElementById('calRate').textContent = Math.round(checked.length/daysInMonth*100)+'%';
+  const doneCount = Object.values(dayMap).filter(v => v && v !== 'clear').length;
+  const sorted = Object.keys(dayMap).map(Number).sort((a,b)=>b-a);
+  let streak = 0;
+  if (sorted.length) { streak = 1; for (let i=0;i<sorted.length-1;i++){if(sorted[i]-sorted[i+1]===1)streak++;else break;} }
+  document.getElementById('calDoneCount').textContent = doneCount;
+  document.getElementById('calRate').textContent = Math.round(doneCount/daysInMonth*100)+'%';
   document.getElementById('calStreak').textContent = streak;
+}
+
+let selectedPalette = 'done';
+
+function selectPalette(color) {
+  selectedPalette = color;
+  document.querySelectorAll('.pal-btn').forEach(b => b.classList.remove('pal-active'));
+  document.querySelector(`.pal-btn[data-color="${color}"]`)?.classList.add('pal-active');
 }
 
 async function toggleHabit(day) {
   const habits = JSON.parse(localStorage.getItem('habits') || '{}');
   const key = `${calYear}-${calMonth}`;
-  if (!habits[key]) habits[key] = [];
-  const idx = habits[key].indexOf(day);
-  if (idx>=0) habits[key].splice(idx,1); else habits[key].push(day);
+  if (!habits[key]) habits[key] = {};
+
+  // 이전 버전 배열 호환
+  if (Array.isArray(habits[key])) {
+    const arr = habits[key];
+    habits[key] = {};
+    arr.forEach(d => { habits[key][d] = 'done'; });
+  }
+
+  if (selectedPalette === 'clear') {
+    delete habits[key][day];
+  } else {
+    habits[key][day] = selectedPalette;
+  }
+
   localStorage.setItem('habits', JSON.stringify(habits));
   renderCalendar();
   const sid = getSharedCalId();
