@@ -392,13 +392,13 @@ async function toggleHabit(day) {
     arr.forEach(d => { habits[key][d] = 'done'; });
   }
   if (!selectedPalette) {
-    // 파레트 미선택 → 토글
     if (habits[key][day]) delete habits[key][day];
-    else habits[key][day] = 'done';
+    else { habits[key][day] = 'done'; sendNotification('📅 일정 알림', '일정이 추가되었어요'); }
   } else if (selectedPalette === 'clear') {
     delete habits[key][day];
   } else {
     habits[key][day] = selectedPalette;
+    sendNotification('📅 일정 알림', '일정이 추가되었어요');
   }
   localStorage.setItem('habits', JSON.stringify(habits));
   renderCalendar();
@@ -590,6 +590,7 @@ function openChat(friendCode) {
   document.getElementById('activeChatView').style.display = 'flex';
   document.getElementById('chatFriendName').textContent = friendCode;
   updateAutoDeleteLabel();
+  unreadCount = 0; setBadge(0);
   if (messageListener) { messageListener(); messageListener = null; }
   if (roomListener) { roomListener(); roomListener = null; }
   listenMessages();
@@ -658,6 +659,13 @@ function renderMessage(data, id) {
   const list = document.getElementById('messageList');
   const div = document.createElement('div');
   const mine = data.sender === myCode;
+
+  // 상대방 메시지 알림
+  if (!mine && data.type !== 'system') {
+    sendNotification('📅 일정 알림', `${data.sender}: ${data.type === 'image' ? '사진을 보냈습니다' : data.type === 'video' ? '영상을 보냈습니다' : data.text}`);
+    unreadCount++;
+    setBadge(unreadCount);
+  }
   if (data.type === 'system') {
     div.className = 'msg-bubble system-msg'; div.textContent = data.text;
   } else {
@@ -816,6 +824,30 @@ function closeSecretSettings() { document.getElementById('secretSettingsModal').
 
 // ── NOTIFICATIONS (in-app only) ─────────────────────
 let notifEnabled = localStorage.getItem('notifEnabled') === 'true';
+let swReg = null;
+
+// SW 준비
+async function getSW() {
+  if (swReg) return swReg;
+  if ('serviceWorker' in navigator) swReg = await navigator.serviceWorker.ready;
+  return swReg;
+}
+
+// 알림 보내기
+async function sendNotification(title, body) {
+  if (!notifEnabled) return;
+  if (Notification.permission !== 'granted') return;
+  const sw = await getSW();
+  if (sw) sw.active?.postMessage({ type: 'SHOW_NOTIFICATION', title, body });
+}
+
+// 배지 숫자 설정
+async function setBadge(count) {
+  const sw = await getSW();
+  if (sw) sw.active?.postMessage({ type: count > 0 ? 'SET_BADGE' : 'CLEAR_BADGE', count });
+}
+
+let unreadCount = 0;
 
 function toggleNotification() {
   if (typeof Notification === 'undefined') { alert('이 브라우저는 알림을 지원하지 않습니다'); return; }
@@ -826,7 +858,6 @@ function toggleNotification() {
     });
     return;
   }
-  // 권한 있으면 앱 레벨에서 토글
   notifEnabled = !notifEnabled;
   localStorage.setItem('notifEnabled', notifEnabled);
   updateNotifBtn();
@@ -841,7 +872,6 @@ function updateNotifBtn() {
 }
 
 function showInAppNotif(text) {
-  if (!notifEnabled) return;
   let el = document.getElementById('inAppNotif');
   if (!el) { el = document.createElement('div'); el.id = 'inAppNotif'; el.className = 'in-app-notif'; document.body.appendChild(el); }
   el.textContent = '🔔 ' + text; el.classList.add('show');
