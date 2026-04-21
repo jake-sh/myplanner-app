@@ -373,29 +373,33 @@ function renderCalendar() {
 let selectedPalette = 'done';
 
 function selectPalette(color) {
-  selectedPalette = color;
-  document.querySelectorAll('.pal-btn').forEach(b => b.classList.remove('pal-active'));
-  document.querySelector(`.pal-btn[data-color="${color}"]`)?.classList.add('pal-active');
+  if (selectedPalette === color) {
+    selectedPalette = null;
+    document.querySelectorAll('.pal-btn').forEach(b => b.classList.remove('pal-active'));
+  } else {
+    selectedPalette = color;
+    document.querySelectorAll('.pal-btn').forEach(b => b.classList.remove('pal-active'));
+    document.querySelector(`.pal-btn[data-color="${color}"]`)?.classList.add('pal-active');
+  }
 }
 
 async function toggleHabit(day) {
   const habits = JSON.parse(localStorage.getItem('habits') || '{}');
   const key = `${calYear}-${calMonth}`;
   if (!habits[key]) habits[key] = {};
-
-  // 이전 버전 배열 호환
   if (Array.isArray(habits[key])) {
-    const arr = habits[key];
-    habits[key] = {};
+    const arr = habits[key]; habits[key] = {};
     arr.forEach(d => { habits[key][d] = 'done'; });
   }
-
-  if (selectedPalette === 'clear') {
+  if (!selectedPalette) {
+    // 파레트 미선택 → 토글
+    if (habits[key][day]) delete habits[key][day];
+    else habits[key][day] = 'done';
+  } else if (selectedPalette === 'clear') {
     delete habits[key][day];
   } else {
     habits[key][day] = selectedPalette;
   }
-
   localStorage.setItem('habits', JSON.stringify(habits));
   renderCalendar();
   const sid = getSharedCalId();
