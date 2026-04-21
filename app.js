@@ -522,6 +522,11 @@ async function addFriendByCode() {
   if (!code) { alert('코드를 입력하세요'); return; }
   if (code === myCode) { alert('자신의 코드는 추가할 수 없습니다'); return; }
   if (friends.includes(code)) { alert('이미 추가된 친구입니다'); return; }
+
+  // 존재하는 사용자인지 확인
+  const snap = await db.collection('users').doc(code).get();
+  if (!snap.exists) { alert(`"${code}" 는 등록되지 않은 사용자예요`); return; }
+
   friends.push(code); localStorage.setItem('friends', JSON.stringify(friends));
   await db.collection('users').doc(myCode).set({ friends: firebase.firestore.FieldValue.arrayUnion(code) }, { merge: true });
   await db.collection('users').doc(code).set({ friends: firebase.firestore.FieldValue.arrayUnion(myCode) }, { merge: true });
@@ -608,14 +613,20 @@ function listenRoomSettings() {
   roomListener = db.collection('rooms').doc(chatRoomId).onSnapshot(snap => {
     if (!snap.exists) return;
     const data = snap.data();
-    if (data.deleteRequest && data.deleteRequest.from !== myCode && data.deleteRequest.status === 'pending') {
-      showDeleteTimeRequest(data.deleteRequest.from, data.deleteRequest.minutes, data.deleteRequest.id);
+    const req = data.deleteRequest;
+    if (!req) return;
+    if (req.from !== myCode && req.status === 'pending') {
+      showDeleteTimeRequest(req.from, req.minutes, req.id);
     }
-    if (data.deleteRequest?.status === 'approved' && !data.deleteRequest?.appliedTo?.includes(myCode)) {
-      autoDeleteMinutes = data.deleteRequest.minutes;
+    if (req.status === 'rejected') {
+      document.getElementById('deleteRequestBanner')?.remove();
+      if (req.from === myCode) showInAppNotif('상대방이 변경을 거부했습니다');
+    }
+    if (req.status === 'approved') {
+      document.getElementById('deleteRequestBanner')?.remove();
+      autoDeleteMinutes = req.minutes;
       localStorage.setItem('autoDeleteMin', autoDeleteMinutes);
       updateAutoDeleteLabel();
-      db.collection('rooms').doc(chatRoomId).update({ 'deleteRequest.appliedTo': firebase.firestore.FieldValue.arrayUnion(myCode) });
     }
   });
 }
@@ -635,8 +646,10 @@ function showDeleteTimeRequest(from, minutes, reqId) {
 async function respondDeleteRequest(accept, reqId, minutes) {
   document.getElementById('deleteRequestBanner')?.remove();
   if (accept) {
-    autoDeleteMinutes = minutes; localStorage.setItem('autoDeleteMin', minutes); updateAutoDeleteLabel();
-    await db.collection('rooms').doc(chatRoomId).update({ 'deleteRequest.status': 'approved', 'deleteRequest.appliedTo': firebase.firestore.FieldValue.arrayUnion(myCode) });
+    autoDeleteMinutes = minutes;
+    localStorage.setItem('autoDeleteMin', minutes);
+    updateAutoDeleteLabel();
+    await db.collection('rooms').doc(chatRoomId).update({ 'deleteRequest.status': 'approved' });
   } else {
     await db.collection('rooms').doc(chatRoomId).update({ 'deleteRequest.status': 'rejected' });
   }
@@ -782,12 +795,15 @@ function openTimerSetting() { document.getElementById('timerModal').style.displa
 function closeTimerModal() { document.getElementById('timerModal').style.display = 'none'; }
 async function setAutoDelete(min) {
   closeTimerModal();
-  if (!chatRoomId) { autoDeleteMinutes = min; localStorage.setItem('autoDeleteMin', min); updateAutoDeleteLabel(); return; }
+  if (!chatRoomId) {
+    autoDeleteMinutes = min; localStorage.setItem('autoDeleteMin', min); updateAutoDeleteLabel(); return;
+  }
   const reqId = Date.now().toString();
   await db.collection('rooms').doc(chatRoomId).set({
-    deleteRequest: { from: myCode, minutes: min, id: reqId, status: 'pending', appliedTo: [myCode], ts: firebase.firestore.Timestamp.now() }
+    deleteRequest: { from: myCode, minutes: min, id: reqId, status: 'pending', appliedTo: [], ts: firebase.firestore.Timestamp.now() }
   }, { merge: true });
-  autoDeleteMinutes = min; localStorage.setItem('autoDeleteMin', min); updateAutoDeleteLabel();
+  // 요청자는 승인 대기 - 아직 변경 안 함
+  showInAppNotif('상대방 승인 대기 중...');
 }
 function updateAutoDeleteLabel() { document.getElementById('autoDeleteLabel').textContent = `자동삭제: ${autoDeleteMinutes}분`; }
 
