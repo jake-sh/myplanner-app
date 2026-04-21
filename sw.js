@@ -1,4 +1,4 @@
-const CACHE = 'myplanner-v32';
+const CACHE = 'myplanner-v33';
 
 self.addEventListener('install', e => { self.skipWaiting(); });
 self.addEventListener('activate', e => {
@@ -17,8 +17,8 @@ self.addEventListener('message', e => {
       icon: '/myplanner-app/icons/icon-192.png',
       badge: '/myplanner-app/icons/icon-192.png',
       tag: 'schedule-notification',
-      renotify: true,
-      vibrate: [200, 100, 200]
+      renotify: false,
+      silent: false
     });
   }
   if (e.data?.type === 'SET_BADGE') {
@@ -29,7 +29,6 @@ self.addEventListener('message', e => {
   }
 });
 
-// 알림 클릭 시 앱 열기
 self.addEventListener('notificationclick', e => {
   e.notification.close();
   e.waitUntil(clients.matchAll({ type: 'window' }).then(list => {

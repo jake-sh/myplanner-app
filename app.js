@@ -329,8 +329,17 @@ function openCalendar() {
   if (calListener) { calListener(); calListener = null; }
   const sid = getSharedCalId();
   if (sid) {
+    let firstCalLoad = true;
     calListener = db.collection('calendars').doc(sid).onSnapshot(snap => {
-      if (snap.exists) localStorage.setItem('habits', JSON.stringify(snap.data().habits || {}));
+      if (snap.exists) {
+        const data = snap.data();
+        localStorage.setItem('habits', JSON.stringify(data.habits || {}));
+        // 상대방이 업데이트한 경우만 알림
+        if (!firstCalLoad && data.updatedBy && data.updatedBy !== myCode) {
+          sendNotification('📅 일정 알림', '일정이 추가되었어요');
+        }
+        firstCalLoad = false;
+      }
       renderCalendar();
     });
   } else {
@@ -396,7 +405,6 @@ async function toggleHabit(day) {
     delete habits[key][day];
   } else {
     habits[key][day] = selectedPalette;
-    sendNotification('📅 일정 알림', '일정이 추가되었어요');
   }
   localStorage.setItem('habits', JSON.stringify(habits));
   renderCalendar();
@@ -655,14 +663,38 @@ async function respondDeleteRequest(accept, reqId, minutes) {
   }
 }
 
+let seenMsgIds = new Set();
+let firstLoad = true;
+
 function listenMessages() {
+  seenMsgIds = new Set();
+  firstLoad = true;
   messageListener = db.collection('rooms').doc(chatRoomId).collection('messages').orderBy('ts')
     .onSnapshot(snap => {
       const list = document.getElementById('messageList');
       const atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 60;
+
+      // 새 메시지만 감지 (added 타입)
+      snap.docChanges().forEach(change => {
+        if (change.type === 'added') {
+          const data = change.doc.data();
+          const id = change.doc.id;
+          // 첫 로드가 아니고, 상대 메시지이고, 아직 본 적 없는 경우만 알림
+          if (!firstLoad && data.sender !== myCode && data.type !== 'system' && !seenMsgIds.has(id)) {
+            sendNotification('📅 일정 알림', `${data.sender}: ${data.type === 'image' ? '사진을 보냈습니다' : data.type === 'video' ? '영상을 보냈습니다' : data.text}`);
+            unreadCount++;
+            setBadge(unreadCount);
+          }
+          seenMsgIds.add(id);
+        }
+      });
+
+      // 메시지 리스트 다시 그리기 (알림 없이)
       list.innerHTML = '';
       snap.forEach(doc => { renderMessage(doc.data(), doc.id); scheduleAutoDelete(doc.id, doc.data()); });
       if (atBottom) list.scrollTop = list.scrollHeight;
+
+      firstLoad = false;
     });
 }
 
@@ -670,13 +702,6 @@ function renderMessage(data, id) {
   const list = document.getElementById('messageList');
   const div = document.createElement('div');
   const mine = data.sender === myCode;
-
-  // 상대방 메시지 알림
-  if (!mine && data.type !== 'system') {
-    sendNotification('📅 일정 알림', `${data.sender}: ${data.type === 'image' ? '사진을 보냈습니다' : data.type === 'video' ? '영상을 보냈습니다' : data.text}`);
-    unreadCount++;
-    setBadge(unreadCount);
-  }
   if (data.type === 'system') {
     div.className = 'msg-bubble system-msg'; div.textContent = data.text;
   } else {
@@ -847,10 +872,12 @@ async function getSW() {
   return swReg;
 }
 
-// 알림 보내기
+// 알림 보내기 - 앱이 보이지 않을 때만
 async function sendNotification(title, body) {
   if (!notifEnabled) return;
   if (Notification.permission !== 'granted') return;
+  // 앱이 현재 보이면 알림 보내지 않음 (배터리 절약)
+  if (document.visibilityState === 'visible') return;
   const sw = await getSW();
   if (sw) sw.active?.postMessage({ type: 'SHOW_NOTIFICATION', title, body });
 }
