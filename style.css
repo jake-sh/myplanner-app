@@ -146,7 +146,9 @@ input:checked+.slider:before{transform:translateX(20px);}
 .chat-header-center{flex:1;text-align:center;}
 .chat-friend-name{font-size:16px;font-weight:700;}
 .auto-delete-label{font-size:11px;color:#64748b;margin-top:2px;}
-.chat-header-btn{background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;padding:4px;min-width:36px;}
+.chat-header-btn{background:none;border:none;color:var(--chat-text2, #94a3b8);cursor:pointer;padding:6px;min-width:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;transition:opacity .15s;}
+.chat-header-btn:active{opacity:.6;}
+.chat-header-btn.danger-btn{color:#ef4444;}
 .chat-header-actions{display:flex;gap:4px;}
 .danger-btn{color:#ef4444 !important;}
 .friend-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
@@ -217,7 +219,8 @@ input:checked+.slider:before{transform:translateX(20px);}
 /* 미디어 메시지 */
 .msg-media { max-width: 220px; max-height: 220px; width: auto; height: auto; border-radius: 12px; display: block; cursor: pointer; }
 .msg-bubble.media-bubble { padding: 0 !important; overflow: hidden; background: transparent !important; border: none !important; line-height: 0; }
-.attach-btn { background: none; border: none; font-size: 22px; cursor: pointer; padding: 4px; flex-shrink: 0; }
+.attach-btn { background:none; border:none; color:var(--chat-text2, #94a3b8); cursor:pointer; padding:6px; flex-shrink:0; display:flex; align-items:center; justify-content:center; border-radius:8px; transition:opacity .15s; }
+.attach-btn:active { opacity:.6; }
 
 /* 달력 리프레시 버튼 */
 .cal-refresh-btn { background:none; border:none; font-size:13px; font-weight:700; cursor:pointer; color:var(--primary); padding:4px 8px; margin-left:auto; font-family:inherit; }

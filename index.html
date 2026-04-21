@@ -181,19 +181,35 @@
   <!-- Active chat -->
   <div id="activeChatView" style="display:none;flex-direction:column;height:100%;">
     <div class="chat-header">
-      <button class="chat-header-btn" onclick="backToFriendList()">←</button>
+      <button class="chat-header-btn" onclick="backToFriendList()">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
       <div class="chat-header-center">
         <div id="chatFriendName" class="chat-friend-name"></div>
         <div id="autoDeleteLabel" class="auto-delete-label">자동삭제: 5분</div>
       </div>
       <div class="chat-header-actions">
-        <button class="chat-header-btn" onclick="openTimerSetting()">⏱</button>
-        <button class="chat-header-btn danger-btn" onclick="deleteAllNow()">🗑</button>
+        <button class="chat-header-btn" onclick="openTimerSetting()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/>
+          </svg>
+        </button>
+        <button class="chat-header-btn danger-btn" onclick="deleteAllNow()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+          </svg>
+        </button>
       </div>
     </div>
     <div id="messageList" class="message-list"></div>
     <div class="chat-input-bar">
-      <button class="attach-btn" onclick="document.getElementById('fileInput').click()">📎</button>
+      <button class="attach-btn" onclick="document.getElementById('fileInput').click()">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+      </button>
       <input type="file" id="fileInput" accept="image/*,video/*" style="display:none" onchange="handleFileSelect(event)"/>
       <input id="msgInput" class="msg-input" type="text" placeholder="메시지 입력..." onkeydown="if(event.key==='Enter')sendMessage()"/>
       <button class="send-btn" onclick="sendMessage()">➤</button>
