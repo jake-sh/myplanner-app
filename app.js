@@ -672,30 +672,46 @@ let seenMsgIds = new Set();
 let firstLoad = true;
 
 function listenMessages() {
+  // 기존 리스너 완전 정리
+  if (messageListener) { messageListener(); messageListener = null; }
+  Object.values(deleteTimers).forEach(t => clearTimeout(t)); deleteTimers = {};
+  Object.values(countdownTimers).forEach(t => clearInterval(t)); countdownTimers = {};
+
   seenMsgIds = new Set();
   firstLoad = true;
+
   messageListener = db.collection('rooms').doc(chatRoomId).collection('messages').orderBy('ts')
     .onSnapshot(snap => {
       const list = document.getElementById('messageList');
+      if (!list) return;
       const atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 60;
 
-      // 새 메시지만 감지 (added 타입)
+      // 새 메시지 알림 (첫 로드 이후, 상대방 메시지만)
       snap.docChanges().forEach(change => {
         if (change.type === 'added') {
           const data = change.doc.data();
           const id = change.doc.id;
           if (!firstLoad && data.sender !== myCode && data.type !== 'system' && !seenMsgIds.has(id)) {
-            sendNotification('📅 일정 알림', '새 일정이 있어요');
-            unreadCount++;
-            setBadge(unreadCount);
+            // 앱이 백그라운드일 때만 알림
+            if (document.visibilityState !== 'visible' && notifEnabled && Notification.permission === 'granted') {
+              sendNotification('📅 일정 알림', '새 일정이 있어요');
+              unreadCount++;
+              setBadge(unreadCount);
+            }
           }
           seenMsgIds.add(id);
         }
       });
 
-      // 메시지 리스트 다시 그리기 (알림 없이)
+      // 카운트다운 타이머 정리 후 재시작
+      Object.values(countdownTimers).forEach(t => clearInterval(t)); countdownTimers = {};
+
       list.innerHTML = '';
-      snap.forEach(doc => { renderMessage(doc.data(), doc.id); scheduleAutoDelete(doc.id, doc.data()); });
+      snap.forEach(doc => {
+        renderMessage(doc.data(), doc.id);
+        // 삭제 타이머는 아직 없는 것만 등록
+        if (!deleteTimers[doc.id]) scheduleAutoDelete(doc.id, doc.data());
+      });
       if (atBottom) list.scrollTop = list.scrollHeight;
 
       firstLoad = false;
@@ -929,12 +945,16 @@ async function getSW() {
   return swReg;
 }
 
-// 알림 보내기 - 앱이 보이지 않을 때만
+let lastNotifTime = 0;
+
+// 알림 보내기 - 앱이 보이지 않을 때만, 중복 방지
 async function sendNotification(title, body) {
   if (!notifEnabled) return;
   if (Notification.permission !== 'granted') return;
-  // 앱이 현재 보이면 알림 보내지 않음 (배터리 절약)
   if (document.visibilityState === 'visible') return;
+  const now = Date.now();
+  if (now - lastNotifTime < 3000) return; // 3초 내 중복 방지
+  lastNotifTime = now;
   const sw = await getSW();
   if (sw) sw.active?.postMessage({ type: 'SHOW_NOTIFICATION', title, body });
 }
