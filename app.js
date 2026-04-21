@@ -716,7 +716,7 @@ function renderMessage(data, id) {
   // 말풍선
   const bubble = document.createElement('div');
   bubble.className = `msg-bubble ${mine ? 'mine' : 'theirs'}`;
-  bubble.style.fontSize = (localStorage.getItem('chatFontSize') || '14') + 'px';
+  bubble.style.fontSize = (localStorage.getItem('chatFontSize') || '18') + 'px';
   if (data.type === 'image') {
     bubble.classList.add('media-bubble');
     const img = document.createElement('img');
@@ -859,13 +859,13 @@ function setChatFontSize(size) {
 }
 
 function applyChatFontSize() {
-  const size = parseInt(localStorage.getItem('chatFontSize') || '14');
+  const size = parseInt(localStorage.getItem('chatFontSize') || '18');
   document.querySelectorAll('.msg-bubble').forEach(el => el.style.fontSize = size + 'px');
   document.querySelector('#chatApp .msg-input') && (document.getElementById('msgInput').style.fontSize = size + 'px');
 }
 
 function updateFontSizeBtns() {
-  const size = parseInt(localStorage.getItem('chatFontSize') || '14');
+  const size = parseInt(localStorage.getItem('chatFontSize') || '18');
   document.querySelectorAll('.font-size-btn').forEach(btn => {
     const s = btn.textContent === '소' ? 12 : btn.textContent === '중' ? 15 : 18;
     btn.style.background = s === size ? '#3b82f6' : '#0f172a';
@@ -898,8 +898,8 @@ function updateThemeBtns() {
 }
 
 function updateFontSizeBtns() {
-  const size = parseInt(localStorage.getItem('chatFontSize') || '14');
-  const map = { 'fontSmBtn': 12, 'fontMdBtn': 15, 'fontLgBtn': 18 };
+  const size = parseInt(localStorage.getItem('chatFontSize') || '18');
+  const map = { 'fontSmBtn': 14, 'fontMdBtn': 18, 'fontLgBtn': 22 };
   Object.entries(map).forEach(([id, s]) => {
     document.getElementById(id)?.classList.toggle('font-active', s === size);
   });
