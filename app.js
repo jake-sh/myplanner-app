@@ -437,7 +437,6 @@ function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').re
 // ── SECRET CHAT ─────────────────────────────────────
 function enterChatApp() {
   applyChatTheme();
-  applyBubbleColor();
   showScreen('chatApp');
   if (!myCode) {
     document.getElementById('chatSetup').style.display = 'flex';
@@ -871,42 +870,6 @@ function updateFontSizeBtns() {
   });
 }
 
-const BUBBLE_COLORS = [
-  { name:'하늘', value:'#AEE6FF' },
-  { name:'민트', value:'#B5F0DC' },
-  { name:'라임', value:'#D4F5A2' },
-  { name:'노랑', value:'#FFF3A3' },
-  { name:'복숭아', value:'#FFD6B0' },
-  { name:'핑크', value:'#FFB8D1' },
-  { name:'라벤더', value:'#D9C9FF' },
-  { name:'연회색', value:'#E0E0E0' },
-  { name:'흰색', value:'#FFFFFF' },
-  { name:'연두', value:'#C8F5C8' },
-];
-
-function renderBubbleColorPicker() {
-  const saved = localStorage.getItem('bubbleColor') || '#AEE6FF';
-  const wrap = document.getElementById('bubbleColorPicker');
-  if (!wrap) return;
-  wrap.innerHTML = BUBBLE_COLORS.map(c => `
-    <button class="bubble-color-btn ${saved === c.value ? 'bubble-color-active' : ''}"
-      style="background:${c.value};"
-      onclick="setBubbleColor('${c.value}')"
-      title="${c.name}"></button>
-  `).join('');
-}
-
-function setBubbleColor(color) {
-  localStorage.setItem('bubbleColor', color);
-  applyBubbleColor();
-  renderBubbleColorPicker();
-}
-
-function applyBubbleColor() {
-  const color = localStorage.getItem('bubbleColor') || '#AEE6FF';
-  document.documentElement.style.setProperty('--chat-bubble-theirs-light', color);
-}
-
 function setChatTheme(theme) {
   localStorage.setItem('chatTheme', theme);
   applyChatTheme();
@@ -928,11 +891,16 @@ function applyChatTheme() {
 
 function updateThemeBtns() {
   const theme = localStorage.getItem('chatTheme') || 'dark';
-  const darkBtn = document.getElementById('themeDarkBtn');
-  const lightBtn = document.getElementById('themeLightBtn');
-  if (!darkBtn) return;
-  darkBtn.style.background = theme === 'dark' ? '#3b82f6' : '';
-  lightBtn.style.background = theme === 'light' ? '#3b82f6' : '';
+  document.getElementById('themeDarkBtn')?.classList.toggle('theme-active', theme === 'dark');
+  document.getElementById('themeLightBtn')?.classList.toggle('theme-active', theme === 'light');
+}
+
+function updateFontSizeBtns() {
+  const size = parseInt(localStorage.getItem('chatFontSize') || '14');
+  const map = { 'fontSmBtn': 12, 'fontMdBtn': 15, 'fontLgBtn': 18 };
+  Object.entries(map).forEach(([id, s]) => {
+    document.getElementById(id)?.classList.toggle('font-active', s === size);
+  });
 }
 
 function openSecretSettings() {
@@ -940,7 +908,6 @@ function openSecretSettings() {
   updateNotifBtn();
   updateFontSizeBtns();
   updateThemeBtns();
-  renderBubbleColorPicker();
   document.getElementById('secretSettingsModal').style.display = 'flex';
 }
 function closeSecretSettings() { document.getElementById('secretSettingsModal').style.display = 'none'; }
