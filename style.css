@@ -208,3 +208,14 @@ input:checked+.slider:before{transform:translateX(20px);}
 .cal-day.cal-color-red   { background:#FAF4C0 !important; color:#1e293b !important; border-radius:50%; }
 .cal-day.cal-color-green { background:#CEFBC9 !important; color:#1e293b !important; border-radius:50%; }
 .cal-day.cal-today { background:#4A90D9 !important; color:#fff !important; border-radius:50%; }
+
+/* 메시지 행 레이아웃 (카톡 스타일) */
+.msg-row { display:flex; align-items:flex-end; gap:6px; margin:4px 10px; max-width:100%; }
+.msg-row-mine { justify-content:flex-end; }
+.msg-row-theirs { justify-content:flex-start; }
+.msg-row .msg-bubble { max-width:70%; margin:0; }
+.msg-meta { display:flex; flex-direction:column; gap:2px; font-size:11px; color:#64748b; flex-shrink:0; padding-bottom:2px; }
+.msg-row-mine .msg-meta { align-items:flex-end; }
+.msg-row-theirs .msg-meta { align-items:flex-start; }
+.msg-meta .msg-time { font-size:11px; color:#64748b; }
+.msg-meta .msg-countdown { font-size:10px; color:#94a3b8; }

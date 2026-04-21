@@ -699,34 +699,51 @@ function listenMessages() {
 
 function renderMessage(data, id) {
   const list = document.getElementById('messageList');
-  const div = document.createElement('div');
   const mine = data.sender === myCode;
   if (data.type === 'system') {
-    div.className = 'msg-bubble system-msg'; div.textContent = data.text;
-  } else {
-    div.className = `msg-bubble ${mine ? 'mine' : 'theirs'}`;
-    div.style.fontSize = (localStorage.getItem('chatFontSize') || '14') + 'px';
-    if (data.type === 'image') {
-      const img = document.createElement('img');
-      img.src = data.url; img.className = 'msg-media';
-      img.onclick = () => window.open(data.url, '_blank');
-      div.appendChild(img);
-    } else if (data.type === 'video') {
-      const vid = document.createElement('video');
-      vid.src = data.url; vid.controls = true; vid.className = 'msg-media';
-      div.appendChild(vid);
-    } else {
-      div.textContent = data.text;
-    }
-    const footer = document.createElement('div'); footer.className = 'msg-footer';
-    const sent = document.createElement('span'); sent.className = 'msg-time';
-    const d = data.ts?.toDate ? data.ts.toDate() : new Date();
-    sent.textContent = d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-    const cd = document.createElement('span'); cd.className = 'msg-countdown'; cd.id = 'cd-' + id;
-    footer.appendChild(sent); footer.appendChild(cd); div.appendChild(footer);
-    startCountdown(id, data.deleteAt);
+    const sysDiv = document.createElement('div');
+    sysDiv.className = 'msg-bubble system-msg';
+    sysDiv.textContent = data.text;
+    list.appendChild(sysDiv);
+    return;
   }
-  list.appendChild(div);
+
+  // 컨테이너 (시간 + 말풍선 가로 배치)
+  const row = document.createElement('div');
+  row.className = `msg-row ${mine ? 'msg-row-mine' : 'msg-row-theirs'}`;
+
+  // 말풍선
+  const bubble = document.createElement('div');
+  bubble.className = `msg-bubble ${mine ? 'mine' : 'theirs'}`;
+  bubble.style.fontSize = (localStorage.getItem('chatFontSize') || '14') + 'px';
+  if (data.type === 'image') {
+    const img = document.createElement('img');
+    img.src = data.url; img.className = 'msg-media';
+    img.onclick = () => window.open(data.url, '_blank');
+    bubble.appendChild(img);
+  } else if (data.type === 'video') {
+    const vid = document.createElement('video');
+    vid.src = data.url; vid.controls = true; vid.className = 'msg-media';
+    bubble.appendChild(vid);
+  } else {
+    bubble.textContent = data.text;
+  }
+
+  // 시간+카운트다운
+  const meta = document.createElement('div');
+  meta.className = 'msg-meta';
+  const sent = document.createElement('div'); sent.className = 'msg-time';
+  const d = data.ts?.toDate ? data.ts.toDate() : new Date();
+  sent.textContent = d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+  const cd = document.createElement('div'); cd.className = 'msg-countdown'; cd.id = 'cd-' + id;
+  meta.appendChild(sent); meta.appendChild(cd);
+
+  // 내 메시지: 시간 - 말풍선 / 상대 메시지: 말풍선 - 시간
+  if (mine) { row.appendChild(meta); row.appendChild(bubble); }
+  else { row.appendChild(bubble); row.appendChild(meta); }
+
+  list.appendChild(row);
+  startCountdown(id, data.deleteAt);
 }
 
 function startCountdown(msgId, deleteAt) {
