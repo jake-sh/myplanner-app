@@ -438,6 +438,7 @@ function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').re
 function enterChatApp() {
   applyChatTheme();
   showScreen('chatApp');
+  initFCM();
   if (!myCode) {
     document.getElementById('chatSetup').style.display = 'flex';
     document.getElementById('friendListView').style.display = 'none';
@@ -850,6 +851,11 @@ async function handleFileSelect(e) {
       deleteAt: null  // 상대방이 읽으면 카운트 시작
     });
     showInAppNotif('전송 완료!');
+    // 상대방 FCM 푸시
+    const friendSnap = await db.collection('users').doc(activeFriendCode).get();
+    if (friendSnap.exists && friendSnap.data().fcmToken) {
+      sendFCMPush(friendSnap.data().fcmToken);
+    }
   } catch(err) {
     alert('전송 실패: ' + err.message);
   }
@@ -861,8 +867,13 @@ async function sendMessage() {
   await db.collection('rooms').doc(chatRoomId).collection('messages').add({
     sender: myCode, receiverId: activeFriendCode, text, type: 'text',
     ts: firebase.firestore.Timestamp.now(),
-    deleteAt: null  // 상대방이 읽으면 카운트 시작
+    deleteAt: null
   });
+  // 상대방 FCM 토큰 조회 후 푸시
+  const friendSnap = await db.collection('users').doc(activeFriendCode).get();
+  if (friendSnap.exists && friendSnap.data().fcmToken) {
+    sendFCMPush(friendSnap.data().fcmToken);
+  }
 }
 
 async function deleteAllNow() {
@@ -970,10 +981,43 @@ async function getSW() {
   return swReg;
 }
 
-let lastNotifTime = 0;
+const VAPID_KEY = 'BFsKaZKglqdWpCOkCgp39gkMlGcKq1aHSEkueZjhsojj65HfAPMoL9_sKhTz6NjgXCjtNv0plJVIj9S8I7r4XR8';
+const FCM_SERVER = 'https://fcm-server-xlrl.onrender.com';
 
-// 알림 보내기 - 앱이 보이지 않을 때만, 중복 방지
-async function sendNotification(title, body) {
+let fcmToken = localStorage.getItem('fcmToken') || null;
+let messaging = null;
+
+// FCM 초기화 및 토큰 발급
+async function initFCM() {
+  try {
+    if (!firebase.messaging.isSupported()) return;
+    messaging = firebase.messaging();
+    const sw = await navigator.serviceWorker.ready;
+    const token = await messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: sw });
+    if (token && token !== fcmToken) {
+      fcmToken = token;
+      localStorage.setItem('fcmToken', token);
+      // Firestore에 토큰 저장
+      if (myCode) await db.collection('users').doc(myCode).set({ fcmToken: token }, { merge: true });
+    }
+  } catch(e) {
+    console.log('FCM init error:', e.message);
+  }
+}
+
+// Render 서버로 FCM 푸시 전송
+async function sendFCMPush(targetToken) {
+  if (!targetToken) return;
+  try {
+    await fetch(`${FCM_SERVER}/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: targetToken, title: '📅 일정 알림', body: '새 일정이 있어요' })
+    });
+  } catch(e) {
+    console.log('Push error:', e.message);
+  }
+}
   if (!notifEnabled) return;
   if (Notification.permission !== 'granted') return;
   if (document.visibilityState === 'visible') return;
