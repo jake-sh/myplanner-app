@@ -611,6 +611,8 @@ function openChat(friendCode) {
   if (roomListener) { roomListener(); roomListener = null; }
   listenMessages();
   listenRoomSettings();
+  // 읽지 않은 메시지 삭제 타이머 시작
+  markMessagesRead();
 }
 
 function backToFriendList() {
@@ -771,9 +773,16 @@ function renderMessage(data, id) {
 
 function startCountdown(msgId, deleteAt) {
   if (countdownTimers[msgId]) clearInterval(countdownTimers[msgId]);
-  const target = deleteAt?.toMillis ? deleteAt.toMillis() : Date.now() + autoDeleteMinutes * 60000;
+  if (!deleteAt) {
+    // 아직 읽지 않음
+    const el = document.getElementById('cd-' + msgId);
+    if (el) el.textContent = '';
+    return;
+  }
+  const target = deleteAt.toMillis ? deleteAt.toMillis() : deleteAt;
   function tick() {
-    const el = document.getElementById('cd-' + msgId); if (!el) { clearInterval(countdownTimers[msgId]); return; }
+    const el = document.getElementById('cd-' + msgId);
+    if (!el) { clearInterval(countdownTimers[msgId]); return; }
     const rem = Math.max(0, target - Date.now());
     el.textContent = rem > 0 ? `${Math.floor(rem/60000)}:${String(Math.floor((rem%60000)/1000)).padStart(2,'0')}` : '';
     if (rem <= 0) clearInterval(countdownTimers[msgId]);
@@ -781,13 +790,29 @@ function startCountdown(msgId, deleteAt) {
   tick(); countdownTimers[msgId] = setInterval(tick, 1000);
 }
 
+// 채팅창 열면 상대방 메시지에 deleteAt 설정 (읽음 처리)
+async function markMessagesRead() {
+  if (!chatRoomId || !myCode) return;
+  const snap = await db.collection('rooms').doc(chatRoomId).collection('messages')
+    .where('receiverId', '==', myCode)
+    .where('deleteAt', '==', null)
+    .get();
+  if (snap.empty) return;
+  const batch = db.batch();
+  const deleteAt = firebase.firestore.Timestamp.fromMillis(Date.now() + autoDeleteMinutes * 60000);
+  snap.docs.forEach(doc => batch.update(doc.ref, { deleteAt }));
+  await batch.commit().catch(() => {});
+}
+
 function scheduleAutoDelete(msgId, data) {
+  if (!data.deleteAt) return; // 아직 읽지 않음 → 타이머 없음
   if (deleteTimers[msgId]) return;
-  const target = data.deleteAt?.toMillis ? data.deleteAt.toMillis() : Date.now() + autoDeleteMinutes * 60000;
+  const target = data.deleteAt.toMillis();
+  const delay = Math.max(0, target - Date.now());
   deleteTimers[msgId] = setTimeout(() => {
     db.collection('rooms').doc(chatRoomId).collection('messages').doc(msgId).delete().catch(() => {});
     delete deleteTimers[msgId];
-  }, Math.max(0, target - Date.now()));
+  }, delay);
 }
 
 async function handleFileSelect(e) {
@@ -822,7 +847,7 @@ async function handleFileSelect(e) {
       type: isVideo ? 'video' : 'image',
       url, storagePath: path,
       ts: firebase.firestore.Timestamp.now(),
-      deleteAt: firebase.firestore.Timestamp.fromMillis(Date.now() + autoDeleteMinutes * 60000)
+      deleteAt: null  // 상대방이 읽으면 카운트 시작
     });
     showInAppNotif('전송 완료!');
   } catch(err) {
@@ -836,7 +861,7 @@ async function sendMessage() {
   await db.collection('rooms').doc(chatRoomId).collection('messages').add({
     sender: myCode, receiverId: activeFriendCode, text, type: 'text',
     ts: firebase.firestore.Timestamp.now(),
-    deleteAt: firebase.firestore.Timestamp.fromMillis(Date.now() + autoDeleteMinutes * 60000)
+    deleteAt: null  // 상대방이 읽으면 카운트 시작
   });
 }
 
