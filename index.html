@@ -230,6 +230,65 @@
     </div>
   </div>
 
+
+<!-- ===== STATS SCREEN ===== -->
+<div id="statsScreen" class="screen">
+  <div class="sub-header">
+    <button onclick="showScreen('fakeApp')" class="back-btn">← 뒤로</button>
+    <span class="sub-title">건강 통계</span>
+    <button onclick="openAddStatModal()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;">+ 입력</button>
+  </div>
+
+  <!-- 카테고리 탭 -->
+  <div id="statCategoryTabs" style="display:flex;gap:8px;padding:12px 16px;overflow-x:auto;scrollbar-width:none;">
+  </div>
+
+  <!-- 그래프 영역 -->
+  <div style="padding:0 16px;">
+    <div id="statChartWrap" style="background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+      <div id="statChartTitle" style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:4px;"></div>
+      <div id="statChartUnit" style="font-size:11px;color:#94a3b8;margin-bottom:12px;"></div>
+      <canvas id="statCanvas" style="width:100%;max-height:200px;"></canvas>
+      <div id="statEmpty" style="text-align:center;color:#94a3b8;font-size:13px;padding:40px 0;display:none;">데이터가 없어요.<br>+ 입력으로 추가해보세요!</div>
+    </div>
+
+    <!-- 최근 기록 -->
+    <div style="margin-top:16px;">
+      <div style="font-size:13px;font-weight:700;color:#64748b;margin-bottom:8px;">최근 기록</div>
+      <div id="statRecordList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 통계 입력 모달 -->
+<div id="addStatModal" class="modal" style="display:none">
+  <div class="modal-box">
+    <div class="modal-title">수치 입력</div>
+    <div style="margin-bottom:12px;">
+      <div style="font-size:12px;color:#94a3b8;margin-bottom:6px;">카테고리</div>
+      <select id="statCatSelect" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;background:#f8fafc;">
+        <option value="weight">⚖️ 체중 (kg)</option>
+        <option value="bp_sys">🫀 혈압 수축기 (mmHg)</option>
+        <option value="bp_dia">🫀 혈압 이완기 (mmHg)</option>
+        <option value="blood_sugar">🩸 혈당 (mg/dL)</option>
+        <option value="sleep">😴 수면 시간 (h)</option>
+        <option value="steps">🚶 걸음 수 (보)</option>
+        <option value="water">💧 물 섭취 (L)</option>
+        <option value="exercise">🏃 운동 시간 (분)</option>
+      </select>
+    </div>
+    <div style="margin-bottom:12px;">
+      <div style="font-size:12px;color:#94a3b8;margin-bottom:6px;">수치</div>
+      <input id="statValueInput" type="number" step="0.1" placeholder="수치 입력" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:16px;box-sizing:border-box;"/>
+    </div>
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px;color:#94a3b8;margin-bottom:6px;">날짜</div>
+      <input id="statDateInput" type="date" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;box-sizing:border-box;"/>
+    </div>
+    <button class="chat-action-btn" onclick="saveStatEntry()">저장</button>
+    <button class="modal-cancel" onclick="closeAddStatModal()">취소</button>
+  </div>
+</div>
   <!-- Add Friend Modal -->
   <div id="addFriendModal" class="modal" style="display:none">
     <div class="modal-box">

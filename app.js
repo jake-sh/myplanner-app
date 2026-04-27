@@ -204,6 +204,7 @@ function cancelPatternSetup() {
 function openFeature(i) {
   if (i === 0) openTodo();
   else if (i === 3) openMemo();
+  else if (i === 5) openStats();
   else if (i === 8) openCalendar();
   else openFakeFeature(i);
 }
@@ -1191,4 +1192,206 @@ function showInAppNotif(text) {
   if (!el) { el = document.createElement('div'); el.id = 'inAppNotif'; el.className = 'in-app-notif'; document.body.appendChild(el); }
   el.textContent = text; el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+
+// ── 건강 통계 ─────────────────────────────────────────
+const STAT_CATEGORIES = {
+  weight:    { label: '⚖️ 체중',    unit: 'kg',     color: '#4A90D9' },
+  bp_sys:    { label: '🫀 혈압(수)', unit: 'mmHg',   color: '#ef4444' },
+  bp_dia:    { label: '🫀 혈압(이)', unit: 'mmHg',   color: '#f97316' },
+  blood_sugar:{ label: '🩸 혈당',   unit: 'mg/dL',  color: '#a855f7' },
+  sleep:     { label: '😴 수면',    unit: 'h',      color: '#6366f1' },
+  steps:     { label: '🚶 걸음',    unit: '보',     color: '#22c55e' },
+  water:     { label: '💧 물',      unit: 'L',      color: '#06b6d4' },
+  exercise:  { label: '🏃 운동',    unit: '분',     color: '#f59e0b' }
+};
+
+let currentStatCat = 'weight';
+let statChartInstance = null;
+
+function getStatData() {
+  return JSON.parse(localStorage.getItem('healthStats') || '{}');
+}
+
+function saveStatData(data) {
+  localStorage.setItem('healthStats', JSON.stringify(data));
+}
+
+function openStats() {
+  showScreen('statsScreen');
+  renderStatTabs();
+  renderStatChart();
+}
+
+function renderStatTabs() {
+  const data = getStatData();
+  const wrap = document.getElementById('statCategoryTabs');
+  wrap.innerHTML = Object.entries(STAT_CATEGORIES).map(([key, cat]) => {
+    const hasData = data[key] && data[key].length > 0;
+    const active = key === currentStatCat;
+    return `<button onclick="switchStatCat('${key}')" style="
+      flex-shrink:0;padding:7px 14px;border-radius:20px;border:none;cursor:pointer;font-size:12px;font-weight:600;
+      background:${active ? 'var(--primary)' : '#f1f5f9'};
+      color:${active ? '#fff' : '#64748b'};
+      position:relative;
+    ">${cat.label}${hasData ? '<span style="position:absolute;top:-3px;right:-3px;width:7px;height:7px;background:#22c55e;border-radius:50%;border:1.5px solid #fff;"></span>' : ''}</button>`;
+  }).join('');
+}
+
+function switchStatCat(key) {
+  currentStatCat = key;
+  renderStatTabs();
+  renderStatChart();
+}
+
+function renderStatChart() {
+  const data = getStatData();
+  const entries = (data[currentStatCat] || []).sort((a, b) => a.date.localeCompare(b.date));
+  const cat = STAT_CATEGORIES[currentStatCat];
+
+  document.getElementById('statChartTitle').textContent = cat.label;
+  document.getElementById('statChartUnit').textContent = '단위: ' + cat.unit;
+
+  const canvas = document.getElementById('statCanvas');
+  const empty = document.getElementById('statEmpty');
+
+  if (entries.length === 0) {
+    canvas.style.display = 'none';
+    empty.style.display = 'block';
+  } else {
+    canvas.style.display = 'block';
+    empty.style.display = 'none';
+    drawChart(canvas, entries, cat);
+  }
+
+  // 최근 기록
+  const list = document.getElementById('statRecordList');
+  list.innerHTML = [...entries].reverse().slice(0, 10).map((e, idx) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#fff;border-radius:12px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,0.05);">
+      <span style="font-size:13px;color:#64748b;">${e.date}</span>
+      <span style="font-size:15px;font-weight:700;color:${cat.color};">${e.value} <span style="font-size:11px;font-weight:400;color:#94a3b8;">${cat.unit}</span></span>
+      <button onclick="deleteStatEntry('${currentStatCat}', ${entries.length - 1 - idx})" style="background:none;border:none;color:#cbd5e1;font-size:16px;cursor:pointer;">×</button>
+    </div>
+  `).join('');
+}
+
+function drawChart(canvas, entries, cat) {
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.parentElement.clientWidth - 32;
+  const H = 180;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  const vals = entries.map(e => parseFloat(e.value));
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  const range = max - min || 1;
+
+  const padL = 40, padR = 16, padT = 16, padB = 30;
+  const gW = W - padL - padR;
+  const gH = H - padT - padB;
+
+  // 격자선
+  ctx.strokeStyle = '#f1f5f9';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + (gH / 4) * i;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+    const val = max - (range / 4) * i;
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(val.toFixed(1), padL - 4, y + 4);
+  }
+
+  const pts = entries.map((e, i) => ({
+    x: padL + (gW / Math.max(entries.length - 1, 1)) * i,
+    y: padT + gH - ((parseFloat(e.value) - min) / range) * gH
+  }));
+
+  // 영역 채우기
+  const grad = ctx.createLinearGradient(0, padT, 0, padT + gH);
+  grad.addColorStop(0, cat.color + '33');
+  grad.addColorStop(1, cat.color + '00');
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, padT + gH);
+  pts.forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.lineTo(pts[pts.length - 1].x, padT + gH);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // 라인
+  ctx.beginPath();
+  ctx.strokeStyle = cat.color;
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+  ctx.stroke();
+
+  // 점 + 날짜
+  pts.forEach((p, i) => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+    ctx.strokeStyle = cat.color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // 날짜 라벨 (간격 조절)
+    if (entries.length <= 7 || i % Math.ceil(entries.length / 6) === 0) {
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '9px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(entries[i].date.slice(5), p.x, H - 6);
+    }
+  });
+}
+
+function openAddStatModal() {
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById('statDateInput').value = today;
+  document.getElementById('statCatSelect').value = currentStatCat;
+  document.getElementById('statValueInput').value = '';
+  document.getElementById('addStatModal').style.display = 'flex';
+}
+
+function closeAddStatModal() {
+  document.getElementById('addStatModal').style.display = 'none';
+}
+
+function saveStatEntry() {
+  const cat = document.getElementById('statCatSelect').value;
+  const val = document.getElementById('statValueInput').value.trim();
+  const date = document.getElementById('statDateInput').value;
+  if (!val || !date) { alert('수치와 날짜를 입력해주세요'); return; }
+
+  const data = getStatData();
+  if (!data[cat]) data[cat] = [];
+  data[cat].push({ value: parseFloat(val), date });
+  saveStatData(data);
+
+  currentStatCat = cat;
+  closeAddStatModal();
+  renderStatTabs();
+  renderStatChart();
+}
+
+function deleteStatEntry(cat, idx) {
+  const data = getStatData();
+  if (data[cat]) {
+    data[cat].sort((a, b) => a.date.localeCompare(b.date));
+    data[cat].splice(idx, 1);
+    saveStatData(data);
+    renderStatTabs();
+    renderStatChart();
+  }
 }
