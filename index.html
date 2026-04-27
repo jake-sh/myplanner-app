@@ -350,6 +350,19 @@
   <button id="savePatternBtn" class="settings-btn save-pattern-btn" onclick="savePattern()" style="display:none;">패턴 저장</button>
 </div>
 
+<div id="dbg" style="display:none;position:fixed;top:0;left:0;right:0;background:red;color:#fff;font-size:11px;padding:8px;z-index:99999;white-space:pre-wrap;max-height:40vh;overflow:auto;word-break:break-all;"></div>
+<script>
+window.onerror=function(m,s,l){
+  var e=document.getElementById("dbg");
+  e.style.display="block";
+  e.textContent+="ERR: "+m+"\n"+s+":"+l+"\n\n";
+};
+window.addEventListener("unhandledrejection",function(e){
+  var el=document.getElementById("dbg");
+  el.style.display="block";
+  el.textContent+="PROMISE: "+(e.reason||"unknown")+"\n\n";
+});
+</script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
