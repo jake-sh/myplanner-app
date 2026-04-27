@@ -303,6 +303,7 @@ function addTodo() {
   const todos = JSON.parse(localStorage.getItem('todos') || '[]');
   todos.unshift({ text, done: false });
   localStorage.setItem('todos', JSON.stringify(todos)); el.value = ''; renderTodoList();
+  saveTodosToFirestore();
 }
 function toggleTodo(i) {
   const todos = JSON.parse(localStorage.getItem('todos') || '[]'); todos[i].done = !todos[i].done;
@@ -917,10 +918,12 @@ async function sendMessage() {
     deleteAt: null
   });
   // 상대방 FCM 토큰 조회 후 푸시
-  const friendSnap = await db.collection('users').doc(activeFriendCode).get();
-  if (friendSnap.exists && friendSnap.data().fcmToken) {
-    sendFCMPush(friendSnap.data().fcmToken);
-  }
+  try {
+    const friendSnap = await db.collection('users').doc(activeFriendCode).get();
+    if (friendSnap.exists && friendSnap.data().fcmToken) {
+      sendFCMPush(friendSnap.data().fcmToken, '새 메시지', '새 알림이 있어요');
+    }
+  } catch(e) { console.log('push error:', e.message); }
 }
 
 async function deleteAllNow() {
@@ -1037,15 +1040,19 @@ let messaging = null;
 // FCM 초기화 및 토큰 발급
 async function initFCM() {
   try {
-    if (typeof firebase.messaging === 'undefined') return;
-    if (!firebase.messaging.isSupported()) return;
-    messaging = firebase.messaging();
-    const sw = await navigator.serviceWorker.ready;
-    const token = await messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: sw });
-    if (token && token !== fcmToken) {
-      fcmToken = token;
-      localStorage.setItem('fcmToken', token);
-      if (myCode) await db.collection('users').doc(myCode).set({ fcmToken: token }, { merge: true });
+    if (typeof firebase !== 'undefined' && firebase.messaging && firebase.messaging.isSupported && firebase.messaging.isSupported()) {
+      messaging = firebase.messaging();
+      const sw = await navigator.serviceWorker.ready;
+      const token = await messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: sw });
+      if (token) {
+        fcmToken = token;
+        localStorage.setItem('fcmToken', token);
+        if (myCode) await db.collection('users').doc(myCode).set({ fcmToken: token }, { merge: true });
+        console.log('FCM token saved');
+      }
+    } else {
+      // FCM 미지원 (iOS 등) - fcmToken 없이 SW postMessage 방식만 사용
+      console.log('FCM not supported, using SW notifications only');
     }
   } catch(e) {
     console.log('FCM init error:', e.message);
