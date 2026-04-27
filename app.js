@@ -752,11 +752,13 @@ function listenMessages() {
       const atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 60;
 
       // 새 메시지 알림 (첫 로드 이후, 상대방 메시지만)
+      let hasNewMsg = false;
       snap.docChanges().forEach(change => {
         if (change.type === 'added') {
           const data = change.doc.data();
           const id = change.doc.id;
           if (!firstLoad && data.sender !== myCode && data.type !== 'system' && !seenMsgIds.has(id)) {
+            hasNewMsg = true;
             // 앱이 백그라운드일 때만 알림
             if (document.visibilityState !== 'visible' && notifEnabled && Notification.permission === 'granted') {
               sendNotification('새 메시지', '새 알림이 있어요');
@@ -767,6 +769,8 @@ function listenMessages() {
           seenMsgIds.add(id);
         }
       });
+      // 채팅창 열려있는 상태에서 새 메시지 오면 즉시 읽음 처리 → 카운트 시작
+      if (hasNewMsg) markMessagesRead();
 
       // 카운트다운 타이머 정리 후 재시작
       Object.values(countdownTimers).forEach(t => clearInterval(t)); countdownTimers = {};
@@ -1243,7 +1247,7 @@ function renderStatsUI() {
     var btn = document.createElement("button");
     btn.textContent = c.emoji + " " + c.label + (hasDot ? "●" : "");
     btn.setAttribute("data-scat", k);
-    btn.style.cssText = "flex-shrink:0;padding:6px 12px;border-radius:20px;border:none;cursor:pointer;font-size:11px;font-weight:600;background:" + bg + ";color:" + col + ";";
+    btn.style.cssText = "flex-shrink:0;padding:6px 12px;border-radius:20px;border:none;cursor:pointer;font-size:15px;font-weight:600;background:" + bg + ";color:" + col + ";";
     tabHtml += btn.outerHTML;
   });
   tabHtml += "</div>";
