@@ -1196,196 +1196,182 @@ function showInAppNotif(text) {
 
 
 
-// ── 건강 통계 ──────────────────────────────────────────
-const STAT_CATEGORIES = {
-  weight:     { label: '⚖️ 체중',     unit: 'kg',    color: '#4A90D9' },
-  bp_sys:     { label: '🫀 혈압(수)', unit: 'mmHg',  color: '#ef4444' },
-  bp_dia:     { label: '🫀 혈압(이)', unit: 'mmHg',  color: '#f97316' },
-  blood_sugar:{ label: '🩸 혈당',     unit: 'mg/dL', color: '#a855f7' },
-  sleep:      { label: '😴 수면',     unit: 'h',     color: '#6366f1' },
-  steps:      { label: '🚶 걸음',     unit: '보',    color: '#22c55e' },
-  water:      { label: '💧 물',       unit: 'L',     color: '#06b6d4' },
-  exercise:   { label: '🏃 운동',     unit: '분',    color: '#f59e0b' }
+// -- Health Stats --
+var STAT_CATS = {
+  weight:     { label: "체중",   unit: "kg",    color: "#4A90D9", emoji: "⚖️" },
+  bp_sys:     { label: "혈압수", unit: "mmHg",  color: "#ef4444", emoji: "🫀" },
+  bp_dia:     { label: "혈압이", unit: "mmHg",  color: "#f97316", emoji: "🫀" },
+  blood_sugar:{ label: "혈당",   unit: "mg/dL", color: "#a855f7", emoji: "🩸" },
+  sleep:      { label: "수면",   unit: "h",     color: "#6366f1", emoji: "😴" },
+  steps:      { label: "걸음",   unit: "보",    color: "#22c55e", emoji: "🚶" },
+  water:      { label: "물",     unit: "L",     color: "#06b6d4", emoji: "💧" },
+  exercise:   { label: "운동",   unit: "분",    color: "#f59e0b", emoji: "🏃" }
 };
+var curSC = "weight";
 
-let currentStatCat = 'weight';
-
-function getStatData() {
-  try { return JSON.parse(localStorage.getItem('healthStats') || '{}'); } catch(e) { return {}; }
-}
-function saveStatData(d) {
-  localStorage.setItem('healthStats', JSON.stringify(d));
-}
+function getSD() { try { return JSON.parse(localStorage.getItem("hStats")||"{}"); } catch(e) { return {}; } }
+function setSD(d) { localStorage.setItem("hStats", JSON.stringify(d)); }
 
 function openStats() {
-  showScreen('statsScreen');
-  renderStatTabs();
-  renderStatChart();
+  document.getElementById("featureTitle").textContent = "건강 통계";
+  renderStatsUI();
+  showScreen("fakeFeature");
 }
 
-function renderStatTabs() {
-  var wrap = document.getElementById('statCategoryTabs');
-  if (!wrap) return;
-  var data = getStatData();
-  var html = '';
-  var keys = Object.keys(STAT_CATEGORIES);
-  for (var i = 0; i < keys.length; i++) {
-    var key = keys[i];
-    var cat = STAT_CATEGORIES[key];
-    var active = (key === currentStatCat);
-    var hasData = data[key] && data[key].length > 0;
-    var bg = active ? 'var(--primary)' : '#f1f5f9';
-    var col = active ? '#fff' : '#64748b';
-    var dot = hasData ? '<span style="position:absolute;top:-3px;right:-3px;width:7px;height:7px;background:#22c55e;border-radius:50%;border:1.5px solid #fff;display:inline-block;"></span>' : '';
-    html += '<button onclick="switchStatCat(&quot;' + key + '&quot;)" style="flex-shrink:0;padding:7px 14px;border-radius:20px;border:none;cursor:pointer;font-size:12px;font-weight:600;background:' + bg + ';color:' + col + ';position:relative;">' + cat.label + dot + '</button>';
-  }
-  wrap.innerHTML = html;
-}
+function renderStatsUI() {
+  var fc = document.getElementById("featureContent");
+  var data = getSD();
+  var cat = STAT_CATS[curSC];
+  var entries = (data[curSC]||[]).slice().sort(function(a,b){return a.date>b.date?1:-1;});
 
-function switchStatCat(key) {
-  currentStatCat = key;
-  renderStatTabs();
-  renderStatChart();
-}
+  var tabHtml = '<div style="display:flex;gap:6px;overflow-x:auto;padding:4px 0 12px;scrollbar-width:none;">';
+  Object.keys(STAT_CATS).forEach(function(k) {
+    var c = STAT_CATS[k];
+    var active = (k === curSC);
+    var hasDot = data[k] && data[k].length > 0;
+    var bg = active ? "var(--primary)" : "#f1f5f9";
+    var col = active ? "#fff" : "#64748b";
+    var btn = document.createElement("button");
+    btn.textContent = c.emoji + " " + c.label + (hasDot ? "●" : "");
+    btn.setAttribute("data-scat", k);
+    btn.style.cssText = "flex-shrink:0;padding:6px 12px;border-radius:20px;border:none;cursor:pointer;font-size:11px;font-weight:600;background:" + bg + ";color:" + col + ";";
+    tabHtml += btn.outerHTML;
+  });
+  tabHtml += "</div>";
 
-function renderStatChart() {
-  var data = getStatData();
-  var cat = STAT_CATEGORIES[currentStatCat];
-  var entries = (data[currentStatCat] || []).slice().sort(function(a,b){ return a.date > b.date ? 1 : -1; });
+  var addHtml = '<div style="text-align:right;margin-bottom:12px;"><button id="openSmBtn" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;">+ 입력</button></div>';
 
-  var titleEl = document.getElementById('statChartTitle');
-  var unitEl = document.getElementById('statChartUnit');
-  var canvas = document.getElementById('statCanvas');
-  var emptyEl = document.getElementById('statEmpty');
-  var listEl = document.getElementById('statRecordList');
-  if (!titleEl || !canvas) return;
-
-  titleEl.textContent = cat.label;
-  unitEl.textContent = '단위: ' + cat.unit;
-
+  var chartHtml = '<div style="background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:#1e293b;">' + cat.emoji + " " + cat.label + '</div><div style="font-size:11px;color:#94a3b8;margin-bottom:12px;">단위: ' + cat.unit + '</div>';
   if (entries.length === 0) {
-    canvas.style.display = 'none';
-    emptyEl.style.display = 'block';
-    listEl.innerHTML = '';
-    return;
+    chartHtml += '<div style="text-align:center;color:#94a3b8;font-size:13px;padding:30px 0;">데이터가 없어요.<br>+ 입력으로 추가해보세요!</div>';
+  } else {
+    chartHtml += '<canvas id="sCanvas" style="width:100%;"></canvas>';
   }
-  canvas.style.display = 'block';
-  emptyEl.style.display = 'none';
-  drawStatChart(canvas, entries, cat);
+  chartHtml += "</div>";
 
-  var html = '';
-  var rev = entries.slice().reverse().slice(0, 10);
-  for (var i = 0; i < rev.length; i++) {
-    var e = rev[i];
+  var listHtml = '<div style="font-size:13px;font-weight:700;color:#64748b;margin-bottom:8px;">최근 기록</div>';
+  entries.slice().reverse().slice(0,10).forEach(function(e, i) {
     var origIdx = entries.length - 1 - i;
-    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#fff;border-radius:12px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,0.05);">'
+    var row = '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#fff;border-radius:12px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,.05);">'
       + '<span style="font-size:13px;color:#64748b;">' + e.date + '</span>'
-      + '<span style="font-size:15px;font-weight:700;color:' + cat.color + ';">' + e.value + ' <span style="font-size:11px;font-weight:400;color:#94a3b8;">' + cat.unit + '</span></span>'
-      + '<button onclick="deleteStatEntry(&quot;' + currentStatCat + '&quot;,' + origIdx + ')" style="background:none;border:none;color:#cbd5e1;font-size:18px;cursor:pointer;padding:0 4px;">×</button>'
+      + '<span style="font-size:15px;font-weight:700;color:' + cat.color + ';">' + e.value + ' <small style="font-size:11px;color:#94a3b8;">' + cat.unit + '</small></span>'
+      + '<button data-dcat="' + curSC + '" data-didx="' + origIdx + '" style="background:none;border:none;color:#cbd5e1;font-size:20px;cursor:pointer;">×</button>'
       + '</div>';
-  }
-  listEl.innerHTML = html;
-}
-
-function drawStatChart(canvas, entries, cat) {
-  var dpr = window.devicePixelRatio || 1;
-  var W = canvas.parentElement.clientWidth - 32;
-  var H = 180;
-  canvas.width = W * dpr;
-  canvas.height = H * dpr;
-  canvas.style.width = W + 'px';
-  canvas.style.height = H + 'px';
-
-  var ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-  ctx.clearRect(0, 0, W, H);
-
-  var vals = entries.map(function(e){ return parseFloat(e.value); });
-  var minV = Math.min.apply(null, vals);
-  var maxV = Math.max.apply(null, vals);
-  var range = maxV - minV || 1;
-
-  var pL=44, pR=12, pT=16, pB=28;
-  var gW = W-pL-pR, gH = H-pT-pB;
-
-  // 격자
-  for (var g=0; g<=4; g++) {
-    var gy = pT + (gH/4)*g;
-    ctx.strokeStyle = '#f1f5f9'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(pL, gy); ctx.lineTo(W-pR, gy); ctx.stroke();
-    var gval = maxV - (range/4)*g;
-    ctx.fillStyle = '#94a3b8'; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
-    ctx.fillText(gval.toFixed(1), pL-4, gy+4);
-  }
-
-  var pts = entries.map(function(e, i) {
-    return {
-      x: pL + (entries.length > 1 ? (gW/(entries.length-1))*i : gW/2),
-      y: pT + gH - ((parseFloat(e.value)-minV)/range)*gH
-    };
+    listHtml += row;
   });
 
-  // 그라데이션 영역
-  var grad = ctx.createLinearGradient(0, pT, 0, pT+gH);
-  grad.addColorStop(0, cat.color + '44');
-  grad.addColorStop(1, cat.color + '00');
-  ctx.beginPath();
-  ctx.moveTo(pts[0].x, pT+gH);
-  for (var i=0; i<pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
-  ctx.lineTo(pts[pts.length-1].x, pT+gH);
-  ctx.closePath();
-  ctx.fillStyle = grad; ctx.fill();
+  fc.innerHTML = '<div style="padding:16px;">' + tabHtml + addHtml + chartHtml + listHtml + '</div>';
 
-  // 라인
-  ctx.beginPath(); ctx.strokeStyle = cat.color; ctx.lineWidth = 2.5; ctx.lineJoin = 'round';
-  for (var i=0; i<pts.length; i++) i===0 ? ctx.moveTo(pts[i].x, pts[i].y) : ctx.lineTo(pts[i].x, pts[i].y);
-  ctx.stroke();
+  // 이벤트 바인딩
+  fc.querySelectorAll("[data-scat]").forEach(function(btn) {
+    btn.addEventListener("click", function() { curSC = this.getAttribute("data-scat"); renderStatsUI(); });
+  });
+  fc.querySelectorAll("[data-dcat]").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      delSE(this.getAttribute("data-dcat"), parseInt(this.getAttribute("data-didx")));
+    });
+  });
+  var smBtn = document.getElementById("openSmBtn");
+  if (smBtn) smBtn.addEventListener("click", openSM);
 
-  // 점 + 날짜
-  for (var i=0; i<pts.length; i++) {
-    ctx.beginPath(); ctx.arc(pts[i].x, pts[i].y, 4, 0, Math.PI*2);
-    ctx.fillStyle = '#fff'; ctx.fill();
-    ctx.strokeStyle = cat.color; ctx.lineWidth = 2; ctx.stroke();
-    if (entries.length <= 7 || i % Math.ceil(entries.length/6) === 0) {
-      ctx.fillStyle = '#94a3b8'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText(entries[i].date.slice(5), pts[i].x, H-4);
-    }
+  if (entries.length > 0) {
+    setTimeout(function() {
+      var canvas = document.getElementById("sCanvas");
+      if (canvas) drawSC(canvas, entries, cat);
+    }, 50);
   }
 }
 
-function openAddStatModal() {
+function drawSC(canvas, entries, cat) {
+  var dpr = window.devicePixelRatio || 1;
+  var W = canvas.parentElement.clientWidth - 32;
+  var H = 160;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + "px";
+  canvas.style.height = H + "px";
+  var ctx = canvas.getContext("2d");
+  ctx.scale(dpr, dpr);
+  var vals = entries.map(function(e){return parseFloat(e.value);});
+  var mn = Math.min.apply(null,vals), mx = Math.max.apply(null,vals), rng = mx-mn||1;
+  var pL=40,pR=10,pT=12,pB=24,gW=W-pL-pR,gH=H-pT-pB;
+  for(var g=0;g<=4;g++){
+    var gy=pT+(gH/4)*g;
+    ctx.strokeStyle="#f1f5f9";ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(pL,gy);ctx.lineTo(W-pR,gy);ctx.stroke();
+    ctx.fillStyle="#94a3b8";ctx.font="9px sans-serif";ctx.textAlign="right";
+    ctx.fillText((mx-(rng/4)*g).toFixed(1),pL-3,gy+3);
+  }
+  var pts=entries.map(function(e,i){return{
+    x:pL+(entries.length>1?(gW/(entries.length-1))*i:gW/2),
+    y:pT+gH-((parseFloat(e.value)-mn)/rng)*gH
+  };});
+  var gr=ctx.createLinearGradient(0,pT,0,pT+gH);
+  gr.addColorStop(0,cat.color+"44");gr.addColorStop(1,cat.color+"00");
+  ctx.beginPath();ctx.moveTo(pts[0].x,pT+gH);
+  pts.forEach(function(p){ctx.lineTo(p.x,p.y);});
+  ctx.lineTo(pts[pts.length-1].x,pT+gH);ctx.closePath();
+  ctx.fillStyle=gr;ctx.fill();
+  ctx.beginPath();ctx.strokeStyle=cat.color;ctx.lineWidth=2.5;ctx.lineJoin="round";
+  pts.forEach(function(p,i){i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);});
+  ctx.stroke();
+  pts.forEach(function(p,i){
+    ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);
+    ctx.fillStyle="#fff";ctx.fill();ctx.strokeStyle=cat.color;ctx.lineWidth=2;ctx.stroke();
+    if(entries.length<=7||i%Math.ceil(entries.length/6)===0){
+      ctx.fillStyle="#94a3b8";ctx.font="8px sans-serif";ctx.textAlign="center";
+      ctx.fillText(entries[i].date.slice(5),p.x,H-2);
+    }
+  });
+}
+
+function openSM() {
+  var overlay = document.createElement("div");
+  overlay.id = "smOverlay";
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;";
   var today = new Date().toISOString().slice(0,10);
-  document.getElementById('statDateInput').value = today;
-  document.getElementById('statCatSelect').value = currentStatCat;
-  document.getElementById('statValueInput').value = '';
-  document.getElementById('addStatModal').style.display = 'flex';
+
+  var selOpts = "";
+  Object.keys(STAT_CATS).forEach(function(k){
+    selOpts += '<option value="' + k + '"' + (k===curSC?" selected":"") + '>' + STAT_CATS[k].emoji + " " + STAT_CATS[k].label + " (" + STAT_CATS[k].unit + ")</option>";
+  });
+
+  overlay.innerHTML = '<div style="background:#fff;border-radius:20px;padding:24px;width:85%;max-width:320px;">'
+    + '<div style="font-size:16px;font-weight:700;margin-bottom:16px;">수치 입력</div>'
+    + '<div style="font-size:12px;color:#94a3b8;margin-bottom:4px;">카테고리</div>'
+    + '<select id="smCat" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:13px;margin-bottom:12px;box-sizing:border-box;">' + selOpts + '</select>'
+    + '<div style="font-size:12px;color:#94a3b8;margin-bottom:4px;">수치</div>'
+    + '<input id="smVal" type="number" step="0.1" placeholder="수치 입력" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:16px;margin-bottom:12px;box-sizing:border-box;"/>'
+    + '<div style="font-size:12px;color:#94a3b8;margin-bottom:4px;">날짜</div>'
+    + '<input id="smDate" type="date" value="' + today + '" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;margin-bottom:16px;box-sizing:border-box;"/>'
+    + '<button id="smSaveBtn" style="width:100%;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:8px;">저장</button>'
+    + '<button id="smCancelBtn" style="width:100%;padding:10px;background:#f1f5f9;color:#64748b;border:none;border-radius:12px;font-size:14px;cursor:pointer;">취소</button>'
+    + '</div>';
+
+  document.body.appendChild(overlay);
+  document.getElementById("smSaveBtn").addEventListener("click", saveSE);
+  document.getElementById("smCancelBtn").addEventListener("click", function(){ overlay.remove(); });
 }
 
-function closeAddStatModal() {
-  document.getElementById('addStatModal').style.display = 'none';
+function saveSE() {
+  var cat = document.getElementById("smCat").value;
+  var val = document.getElementById("smVal").value.trim();
+  var date = document.getElementById("smDate").value;
+  if(!val||!date){alert("수치와 날짜를 입력해주세요");return;}
+  var data = getSD();
+  if(!data[cat]) data[cat]=[];
+  data[cat].push({value:parseFloat(val),date:date});
+  setSD(data);
+  curSC = cat;
+  document.getElementById("smOverlay").remove();
+  renderStatsUI();
 }
 
-function saveStatEntry() {
-  var cat = document.getElementById('statCatSelect').value;
-  var val = document.getElementById('statValueInput').value.trim();
-  var date = document.getElementById('statDateInput').value;
-  if (!val || !date) { alert('수치와 날짜를 입력해주세요'); return; }
-  var data = getStatData();
-  if (!data[cat]) data[cat] = [];
-  data[cat].push({ value: parseFloat(val), date: date });
-  saveStatData(data);
-  currentStatCat = cat;
-  closeAddStatModal();
-  renderStatTabs();
-  renderStatChart();
-}
-
-function deleteStatEntry(cat, idx) {
-  var data = getStatData();
-  if (!data[cat]) return;
-  data[cat].sort(function(a,b){ return a.date > b.date ? 1 : -1; });
-  data[cat].splice(idx, 1);
-  saveStatData(data);
-  renderStatTabs();
-  renderStatChart();
+function delSE(cat, idx) {
+  var data = getSD();
+  if(!data[cat]) return;
+  data[cat].sort(function(a,b){return a.date>b.date?1:-1;});
+  data[cat].splice(idx,1);
+  setSD(data);
+  renderStatsUI();
 }
