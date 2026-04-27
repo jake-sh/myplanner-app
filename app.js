@@ -990,6 +990,7 @@ let messaging = null;
 // FCM 초기화 및 토큰 발급
 async function initFCM() {
   try {
+    if (typeof firebase.messaging === 'undefined') return;
     if (!firebase.messaging.isSupported()) return;
     messaging = firebase.messaging();
     const sw = await navigator.serviceWorker.ready;
@@ -997,7 +998,6 @@ async function initFCM() {
     if (token && token !== fcmToken) {
       fcmToken = token;
       localStorage.setItem('fcmToken', token);
-      // Firestore에 토큰 저장
       if (myCode) await db.collection('users').doc(myCode).set({ fcmToken: token }, { merge: true });
     }
   } catch(e) {
