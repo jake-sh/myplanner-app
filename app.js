@@ -339,7 +339,7 @@ function openCalendar() {
         localStorage.setItem('habits', JSON.stringify(data.habits || {}));
         // 상대방이 업데이트한 경우만 알림
         if (!firstCalLoad && data.updatedBy && data.updatedBy !== myCode) {
-          sendNotification('📅 일정 알림', '일정이 추가되었어요');
+          sendNotification('달력', '새 일정이 있어요');
         }
         firstCalLoad = false;
       }
@@ -700,7 +700,7 @@ function listenMessages() {
           if (!firstLoad && data.sender !== myCode && data.type !== 'system' && !seenMsgIds.has(id)) {
             // 앱이 백그라운드일 때만 알림
             if (document.visibilityState !== 'visible' && notifEnabled && Notification.permission === 'granted') {
-              sendNotification('📅 일정 알림', '새 일정이 있어요');
+              sendNotification('새 메시지', '새 알림이 있어요');
               unreadCount++;
               setBadge(unreadCount);
             }
@@ -1010,13 +1010,13 @@ async function initFCM() {
 }
 
 // Render 서버로 FCM 푸시 전송
-async function sendFCMPush(targetToken) {
+async function sendFCMPush(targetToken, title = '새 메시지', body = '새 알림이 있어요') {
   if (!targetToken) return;
   try {
     await fetch(`${FCM_SERVER}/send`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: targetToken, title: '📅 일정 알림', body: '새 일정이 있어요' })
+      body: JSON.stringify({ token: targetToken, title, body })
     });
   } catch(e) {
     console.log('Push error:', e.message);
@@ -1024,6 +1024,19 @@ async function sendFCMPush(targetToken) {
 }
 
 let lastNotifTime = 0;
+// 로컬 알림 표시 (iOS/Android 공통)
+async function sendNotification(title, body) {
+  if (!notifEnabled) return;
+  if (Notification.permission !== 'granted') return;
+  const sw = await getSW();
+  if (sw && sw.active) {
+    sw.active.postMessage({ type: 'SHOW_NOTIFICATION', title, body });
+  } else {
+    // SW 없을 때 직접 표시
+    new Notification(title, { body, icon: '/myplanner-app/icons/icon-192.png' });
+  }
+}
+
 async function showPushNotification(title, body) {
   if (!notifEnabled) return;
   if (Notification.permission !== 'granted') return;
