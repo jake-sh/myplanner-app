@@ -1195,27 +1195,26 @@ function showInAppNotif(text) {
 }
 
 
-// ── 건강 통계 ─────────────────────────────────────────
+
+// ── 건강 통계 ──────────────────────────────────────────
 const STAT_CATEGORIES = {
-  weight:    { label: '⚖️ 체중',    unit: 'kg',     color: '#4A90D9' },
-  bp_sys:    { label: '🫀 혈압(수)', unit: 'mmHg',   color: '#ef4444' },
-  bp_dia:    { label: '🫀 혈압(이)', unit: 'mmHg',   color: '#f97316' },
-  blood_sugar:{ label: '🩸 혈당',   unit: 'mg/dL',  color: '#a855f7' },
-  sleep:     { label: '😴 수면',    unit: 'h',      color: '#6366f1' },
-  steps:     { label: '🚶 걸음',    unit: '보',     color: '#22c55e' },
-  water:     { label: '💧 물',      unit: 'L',      color: '#06b6d4' },
-  exercise:  { label: '🏃 운동',    unit: '분',     color: '#f59e0b' }
+  weight:     { label: '⚖️ 체중',     unit: 'kg',    color: '#4A90D9' },
+  bp_sys:     { label: '🫀 혈압(수)', unit: 'mmHg',  color: '#ef4444' },
+  bp_dia:     { label: '🫀 혈압(이)', unit: 'mmHg',  color: '#f97316' },
+  blood_sugar:{ label: '🩸 혈당',     unit: 'mg/dL', color: '#a855f7' },
+  sleep:      { label: '😴 수면',     unit: 'h',     color: '#6366f1' },
+  steps:      { label: '🚶 걸음',     unit: '보',    color: '#22c55e' },
+  water:      { label: '💧 물',       unit: 'L',     color: '#06b6d4' },
+  exercise:   { label: '🏃 운동',     unit: '분',    color: '#f59e0b' }
 };
 
 let currentStatCat = 'weight';
-let statChartInstance = null;
 
 function getStatData() {
-  return JSON.parse(localStorage.getItem('healthStats') || '{}');
+  try { return JSON.parse(localStorage.getItem('healthStats') || '{}'); } catch(e) { return {}; }
 }
-
-function saveStatData(data) {
-  localStorage.setItem('healthStats', JSON.stringify(data));
+function saveStatData(d) {
+  localStorage.setItem('healthStats', JSON.stringify(d));
 }
 
 function openStats() {
@@ -1225,17 +1224,22 @@ function openStats() {
 }
 
 function renderStatTabs() {
-  const data = getStatData();
-  const wrap = document.getElementById('statCategoryTabs');
-  const tabs = Object.entries(STAT_CATEGORIES).map(([key, cat]) => {
-    const hasData = data[key] && data[key].length > 0;
-    const active = key === currentStatCat;
-    const bg = active ? 'var(--primary)' : '#f1f5f9';
-    const color = active ? '#fff' : '#64748b';
-    const dot = hasData ? '<span style="position:absolute;top:-3px;right:-3px;width:7px;height:7px;background:#22c55e;border-radius:50%;border:1.5px solid #fff;"></span>' : '';
-    return '<button onclick="switchStatCat(\"' + key + '\")" style="flex-shrink:0;padding:7px 14px;border-radius:20px;border:none;cursor:pointer;font-size:12px;font-weight:600;background:' + bg + ';color:' + color + ';position:relative;">' + cat.label + dot + '</button>';
-  });
-  wrap.innerHTML = tabs.join('');
+  var wrap = document.getElementById('statCategoryTabs');
+  if (!wrap) return;
+  var data = getStatData();
+  var html = '';
+  var keys = Object.keys(STAT_CATEGORIES);
+  for (var i = 0; i < keys.length; i++) {
+    var key = keys[i];
+    var cat = STAT_CATEGORIES[key];
+    var active = (key === currentStatCat);
+    var hasData = data[key] && data[key].length > 0;
+    var bg = active ? 'var(--primary)' : '#f1f5f9';
+    var col = active ? '#fff' : '#64748b';
+    var dot = hasData ? '<span style="position:absolute;top:-3px;right:-3px;width:7px;height:7px;background:#22c55e;border-radius:50%;border:1.5px solid #fff;display:inline-block;"></span>' : '';
+    html += '<button onclick="switchStatCat(&quot;' + key + '&quot;)" style="flex-shrink:0;padding:7px 14px;border-radius:20px;border:none;cursor:pointer;font-size:12px;font-weight:600;background:' + bg + ';color:' + col + ';position:relative;">' + cat.label + dot + '</button>';
+  }
+  wrap.innerHTML = html;
 }
 
 function switchStatCat(key) {
@@ -1245,118 +1249,112 @@ function switchStatCat(key) {
 }
 
 function renderStatChart() {
-  const data = getStatData();
-  const entries = (data[currentStatCat] || []).sort((a, b) => a.date.localeCompare(b.date));
-  const cat = STAT_CATEGORIES[currentStatCat];
+  var data = getStatData();
+  var cat = STAT_CATEGORIES[currentStatCat];
+  var entries = (data[currentStatCat] || []).slice().sort(function(a,b){ return a.date > b.date ? 1 : -1; });
 
-  document.getElementById('statChartTitle').textContent = cat.label;
-  document.getElementById('statChartUnit').textContent = '단위: ' + cat.unit;
+  var titleEl = document.getElementById('statChartTitle');
+  var unitEl = document.getElementById('statChartUnit');
+  var canvas = document.getElementById('statCanvas');
+  var emptyEl = document.getElementById('statEmpty');
+  var listEl = document.getElementById('statRecordList');
+  if (!titleEl || !canvas) return;
 
-  const canvas = document.getElementById('statCanvas');
-  const empty = document.getElementById('statEmpty');
+  titleEl.textContent = cat.label;
+  unitEl.textContent = '단위: ' + cat.unit;
 
   if (entries.length === 0) {
     canvas.style.display = 'none';
-    empty.style.display = 'block';
-  } else {
-    canvas.style.display = 'block';
-    empty.style.display = 'none';
-    drawChart(canvas, entries, cat);
+    emptyEl.style.display = 'block';
+    listEl.innerHTML = '';
+    return;
   }
+  canvas.style.display = 'block';
+  emptyEl.style.display = 'none';
+  drawStatChart(canvas, entries, cat);
 
-  // 최근 기록
-  const list = document.getElementById('statRecordList');
-  list.innerHTML = [...entries].reverse().slice(0, 10).map((e, idx) => `
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#fff;border-radius:12px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,0.05);">
-      <span style="font-size:13px;color:#64748b;">${e.date}</span>
-      <span style="font-size:15px;font-weight:700;color:${cat.color};">${e.value} <span style="font-size:11px;font-weight:400;color:#94a3b8;">${cat.unit}</span></span>
-      <button onclick="deleteStatEntry('${currentStatCat}', ${entries.length - 1 - idx})" style="background:none;border:none;color:#cbd5e1;font-size:16px;cursor:pointer;">×</button>
-    </div>
-  `).join('');
+  var html = '';
+  var rev = entries.slice().reverse().slice(0, 10);
+  for (var i = 0; i < rev.length; i++) {
+    var e = rev[i];
+    var origIdx = entries.length - 1 - i;
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#fff;border-radius:12px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,0.05);">'
+      + '<span style="font-size:13px;color:#64748b;">' + e.date + '</span>'
+      + '<span style="font-size:15px;font-weight:700;color:' + cat.color + ';">' + e.value + ' <span style="font-size:11px;font-weight:400;color:#94a3b8;">' + cat.unit + '</span></span>'
+      + '<button onclick="deleteStatEntry(&quot;' + currentStatCat + '&quot;,' + origIdx + ')" style="background:none;border:none;color:#cbd5e1;font-size:18px;cursor:pointer;padding:0 4px;">×</button>'
+      + '</div>';
+  }
+  listEl.innerHTML = html;
 }
 
-function drawChart(canvas, entries, cat) {
-  const dpr = window.devicePixelRatio || 1;
-  const W = canvas.parentElement.clientWidth - 32;
-  const H = 180;
+function drawStatChart(canvas, entries, cat) {
+  var dpr = window.devicePixelRatio || 1;
+  var W = canvas.parentElement.clientWidth - 32;
+  var H = 180;
   canvas.width = W * dpr;
   canvas.height = H * dpr;
   canvas.style.width = W + 'px';
   canvas.style.height = H + 'px';
 
-  const ctx = canvas.getContext('2d');
+  var ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, W, H);
 
-  const vals = entries.map(e => parseFloat(e.value));
-  const min = Math.min(...vals);
-  const max = Math.max(...vals);
-  const range = max - min || 1;
+  var vals = entries.map(function(e){ return parseFloat(e.value); });
+  var minV = Math.min.apply(null, vals);
+  var maxV = Math.max.apply(null, vals);
+  var range = maxV - minV || 1;
 
-  const padL = 40, padR = 16, padT = 16, padB = 30;
-  const gW = W - padL - padR;
-  const gH = H - padT - padB;
+  var pL=44, pR=12, pT=16, pB=28;
+  var gW = W-pL-pR, gH = H-pT-pB;
 
-  // 격자선
-  ctx.strokeStyle = '#f1f5f9';
-  ctx.lineWidth = 1;
-  for (let i = 0; i <= 4; i++) {
-    const y = padT + (gH / 4) * i;
-    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
-    const val = max - (range / 4) * i;
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '10px sans-serif';
-    ctx.textAlign = 'right';
-    ctx.fillText(val.toFixed(1), padL - 4, y + 4);
+  // 격자
+  for (var g=0; g<=4; g++) {
+    var gy = pT + (gH/4)*g;
+    ctx.strokeStyle = '#f1f5f9'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pL, gy); ctx.lineTo(W-pR, gy); ctx.stroke();
+    var gval = maxV - (range/4)*g;
+    ctx.fillStyle = '#94a3b8'; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText(gval.toFixed(1), pL-4, gy+4);
   }
 
-  const pts = entries.map((e, i) => ({
-    x: padL + (gW / Math.max(entries.length - 1, 1)) * i,
-    y: padT + gH - ((parseFloat(e.value) - min) / range) * gH
-  }));
+  var pts = entries.map(function(e, i) {
+    return {
+      x: pL + (entries.length > 1 ? (gW/(entries.length-1))*i : gW/2),
+      y: pT + gH - ((parseFloat(e.value)-minV)/range)*gH
+    };
+  });
 
-  // 영역 채우기
-  const grad = ctx.createLinearGradient(0, padT, 0, padT + gH);
-  grad.addColorStop(0, cat.color + '33');
+  // 그라데이션 영역
+  var grad = ctx.createLinearGradient(0, pT, 0, pT+gH);
+  grad.addColorStop(0, cat.color + '44');
   grad.addColorStop(1, cat.color + '00');
   ctx.beginPath();
-  ctx.moveTo(pts[0].x, padT + gH);
-  pts.forEach(p => ctx.lineTo(p.x, p.y));
-  ctx.lineTo(pts[pts.length - 1].x, padT + gH);
+  ctx.moveTo(pts[0].x, pT+gH);
+  for (var i=0; i<pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.lineTo(pts[pts.length-1].x, pT+gH);
   ctx.closePath();
-  ctx.fillStyle = grad;
-  ctx.fill();
+  ctx.fillStyle = grad; ctx.fill();
 
   // 라인
-  ctx.beginPath();
-  ctx.strokeStyle = cat.color;
-  ctx.lineWidth = 2.5;
-  ctx.lineJoin = 'round';
-  pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+  ctx.beginPath(); ctx.strokeStyle = cat.color; ctx.lineWidth = 2.5; ctx.lineJoin = 'round';
+  for (var i=0; i<pts.length; i++) i===0 ? ctx.moveTo(pts[i].x, pts[i].y) : ctx.lineTo(pts[i].x, pts[i].y);
   ctx.stroke();
 
   // 점 + 날짜
-  pts.forEach((p, i) => {
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
-    ctx.fillStyle = '#fff';
-    ctx.fill();
-    ctx.strokeStyle = cat.color;
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // 날짜 라벨 (간격 조절)
-    if (entries.length <= 7 || i % Math.ceil(entries.length / 6) === 0) {
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '9px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(entries[i].date.slice(5), p.x, H - 6);
+  for (var i=0; i<pts.length; i++) {
+    ctx.beginPath(); ctx.arc(pts[i].x, pts[i].y, 4, 0, Math.PI*2);
+    ctx.fillStyle = '#fff'; ctx.fill();
+    ctx.strokeStyle = cat.color; ctx.lineWidth = 2; ctx.stroke();
+    if (entries.length <= 7 || i % Math.ceil(entries.length/6) === 0) {
+      ctx.fillStyle = '#94a3b8'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(entries[i].date.slice(5), pts[i].x, H-4);
     }
-  });
+  }
 }
 
 function openAddStatModal() {
-  const today = new Date().toISOString().slice(0, 10);
+  var today = new Date().toISOString().slice(0,10);
   document.getElementById('statDateInput').value = today;
   document.getElementById('statCatSelect').value = currentStatCat;
   document.getElementById('statValueInput').value = '';
@@ -1368,16 +1366,14 @@ function closeAddStatModal() {
 }
 
 function saveStatEntry() {
-  const cat = document.getElementById('statCatSelect').value;
-  const val = document.getElementById('statValueInput').value.trim();
-  const date = document.getElementById('statDateInput').value;
+  var cat = document.getElementById('statCatSelect').value;
+  var val = document.getElementById('statValueInput').value.trim();
+  var date = document.getElementById('statDateInput').value;
   if (!val || !date) { alert('수치와 날짜를 입력해주세요'); return; }
-
-  const data = getStatData();
+  var data = getStatData();
   if (!data[cat]) data[cat] = [];
-  data[cat].push({ value: parseFloat(val), date });
+  data[cat].push({ value: parseFloat(val), date: date });
   saveStatData(data);
-
   currentStatCat = cat;
   closeAddStatModal();
   renderStatTabs();
@@ -1385,12 +1381,11 @@ function saveStatEntry() {
 }
 
 function deleteStatEntry(cat, idx) {
-  const data = getStatData();
-  if (data[cat]) {
-    data[cat].sort((a, b) => a.date.localeCompare(b.date));
-    data[cat].splice(idx, 1);
-    saveStatData(data);
-    renderStatTabs();
-    renderStatChart();
-  }
+  var data = getStatData();
+  if (!data[cat]) return;
+  data[cat].sort(function(a,b){ return a.date > b.date ? 1 : -1; });
+  data[cat].splice(idx, 1);
+  saveStatData(data);
+  renderStatTabs();
+  renderStatChart();
 }
