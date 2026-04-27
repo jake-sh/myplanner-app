@@ -260,7 +260,7 @@ function openTodo() {
   const sid = getSharedTodoId();
   if (sid) {
     let firstLoad = true;
-    document.getElementById('todoSyncStatus').textContent = '🔗 친구와 연동 중...';
+    
     todoListener = db.collection('todos').doc(sid).onSnapshot(snap => {
       if (snap.exists) {
         const data = snap.data();
@@ -270,11 +270,11 @@ function openTodo() {
         }
         firstLoad = false;
       }
-      document.getElementById('todoSyncStatus').textContent = sid ? '🔗 친구와 연동됨' : '';
+      
       renderTodoList();
     });
   } else {
-    document.getElementById('todoSyncStatus').textContent = '👤 개인 모드 (채팅 친구 연동 시 공유됨)';
+    
     renderTodoList();
   }
 }
