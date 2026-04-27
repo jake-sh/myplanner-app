@@ -840,7 +840,7 @@ async function handleFileSelect(e) {
 
   if (!currentUser) { alert('인증 실패 - 새로고침 후 다시 시도하세요'); return; }
 
-  showInAppNotif('업로드 중...');
+  showUploadStatus('업로드 중...');
   try {
     const path = `media/${chatRoomId}/${Date.now()}`;
     const ref = storage.ref().child(path);
@@ -853,13 +853,14 @@ async function handleFileSelect(e) {
       ts: firebase.firestore.Timestamp.now(),
       deleteAt: null  // 상대방이 읽으면 카운트 시작
     });
-    showInAppNotif('전송 완료!');
+    hideUploadStatus();
     // 상대방 FCM 푸시
     const friendSnap = await db.collection('users').doc(activeFriendCode).get();
     if (friendSnap.exists && friendSnap.data().fcmToken) {
       sendFCMPush(friendSnap.data().fcmToken);
     }
   } catch(err) {
+    hideUploadStatus();
     alert('전송 실패: ' + err.message);
   }
 }
@@ -1064,9 +1065,21 @@ function updateNotifBtn() {
   btn.style.background = notifEnabled ? '#22c55e' : '#475569';
 }
 
+function showUploadStatus(text) {
+  let el = document.getElementById('uploadStatus');
+  if (!el) { el = document.createElement('div'); el.id = 'uploadStatus'; document.body.appendChild(el); }
+  el.textContent = text;
+  el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.6);color:#fff;padding:6px 16px;border-radius:20px;font-size:13px;z-index:9999;';
+  el.style.display = 'block';
+}
+function hideUploadStatus() {
+  const el = document.getElementById('uploadStatus');
+  if (el) el.style.display = 'none';
+}
+
 function showInAppNotif(text) {
   let el = document.getElementById('inAppNotif');
   if (!el) { el = document.createElement('div'); el.id = 'inAppNotif'; el.className = 'in-app-notif'; document.body.appendChild(el); }
-  el.textContent = '🔔 ' + text; el.classList.add('show');
+  el.textContent = text; el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 3500);
 }
