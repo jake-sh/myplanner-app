@@ -1,17 +1,24 @@
-const CACHE = 'myplanner-v59';
+const CACHE = 'myplanner-v60';
 
-self.addEventListener('install', e => { self.skipWaiting(); });
+self.addEventListener('install', e => {
+  self.skipWaiting();
+});
+
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
     .then(() => self.clients.claim())
+    .then(() => self.clients.matchAll().then(clients => {
+      clients.forEach(client => client.postMessage({ type: 'RELOAD' }));
+    }))
   );
 });
+
 self.addEventListener('fetch', e => {
-  e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+  // 캐시 없이 항상 네트워크에서 가져오기
+  e.respondWith(fetch(e.request).catch(() => new Response('offline')));
 });
 
-// FCM 푸시 (Android)
 self.addEventListener('push', e => {
   const data = e.data?.json() || {};
   e.waitUntil(
@@ -23,7 +30,6 @@ self.addEventListener('push', e => {
   );
 });
 
-// postMessage 알림 (iOS 및 백그라운드 공통)
 self.addEventListener('message', e => {
   if (e.data?.type === 'SHOW_NOTIFICATION') {
     self.registration.showNotification(e.data.title || '알림', {
@@ -32,12 +38,8 @@ self.addEventListener('message', e => {
       tag: 'planner-notification'
     });
   }
-  if (e.data?.type === 'SET_BADGE') {
-    if (navigator.setAppBadge) navigator.setAppBadge(e.data.count);
-  }
-  if (e.data?.type === 'CLEAR_BADGE') {
-    if (navigator.clearAppBadge) navigator.clearAppBadge();
-  }
+  if (e.data?.type === 'SET_BADGE') { if (navigator.setAppBadge) navigator.setAppBadge(e.data.count); }
+  if (e.data?.type === 'CLEAR_BADGE') { if (navigator.clearAppBadge) navigator.clearAppBadge(); }
 });
 
 self.addEventListener('notificationclick', e => {
