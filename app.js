@@ -249,9 +249,9 @@ function setTheme(c) { document.documentElement.style.setProperty('--primary', c
 
 // ── 할 일 ───────────────────────────────────────────
 function getSharedTodoId() {
-  if (!myCode || !activeFriendCode) return null;
-  const codes = [myCode, activeFriendCode].sort();
-  return 'todo_' + codes[0] + '_' + codes[1];
+  const f = JSON.parse(localStorage.getItem('friends') || '[]');
+  if (!myCode || !f.length) return null;
+  return [myCode, f[0]].sort().join('_todo_');
 }
 
 function openTodo() {
@@ -281,9 +281,16 @@ function openTodo() {
 
 async function saveTodosToFirestore() {
   const sid = getSharedTodoId();
+  console.log('[TODO] sid:', sid, 'myCode:', myCode, 'friends:', localStorage.getItem('friends'));
   if (!sid) return;
   const todos = JSON.parse(localStorage.getItem('todos') || '[]');
-  await db.collection('todos').doc(sid).set({ todos, updatedBy: myCode, ts: firebase.firestore.Timestamp.now() }).catch(() => {});
+  try {
+    await db.collection('todos').doc(sid).set({ todos, updatedBy: myCode, ts: firebase.firestore.Timestamp.now() });
+    console.log('[TODO] saved ok');
+  } catch(e) {
+    console.log('[TODO] save error:', e.message);
+    alert('할 일 저장 실패: ' + e.message);
+  }
 }
 
 function renderTodoList() {
