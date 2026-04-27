@@ -1227,16 +1227,15 @@ function openStats() {
 function renderStatTabs() {
   const data = getStatData();
   const wrap = document.getElementById('statCategoryTabs');
-  wrap.innerHTML = Object.entries(STAT_CATEGORIES).map(([key, cat]) => {
+  const tabs = Object.entries(STAT_CATEGORIES).map(([key, cat]) => {
     const hasData = data[key] && data[key].length > 0;
     const active = key === currentStatCat;
-    return `<button onclick="switchStatCat('${key}')" style="
-      flex-shrink:0;padding:7px 14px;border-radius:20px;border:none;cursor:pointer;font-size:12px;font-weight:600;
-      background:${active ? 'var(--primary)' : '#f1f5f9'};
-      color:${active ? '#fff' : '#64748b'};
-      position:relative;
-    ">${cat.label}${hasData ? '<span style="position:absolute;top:-3px;right:-3px;width:7px;height:7px;background:#22c55e;border-radius:50%;border:1.5px solid #fff;"></span>' : ''}</button>`;
-  }).join('');
+    const bg = active ? 'var(--primary)' : '#f1f5f9';
+    const color = active ? '#fff' : '#64748b';
+    const dot = hasData ? '<span style="position:absolute;top:-3px;right:-3px;width:7px;height:7px;background:#22c55e;border-radius:50%;border:1.5px solid #fff;"></span>' : '';
+    return '<button onclick="switchStatCat(\"' + key + '\")" style="flex-shrink:0;padding:7px 14px;border-radius:20px;border:none;cursor:pointer;font-size:12px;font-weight:600;background:' + bg + ';color:' + color + ';position:relative;">' + cat.label + dot + '</button>';
+  });
+  wrap.innerHTML = tabs.join('');
 }
 
 function switchStatCat(key) {
