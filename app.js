@@ -286,10 +286,8 @@ async function saveTodosToFirestore() {
   const todos = JSON.parse(localStorage.getItem('todos') || '[]');
   try {
     await db.collection('todos').doc(sid).set({ todos, updatedBy: myCode, ts: firebase.firestore.Timestamp.now() });
-    console.log('[TODO] saved ok');
   } catch(e) {
     console.log('[TODO] save error:', e.message);
-    alert('할 일 저장 실패: ' + e.message);
   }
 }
 
@@ -829,7 +827,6 @@ function renderMessage(data, id) {
 function startCountdown(msgId, deleteAt) {
   if (countdownTimers[msgId]) clearInterval(countdownTimers[msgId]);
   if (!deleteAt) {
-    // 아직 읽지 않음
     const el = document.getElementById('cd-' + msgId);
     if (el) el.textContent = '';
     return;
@@ -839,8 +836,18 @@ function startCountdown(msgId, deleteAt) {
     const el = document.getElementById('cd-' + msgId);
     if (!el) { clearInterval(countdownTimers[msgId]); return; }
     const rem = Math.max(0, target - Date.now());
-    el.textContent = rem > 0 ? `${Math.floor(rem/60000)}:${String(Math.floor((rem%60000)/1000)).padStart(2,'0')}` : '';
-    if (rem <= 0) clearInterval(countdownTimers[msgId]);
+    if (rem <= 0) {
+      clearInterval(countdownTimers[msgId]);
+      // 화면에서 제거
+      const row = el.closest('.msg-row');
+      if (row) row.remove();
+      // Firestore에서도 즉시 삭제
+      if (chatRoomId) {
+        db.collection('rooms').doc(chatRoomId).collection('messages').doc(msgId).delete().catch(() => {});
+      }
+      return;
+    }
+    el.textContent = `${Math.floor(rem/60000)}:${String(Math.floor((rem%60000)/1000)).padStart(2,'0')}`;
   }
   tick(); countdownTimers[msgId] = setInterval(tick, 1000);
 }
