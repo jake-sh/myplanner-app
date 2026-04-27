@@ -50,7 +50,16 @@ function updateFakeDate() {
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  if (id !== 'fakeApp') {
+    history.pushState({ screen: id }, '', '');
+  }
 }
+
+window.addEventListener('popstate', function(e) {
+  // 뒤로가기 누르면 메인 화면으로
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('fakeApp').classList.add('active');
+});
 
 // ── PATTERN ────────────────────────────────────────
 function dotStart(e, dot) {
