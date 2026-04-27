@@ -64,6 +64,8 @@ function dotStart(e, dot) {
   document.addEventListener('mouseup', onDragEnd, { once: true });
 }
 
+let _tapStartDot = -1;
+
 function onTouchMove(e) {
   e.preventDefault();
   const t = e.touches[0];
@@ -84,17 +86,18 @@ function onDragEnd() {
 
   const tapped = currentPattern[0];
   const len = currentPattern.length;
+  const patternCopy = [...currentPattern];
   clearDots();
+  currentPattern = [];
 
-  if (len < 2) {
-    currentPattern = [];
+  // 탭 = 1개 또는 같은 dot만 반복된 경우 (미세한 움직임 허용)
+  const uniqueDots = [...new Set(patternCopy)];
+  if (uniqueDots.length <= 1) {
     openFeature(tapped);
-  } else if (arraysEqual(currentPattern, savedPattern)) {
-    currentPattern = [];
+  } else if (arraysEqual(patternCopy, savedPattern)) {
     enterChatApp();
-  } else {
-    currentPattern = [];
   }
+  // else: 잘못된 패턴 → 아무것도 안 함
 }
 
 function checkDot(x, y) {
