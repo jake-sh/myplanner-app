@@ -1021,11 +1021,14 @@ async function sendFCMPush(targetToken) {
     console.log('Push error:', e.message);
   }
 }
+
+let lastNotifTime = 0;
+async function showPushNotification(title, body) {
   if (!notifEnabled) return;
   if (Notification.permission !== 'granted') return;
   if (document.visibilityState === 'visible') return;
   const now = Date.now();
-  if (now - lastNotifTime < 3000) return; // 3초 내 중복 방지
+  if (now - lastNotifTime < 3000) return;
   lastNotifTime = now;
   const sw = await getSW();
   if (sw) sw.active?.postMessage({ type: 'SHOW_NOTIFICATION', title, body });
