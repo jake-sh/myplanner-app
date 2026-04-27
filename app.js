@@ -232,6 +232,10 @@ function openFakeFeature(i) {
 // ── SETTINGS ───────────────────────────────────────
 function openSettings() {
   document.getElementById('appNameInput').value = localStorage.getItem('appName') || '';
+  // 알림 토글 초기화
+  document.getElementById('notifApp').checked = localStorage.getItem('notifApp') === 'true';
+  document.getElementById('notifCal').checked = localStorage.getItem('notifCal') === 'true';
+  document.getElementById('notifTodo').checked = localStorage.getItem('notifTodo') === 'true';
   showScreen('settingsScreen');
 }
 function saveAppName() {
@@ -339,7 +343,7 @@ function openCalendar() {
         localStorage.setItem('habits', JSON.stringify(data.habits || {}));
         // 상대방이 업데이트한 경우만 알림
         if (!firstCalLoad && data.updatedBy && data.updatedBy !== myCode) {
-          sendNotification('달력', '새 일정이 있어요');
+          if (localStorage.getItem('notifCal') === 'true') sendNotification('달력', '새 일정이 있어요');
         }
         firstCalLoad = false;
       }
@@ -1055,6 +1059,38 @@ async function setBadge(count) {
 }
 
 let unreadCount = 0;
+
+// 설정 화면 알림 토글
+async function toggleSettingsNotif(type, enabled) {
+  if (enabled) {
+    // 권한 요청
+    if (typeof Notification === 'undefined') {
+      alert('이 브라우저는 알림을 지원하지 않습니다');
+      document.getElementById('notif' + type.charAt(0).toUpperCase() + type.slice(1)).checked = false;
+      return;
+    }
+    if (Notification.permission === 'denied') {
+      alert('알림이 차단되어 있습니다.\n브라우저/시스템 설정에서 직접 허용해주세요.');
+      document.getElementById('notif' + type.charAt(0).toUpperCase() + type.slice(1)).checked = false;
+      return;
+    }
+    if (Notification.permission === 'default') {
+      const p = await Notification.requestPermission();
+      if (p !== 'granted') {
+        document.getElementById('notif' + type.charAt(0).toUpperCase() + type.slice(1)).checked = false;
+        return;
+      }
+    }
+    // SW 등록 확인
+    await getSW();
+  }
+  localStorage.setItem('notif' + type.charAt(0).toUpperCase() + type.slice(1), enabled);
+  // notifEnabled는 앱알림 토글과 동기화
+  if (type === 'app') {
+    notifEnabled = enabled;
+    localStorage.setItem('notifEnabled', enabled);
+  }
+}
 
 function toggleNotification() {
   if (typeof Notification === 'undefined') { alert('이 브라우저는 알림을 지원하지 않습니다'); return; }
