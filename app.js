@@ -25,7 +25,7 @@ let autoDeleteMinutes = parseInt(localStorage.getItem('autoDeleteMin') || '5');
 let myCode = localStorage.getItem('myCode') || '';
 let friends = JSON.parse(localStorage.getItem('friends') || '[]');
 let activeFriendCode = null, chatRoomId = null;
-let messageListener = null, friendsListener = null, roomListener = null, calListener = null;
+let messageListener = null, friendsListener = null, roomListener = null, calListener = null, todoListener = null;
 let deleteTimers = {}, countdownTimers = {}, qrScanner = null;
 let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
 let editingMemoIndex = null;
@@ -248,7 +248,44 @@ function saveAppName() {
 function setTheme(c) { document.documentElement.style.setProperty('--primary', c); localStorage.setItem('themeColor', c); }
 
 // ── 할 일 ───────────────────────────────────────────
-function openTodo() { renderTodoList(); showScreen('todoScreen'); }
+function getSharedTodoId() {
+  if (!myCode || !activeFriendCode) return null;
+  const codes = [myCode, activeFriendCode].sort();
+  return 'todo_' + codes[0] + '_' + codes[1];
+}
+
+function openTodo() {
+  showScreen('todoScreen');
+  if (todoListener) { todoListener(); todoListener = null; }
+  const sid = getSharedTodoId();
+  if (sid) {
+    let firstLoad = true;
+    document.getElementById('todoSyncStatus').textContent = '🔗 친구와 연동 중...';
+    todoListener = db.collection('todos').doc(sid).onSnapshot(snap => {
+      if (snap.exists) {
+        const data = snap.data();
+        localStorage.setItem('todos', JSON.stringify(data.todos || []));
+        if (!firstLoad && data.updatedBy && data.updatedBy !== myCode) {
+          if (localStorage.getItem('notifTodo') === 'true') sendNotification('할 일', '새로운 할 일이 있어요');
+        }
+        firstLoad = false;
+      }
+      document.getElementById('todoSyncStatus').textContent = sid ? '🔗 친구와 연동됨' : '';
+      renderTodoList();
+    });
+  } else {
+    document.getElementById('todoSyncStatus').textContent = '👤 개인 모드 (채팅 친구 연동 시 공유됨)';
+    renderTodoList();
+  }
+}
+
+async function saveTodosToFirestore() {
+  const sid = getSharedTodoId();
+  if (!sid) return;
+  const todos = JSON.parse(localStorage.getItem('todos') || '[]');
+  await db.collection('todos').doc(sid).set({ todos, updatedBy: myCode, ts: firebase.firestore.Timestamp.now() }).catch(() => {});
+}
+
 function renderTodoList() {
   const todos = JSON.parse(localStorage.getItem('todos') || '[]');
   document.getElementById('todoCount').textContent = `${todos.filter(t=>t.done).length}/${todos.length}`;
@@ -270,10 +307,12 @@ function addTodo() {
 function toggleTodo(i) {
   const todos = JSON.parse(localStorage.getItem('todos') || '[]'); todos[i].done = !todos[i].done;
   localStorage.setItem('todos', JSON.stringify(todos)); renderTodoList();
+  saveTodosToFirestore();
 }
 function deleteTodo(i) {
   const todos = JSON.parse(localStorage.getItem('todos') || '[]'); todos.splice(i,1);
   localStorage.setItem('todos', JSON.stringify(todos)); renderTodoList();
+  saveTodosToFirestore();
 }
 
 // ── 메모 ───────────────────────────────────────────
