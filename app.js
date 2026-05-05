@@ -1053,6 +1053,22 @@ let notifEnabled = localStorage.getItem('notifEnabled') === 'true';
 let swReg = null;
 
 // SW 준비
+// 앱 열리거나 포커스 될 때 알림 자동 닫기
+async function clearAllNotifications() {
+  const sw = await getSW();
+  if (sw && sw.active) {
+    sw.active.postMessage({ type: 'CLEAR_NOTIFICATIONS' });
+  }
+}
+
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'visible') {
+    clearAllNotifications();
+  }
+});
+
+window.addEventListener('focus', clearAllNotifications);
+
 async function getSW() {
   if (swReg) return swReg;
   if ('serviceWorker' in navigator) swReg = await navigator.serviceWorker.ready;

@@ -1,4 +1,4 @@
-const CACHE = 'myplanner-v64';
+const CACHE = 'myplanner-v65';
 
 self.addEventListener('install', e => {
   self.skipWaiting();
@@ -36,6 +36,11 @@ self.addEventListener('message', e => {
       body: e.data.body || '',
       icon: '/myplanner-app/icons/icon-192.png',
       tag: 'planner-notification'
+    });
+  }
+  if (e.data?.type === 'CLEAR_NOTIFICATIONS') {
+    self.registration.getNotifications().then(function(notifications) {
+      notifications.forEach(function(n) { n.close(); });
     });
   }
   if (e.data?.type === 'SET_BADGE') { if (navigator.setAppBadge) navigator.setAppBadge(e.data.count); }
