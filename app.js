@@ -499,6 +499,7 @@ function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').re
 // ── SECRET CHAT ─────────────────────────────────────
 function enterChatApp() {
   applyChatTheme();
+  applyChatFontSize();
   showScreen('chatApp');
   initFCM();
   if (!myCode) {
@@ -995,7 +996,8 @@ function setChatFontSize(size) {
 function applyChatFontSize() {
   const size = parseInt(localStorage.getItem('chatFontSize') || '18');
   document.querySelectorAll('.msg-bubble').forEach(el => el.style.fontSize = size + 'px');
-  document.querySelector('#chatApp .msg-input') && (document.getElementById('msgInput').style.fontSize = size + 'px');
+  const input = document.getElementById('msgInput');
+  if (input) input.style.fontSize = size + 'px';
 }
 
 function updateFontSizeBtns() {
