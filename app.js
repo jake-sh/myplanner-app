@@ -1507,9 +1507,11 @@ async function loadWeather() {
       var pm25 = Math.round(aData.list[0].components.pm2_5);
       var level = getDustLevel(pm10);
 
-      document.getElementById('widgetDustVal').innerHTML = 'PM10 <b>' + pm10 + '</b> / PM2.5 <b>' + pm25 + '</b>';
-      document.getElementById('widgetDustLevel').textContent = level.text;
-      document.getElementById('widgetDustLevel').style.color = level.color;
+      var level25 = getDustLevel(pm25);
+      document.getElementById('widgetDustVal').innerHTML = 
+        '미세 <b style="color:' + level.color + '">' + level.text + '</b><br>' +
+        '초미세 <b style="color:' + level25.color + '">' + level25.text + '</b>';
+      document.getElementById('widgetDustLevel').textContent = '';
 
       // 옷차림
       document.getElementById('widgetClothesVal').textContent = getClothes(temp, pm10);
