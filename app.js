@@ -1076,7 +1076,7 @@ async function getSW() {
 }
 
 const VAPID_KEY = 'BFsKaZKglqdWpCOkCgp39gkMlGcKq1aHSEkueZjhsojj65HfAPMoL9_sKhTz6NjgXCjtNv0plJVIj9S8I7r4XR8';
-const FCM_SERVER = 'https://fcm-server-xlrl.onrender.com';
+const FCM_SERVER = 'https://sendpush-zd5g5jmsha-uc.a.run.app';
 
 let fcmToken = localStorage.getItem('fcmToken') || null;
 let messaging = null;
@@ -1107,7 +1107,7 @@ async function initFCM() {
 async function sendFCMPush(targetToken, title = '새 메시지', body = '새 알림이 있어요') {
   if (!targetToken) return;
   try {
-    await fetch(`${FCM_SERVER}/send`, {
+    await fetch(`${FCM_SERVER}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token: targetToken, title, body })
