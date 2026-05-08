@@ -1428,3 +1428,102 @@ function delSE(cat, idx) {
   setSD(data);
   renderStatsUI();
 }
+
+// ── 날씨 위젯 ──────────────────────────────────────────
+const OWM_KEY = '4388aeee14859bf5e7351a18d1d35db0';
+
+function startClock() {
+  function tick() {
+    var now = new Date();
+    var h = String(now.getHours()).padStart(2,'0');
+    var m = String(now.getMinutes()).padStart(2,'0');
+    var s = String(now.getSeconds()).padStart(2,'0');
+    var days = ['일','월','화','수','목','금','토'];
+    var dateStr = (now.getMonth()+1) + '월 ' + now.getDate() + '일 (' + days[now.getDay()] + ')';
+    var el = document.getElementById('widgetClock');
+    var del = document.getElementById('widgetDate');
+    if (el) el.innerHTML = h + ':' + m + '<span style="font-size:18px;opacity:0.7;">:' + s + '</span>';
+    if (del) del.textContent = dateStr;
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+function getWeatherIcon(id) {
+  if (id >= 200 && id < 300) return '⛈️';
+  if (id >= 300 && id < 400) return '🌦️';
+  if (id >= 500 && id < 600) return '🌧️';
+  if (id >= 600 && id < 700) return '❄️';
+  if (id >= 700 && id < 800) return '🌫️';
+  if (id === 800) return '☀️';
+  if (id === 801) return '🌤️';
+  if (id === 802) return '⛅';
+  if (id >= 803) return '☁️';
+  return '🌡️';
+}
+
+function getDustLevel(pm10) {
+  if (pm10 <= 30) return { text: '좋음', color: '#4ade80' };
+  if (pm10 <= 80) return { text: '보통', color: '#facc15' };
+  if (pm10 <= 150) return { text: '나쁨', color: '#fb923c' };
+  return { text: '매우나쁨', color: '#f87171' };
+}
+
+function getClothes(temp, pm10) {
+  var dust = pm10 > 80 ? ' 마스크 착용 권장' : '';
+  if (temp >= 28) return '민소매·반팔·반바지·원피스' + dust;
+  if (temp >= 23) return '반팔·얇은 셔츠·반바지' + dust;
+  if (temp >= 20) return '블라우스·긴팔·면바지·청바지' + dust;
+  if (temp >= 17) return '얇은 가디건·긴바지' + dust;
+  if (temp >= 12) return '자켓·가디건·청바지' + dust;
+  if (temp >= 9) return '트렌치코트·니트·청바지' + dust;
+  if (temp >= 5) return '울코트·히트텍·레이어드' + dust;
+  return '패딩·두꺼운 코트·목도리' + dust;
+}
+
+async function loadWeather() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(async function(pos) {
+    var lat = pos.coords.latitude;
+    var lon = pos.coords.longitude;
+    try {
+      // 날씨
+      var wRes = await fetch('https://api.openweathermap.org/data/2.5/weather?lat='+lat+'&lon='+lon+'&appid='+OWM_KEY+'&units=metric&lang=kr');
+      var wData = await wRes.json();
+      var temp = Math.round(wData.main.temp);
+      var desc = wData.weather[0].description;
+      var icon = getWeatherIcon(wData.weather[0].id);
+      var city = wData.name;
+
+      document.getElementById('widgetTemp').textContent = temp + '°';
+      document.getElementById('widgetDesc').textContent = desc;
+      document.getElementById('widgetWeatherIcon').textContent = icon;
+      document.getElementById('widgetLocation').textContent = '📍 ' + city;
+
+      // 미세먼지
+      var aRes = await fetch('https://api.openweathermap.org/data/2.5/air_pollution?lat='+lat+'&lon='+lon+'&appid='+OWM_KEY);
+      var aData = await aRes.json();
+      var pm10 = Math.round(aData.list[0].components.pm10);
+      var pm25 = Math.round(aData.list[0].components.pm2_5);
+      var level = getDustLevel(pm10);
+
+      document.getElementById('widgetDustVal').innerHTML = 'PM10 <b>' + pm10 + '</b> / PM2.5 <b>' + pm25 + '</b>';
+      document.getElementById('widgetDustLevel').textContent = level.text;
+      document.getElementById('widgetDustLevel').style.color = level.color;
+
+      // 옷차림
+      document.getElementById('widgetClothesVal').textContent = getClothes(temp, pm10);
+
+    } catch(e) {
+      document.getElementById('widgetClothesVal').textContent = '날씨 정보 없음';
+    }
+  }, function() {
+    document.getElementById('widgetClothesVal').textContent = '위치 권한 필요';
+  });
+}
+
+// 초기 실행
+startClock();
+loadWeather();
+// 30분마다 날씨 갱신
+setInterval(loadWeather, 30 * 60 * 1000);
