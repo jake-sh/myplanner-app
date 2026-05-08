@@ -1055,19 +1055,39 @@ let swReg = null;
 // SW 준비
 // 앱 열리거나 포커스 될 때 알림 자동 닫기
 async function clearAllNotifications() {
+  // SW postMessage 방식
   const sw = await getSW();
   if (sw && sw.active) {
     sw.active.postMessage({ type: 'CLEAR_NOTIFICATIONS' });
+  }
+  // 직접 Notification API로도 닫기 (iOS 대응)
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) {
+        const notifs = await reg.getNotifications();
+        notifs.forEach(n => n.close());
+      }
+    } catch(e) {}
   }
 }
 
 document.addEventListener('visibilitychange', function() {
   if (document.visibilityState === 'visible') {
     clearAllNotifications();
+    setBadge(0);
+    unreadCount = 0;
   }
 });
 
-window.addEventListener('focus', clearAllNotifications);
+window.addEventListener('focus', function() {
+  clearAllNotifications();
+  setBadge(0);
+  unreadCount = 0;
+});
+
+// 앱 처음 로드 시에도 클리어
+clearAllNotifications();
 
 async function getSW() {
   if (swReg) return swReg;
@@ -1219,8 +1239,12 @@ function hideUploadStatus() {
 function showInAppNotif(text) {
   let el = document.getElementById('inAppNotif');
   if (!el) { el = document.createElement('div'); el.id = 'inAppNotif'; el.className = 'in-app-notif'; document.body.appendChild(el); }
-  el.textContent = text; el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 3500);
+  el.textContent = text;
+  el.classList.add('show');
+  clearTimeout(el._hideTimer);
+  el._hideTimer = setTimeout(() => {
+    el.classList.remove('show');
+  }, 3000);
 }
 
 

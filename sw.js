@@ -1,31 +1,32 @@
-const CACHE = 'myplanner-v66';
+const CACHE = 'myplanner-v69';
 
-self.addEventListener('install', e => {
-  self.skipWaiting();
-});
+self.addEventListener('install', e => { self.skipWaiting(); });
 
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
     .then(() => self.clients.claim())
-    .then(() => self.clients.matchAll().then(clients => {
-      clients.forEach(client => client.postMessage({ type: 'RELOAD' }));
-    }))
   );
 });
 
 self.addEventListener('fetch', e => {
-  // 캐시 없이 항상 네트워크에서 가져오기
   e.respondWith(fetch(e.request).catch(() => new Response('offline')));
 });
 
 self.addEventListener('push', e => {
   const data = e.data?.json() || {};
   e.waitUntil(
-    self.registration.showNotification(data.title || '새 메시지', {
-      body: data.body || '새 알림이 있어요',
-      icon: '/myplanner-app/icons/icon-192.png',
-      tag: 'planner-notification'
+    // 앱이 포그라운드면 알림 안 띄움
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+      const isVisible = clients.some(c => c.visibilityState === 'visible');
+      if (isVisible) return; // 앱 보고 있으면 푸시 무시
+      return self.registration.showNotification(data.title || '새 메시지', {
+        body: data.body || '새 알림이 있어요',
+        icon: '/myplanner-app/icons/icon-192.png',
+        tag: 'planner-notification',
+        renotify: true,
+        vibrate: [500]
+      });
     })
   );
 });
@@ -39,8 +40,8 @@ self.addEventListener('message', e => {
     });
   }
   if (e.data?.type === 'CLEAR_NOTIFICATIONS') {
-    self.registration.getNotifications().then(function(notifications) {
-      notifications.forEach(function(n) { n.close(); });
+    self.registration.getNotifications().then(notifications => {
+      notifications.forEach(n => n.close());
     });
   }
   if (e.data?.type === 'SET_BADGE') { if (navigator.setAppBadge) navigator.setAppBadge(e.data.count); }
@@ -49,8 +50,13 @@ self.addEventListener('message', e => {
 
 self.addEventListener('notificationclick', e => {
   e.notification.close();
-  e.waitUntil(clients.matchAll({ type: 'window' }).then(list => {
-    if (list.length) return list[0].focus();
-    return clients.openWindow('/myplanner-app/');
-  }));
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      // 열린 창 있으면 포커스
+      for (const client of list) {
+        if ('focus' in client) return client.focus();
+      }
+      return self.clients.openWindow('/myplanner-app/');
+    })
+  );
 });

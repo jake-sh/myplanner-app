@@ -202,8 +202,8 @@ input:checked+.slider:before{transform:translateX(20px);}
 .drb-reject{background:#ef4444;border:none;color:#fff;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;flex:1;}
 
 /* 인앱 알림 토스트 */
-.in-app-notif{position:fixed;top:60px;left:50%;transform:translateX(-50%) translateY(-80px);background:#1e293b;color:#f1f5f9;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;z-index:999;transition:transform .3s ease;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.3);border:1px solid #334155;}
-.in-app-notif.show{transform:translateX(-50%) translateY(0);}
+.in-app-notif{position:fixed;top:60px;left:50%;transform:translateX(-50%) translateY(-80px);background:#1e293b;color:#f1f5f9;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;z-index:999;transition:transform .3s ease, opacity .3s ease;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.3);border:1px solid #334155;opacity:0;}
+.in-app-notif.show{transform:translateX(-50%) translateY(0);opacity:1;}
 
 /* 달력 공유 상태 */
 .cal-sync-status { text-align:center; font-size:13px; font-weight:600; color:var(--primary); padding:6px; }
