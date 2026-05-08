@@ -1264,11 +1264,45 @@ var STAT_CATS = {
 };
 var curSC = "weight";
 
+function getSharedStatId() {
+  var f = JSON.parse(localStorage.getItem('friends') || '[]');
+  if (!myCode || !f.length) return null;
+  return [myCode, f[0]].sort().join('_stat_');
+}
+
+var statListener = null;
+
 function getSD() { try { return JSON.parse(localStorage.getItem("hStats")||"{}"); } catch(e) { return {}; } }
-function setSD(d) { localStorage.setItem("hStats", JSON.stringify(d)); }
+function setSD(d) {
+  localStorage.setItem("hStats", JSON.stringify(d));
+  // Firestore 동기화
+  var sid = getSharedStatId();
+  if (sid) {
+    db.collection('stats').doc(sid).set({ data: d, updatedBy: myCode, ts: firebase.firestore.Timestamp.now() }).catch(function(e) {
+      console.log('stat save error:', e.message);
+    });
+  }
+}
 
 function openStats() {
   document.getElementById("featureTitle").textContent = "건강 통계";
+  // Firestore 리스너
+  if (statListener) { statListener(); statListener = null; }
+  var sid = getSharedStatId();
+  if (sid) {
+    var firstLoad = true;
+    statListener = db.collection('stats').doc(sid).onSnapshot(function(snap) {
+      if (snap.exists) {
+        var d = snap.data();
+        localStorage.setItem("hStats", JSON.stringify(d.data || {}));
+        if (!firstLoad && d.updatedBy && d.updatedBy !== myCode) {
+          if (localStorage.getItem('notifTodo') === 'true') sendNotification('통계', '건강 기록이 업데이트됐어요');
+        }
+        firstLoad = false;
+        renderStatsUI();
+      }
+    });
+  }
   renderStatsUI();
   showScreen("fakeFeature");
 }

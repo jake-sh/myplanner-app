@@ -1,4 +1,4 @@
-const CACHE = 'myplanner-v76';
+const CACHE = 'myplanner-v78';
 
 self.addEventListener('install', e => { self.skipWaiting(); });
 
@@ -25,7 +25,6 @@ self.addEventListener('push', e => {
         icon: '/myplanner-app/icons/icon-192.png',
         tag: 'planner-notification',
         renotify: true,
-        vibrate: [500]
       });
     })
   );
