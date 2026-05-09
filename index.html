@@ -390,6 +390,14 @@
       </div>
 
       <div class="secret-setting-item">
+        <div>
+          <div class="settings-label" style="color:var(--chat-text);font-size:14px;">강화 보안</div>
+          <div style="font-size:11px;color:var(--chat-text2);margin-top:2px;">화면 이탈 시 채팅 자동 잠금</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="autoLockToggle" onchange="toggleAutoLock(this.checked)"/><span class="slider"></span></label>
+      </div>
+
+      <div class="secret-setting-item">
         <div class="settings-label" style="color:var(--chat-text);font-size:14px;">내 코드</div>
         <div class="my-code-display" id="myCodeDisplaySettings" style="font-size:13px;padding:8px;"></div>
       </div>

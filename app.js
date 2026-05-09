@@ -1041,11 +1041,17 @@ function updateFontSizeBtns() {
   });
 }
 
+function toggleAutoLock(enabled) {
+  localStorage.setItem('autoLock', enabled ? 'true' : 'false');
+}
+
 function openSecretSettings() {
   document.getElementById('myCodeDisplaySettings').textContent = myCode;
   updateNotifBtn();
   updateFontSizeBtns();
   updateThemeBtns();
+  var autoLockEl = document.getElementById('autoLockToggle');
+  if (autoLockEl) autoLockEl.checked = localStorage.getItem('autoLock') === 'true';
   document.getElementById('secretSettingsModal').style.display = 'flex';
 }
 function closeSecretSettings() { document.getElementById('secretSettingsModal').style.display = 'none'; }
@@ -1079,6 +1085,21 @@ document.addEventListener('visibilitychange', function() {
     clearAllNotifications();
     setBadge(0);
     unreadCount = 0;
+    // 강화 보안 - 채팅창 이탈 후 복귀 시 자동 잠금
+    if (localStorage.getItem('autoLock') === 'true') {
+      var activeScreen = document.querySelector('.screen.active');
+      if (activeScreen && (activeScreen.id === 'chatApp')) {
+        exitChat();
+      }
+    }
+  } else {
+    // 화면 숨겨질 때 강화 보안 적용
+    if (localStorage.getItem('autoLock') === 'true') {
+      var activeScreen = document.querySelector('.screen.active');
+      if (activeScreen && activeScreen.id === 'chatApp') {
+        exitChat();
+      }
+    }
   }
 });
 
