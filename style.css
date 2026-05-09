@@ -143,7 +143,7 @@ input:checked+.slider:before{transform:translateX(20px);}
 .chat-action-btn{background:#3b82f6;color:#fff;border:none;padding:12px 32px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;width:100%;max-width:320px;}
 .chat-exit-btn{background:none;border:none;color:#64748b;font-size:14px;cursor:pointer;font-family:inherit;}
 .chat-header{display:flex;align-items:center;padding:48px 12px 12px;background:var(--chat-surface);gap:8px;flex-shrink:0;position:relative;}
-.chat-header-center{position:absolute;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none;}
+.chat-header-center{position:absolute;left:0;right:0;text-align:center;pointer-events:none;}
 .chat-friend-name{font-size:16px;font-weight:700;}
 .auto-delete-label{font-size:11px;color:#64748b;margin-top:2px;}
 .chat-header-btn{background:none;border:none;color:var(--chat-text2, #94a3b8);cursor:pointer;padding:6px;min-width:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;transition:opacity .15s;}
