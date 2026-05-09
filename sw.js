@@ -1,4 +1,4 @@
-const CACHE = 'myplanner-v84';
+const CACHE = 'myplanner-v85';
 
 self.addEventListener('install', e => { self.skipWaiting(); });
 
@@ -32,10 +32,14 @@ self.addEventListener('push', e => {
 
 self.addEventListener('message', e => {
   if (e.data?.type === 'SHOW_NOTIFICATION') {
-    self.registration.showNotification(e.data.title || '알림', {
-      body: e.data.body || '',
-      icon: '/myplanner-app/icons/icon-192.png',
-      tag: 'planner-notification'
+    // 기존 알림 닫고 새 알림 표시 (중복 방지)
+    self.registration.getNotifications({ tag: 'planner-notification' }).then(ns => {
+      ns.forEach(n => n.close());
+      self.registration.showNotification(e.data.title || '알림', {
+        body: e.data.body || '',
+        icon: '/myplanner-app/icons/icon-192.png',
+        tag: 'planner-notification'
+      });
     });
   }
   if (e.data?.type === 'CLEAR_NOTIFICATIONS') {

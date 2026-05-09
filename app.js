@@ -760,8 +760,8 @@ function listenMessages() {
           const id = change.doc.id;
           if (!firstLoad && data.sender !== myCode && data.type !== 'system' && !seenMsgIds.has(id)) {
             hasNewMsg = true;
-            // 앱이 백그라운드일 때만 알림
-            if (document.visibilityState !== 'visible' && notifEnabled && Notification.permission === 'granted') {
+            // FCM 토큰 없을 때만 SW 로컬 알림 (FCM 있으면 FCM이 알림 처리)
+            if (document.visibilityState !== 'visible' && notifEnabled && Notification.permission === 'granted' && !fcmToken) {
               sendNotification('새 메시지', '새 알림이 있어요');
               unreadCount++;
               setBadge(unreadCount);
@@ -1165,25 +1165,20 @@ let lastNotifTime = 0;
 async function sendNotification(title, body) {
   if (!notifEnabled) return;
   if (Notification.permission !== 'granted') return;
-  const sw = await getSW();
-  if (sw && sw.active) {
-    sw.active.postMessage({ type: 'SHOW_NOTIFICATION', title, body });
-  } else {
-    // SW 없을 때 직접 표시
-    new Notification(title, { body, icon: '/myplanner-app/icons/icon-192.png' });
-  }
-}
-
-async function showPushNotification(title, body) {
-  if (!notifEnabled) return;
-  if (Notification.permission !== 'granted') return;
   if (document.visibilityState === 'visible') return;
+  // 중복 방지 (3초 내 같은 알림 차단)
   const now = Date.now();
   if (now - lastNotifTime < 3000) return;
   lastNotifTime = now;
   const sw = await getSW();
-  if (sw) sw.active?.postMessage({ type: 'SHOW_NOTIFICATION', title, body });
+  if (sw && sw.active) {
+    sw.active.postMessage({ type: 'SHOW_NOTIFICATION', title, body });
+  } else {
+    new Notification(title, { body, icon: '/myplanner-app/icons/icon-192.png' });
+  }
 }
+
+// showPushNotification merged into sendNotification
 
 // 배지 숫자 설정
 async function setBadge(count) {
