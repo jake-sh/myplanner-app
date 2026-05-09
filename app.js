@@ -807,11 +807,25 @@ function renderMessage(data, id) {
   const bubble = document.createElement('div');
   bubble.className = `msg-bubble ${mine ? 'mine' : 'theirs'}`;
   bubble.style.fontSize = (localStorage.getItem('chatFontSize') || '18') + 'px';
-  if (data.type === 'image') {
+  if (data.type === 'album' && data.urls && data.urls.length > 0) {
+    bubble.classList.add('media-bubble');
+    const urls = data.urls;
+    const grid = document.createElement('div');
+    const cols = urls.length <= 2 ? urls.length : urls.length <= 4 ? 2 : 3;
+    grid.style.cssText = 'display:grid;grid-template-columns:repeat('+cols+',1fr);gap:3px;border-radius:12px;overflow:hidden;max-width:240px;';
+    urls.forEach((url, i) => {
+      const img = document.createElement('img');
+      img.src = url;
+      img.style.cssText = 'width:100%;aspect-ratio:1;object-fit:cover;cursor:pointer;';
+      img.onclick = () => openImgViewer(urls, i);
+      grid.appendChild(img);
+    });
+    bubble.appendChild(grid);
+  } else if (data.type === 'image') {
     bubble.classList.add('media-bubble');
     const img = document.createElement('img');
     img.src = data.url; img.className = 'msg-media';
-    img.onclick = () => window.open(data.url, '_blank');
+    img.onclick = () => openImgViewer([data.url], 0);
     bubble.appendChild(img);
   } else if (data.type === 'video') {
     bubble.classList.add('media-bubble');
@@ -893,49 +907,68 @@ function scheduleAutoDelete(msgId, data) {
 }
 
 async function handleFileSelect(e) {
-  const file = e.target.files[0];
-  if (!file || !chatRoomId) return;
+  const files = Array.from(e.target.files);
+  if (!files.length || !chatRoomId) return;
   e.target.value = '';
-  const isVideo = file.type.startsWith('video');
-  const isImage = file.type.startsWith('image');
-  if (!isVideo && !isImage) { alert('이미지 또는 영상만 전송 가능합니다'); return; }
 
-  // 인증 완료까지 대기
+  // 인증 대기
   if (!currentUser) {
-    showInAppNotif('인증 중...');
     await new Promise((resolve) => {
-      const check = setInterval(() => {
-        if (currentUser) { clearInterval(check); resolve(); }
-      }, 200);
+      const check = setInterval(() => { if (currentUser) { clearInterval(check); resolve(); } }, 200);
       setTimeout(() => { clearInterval(check); resolve(); }, 5000);
     });
   }
-
   if (!currentUser) { alert('인증 실패 - 새로고침 후 다시 시도하세요'); return; }
 
-  showUploadStatus('업로드 중...');
+  // 단일 파일
+  if (files.length === 1) {
+    const file = files[0];
+    const isVideo = file.type.startsWith('video');
+    const isImage = file.type.startsWith('image');
+    if (!isVideo && !isImage) { alert('이미지 또는 영상만 전송 가능합니다'); return; }
+    showUploadStatus('업로드 중...');
+    try {
+      const path = `media/${chatRoomId}/${Date.now()}`;
+      const snap = await storage.ref().child(path).put(file);
+      const url = await snap.ref.getDownloadURL();
+      await db.collection('rooms').doc(chatRoomId).collection('messages').add({
+        sender: myCode, receiverId: activeFriendCode,
+        type: isVideo ? 'video' : 'image',
+        url, storagePath: path,
+        ts: firebase.firestore.Timestamp.now(), deleteAt: null
+      });
+      hideUploadStatus();
+      const friendSnap = await db.collection('users').doc(activeFriendCode).get();
+      if (friendSnap.exists && friendSnap.data().fcmToken) sendFCMPush(friendSnap.data().fcmToken);
+    } catch(err) { hideUploadStatus(); alert('전송 실패: ' + err.message); }
+    return;
+  }
+
+  // 다중 파일 - 앨범으로 묶어서 전송
+  const imageFiles = files.filter(f => f.type.startsWith('image'));
+  if (!imageFiles.length) { alert('이미지만 묶음 전송 가능합니다'); return; }
+  if (imageFiles.length > 10) { alert('최대 10장까지 선택 가능합니다'); return; }
+
+  showUploadStatus(`업로드 중... (0/${imageFiles.length})`);
   try {
-    const path = `media/${chatRoomId}/${Date.now()}`;
-    const ref = storage.ref().child(path);
-    const snap = await ref.put(file);
-    const url = await snap.ref.getDownloadURL();
+    const urls = [];
+    const paths = [];
+    for (let i = 0; i < imageFiles.length; i++) {
+      const path = `media/${chatRoomId}/${Date.now()}_${i}`;
+      const snap = await storage.ref().child(path).put(imageFiles[i]);
+      urls.push(await snap.ref.getDownloadURL());
+      paths.push(path);
+      showUploadStatus(`업로드 중... (${i+1}/${imageFiles.length})`);
+    }
     await db.collection('rooms').doc(chatRoomId).collection('messages').add({
       sender: myCode, receiverId: activeFriendCode,
-      type: isVideo ? 'video' : 'image',
-      url, storagePath: path,
-      ts: firebase.firestore.Timestamp.now(),
-      deleteAt: null  // 상대방이 읽으면 카운트 시작
+      type: 'album', urls, storagePaths: paths,
+      ts: firebase.firestore.Timestamp.now(), deleteAt: null
     });
     hideUploadStatus();
-    // 상대방 FCM 푸시
     const friendSnap = await db.collection('users').doc(activeFriendCode).get();
-    if (friendSnap.exists && friendSnap.data().fcmToken) {
-      sendFCMPush(friendSnap.data().fcmToken);
-    }
-  } catch(err) {
-    hideUploadStatus();
-    alert('전송 실패: ' + err.message);
-  }
+    if (friendSnap.exists && friendSnap.data().fcmToken) sendFCMPush(friendSnap.data().fcmToken);
+  } catch(err) { hideUploadStatus(); alert('전송 실패: ' + err.message); }
 }
 
 async function sendMessage() {
@@ -1581,3 +1614,30 @@ startClock();
 loadWeather();
 // 30분마다 날씨 갱신
 setInterval(loadWeather, 30 * 60 * 1000);
+
+// 이미지 뷰어
+let viewerUrls = [];
+let viewerIdx = 0;
+
+function openImgViewer(urls, idx) {
+  viewerUrls = urls;
+  viewerIdx = idx;
+  document.getElementById('imgViewer').style.display = 'flex';
+  updateViewer();
+}
+
+function closeImgViewer() {
+  document.getElementById('imgViewer').style.display = 'none';
+}
+
+function changeViewerImg(dir) {
+  viewerIdx = (viewerIdx + dir + viewerUrls.length) % viewerUrls.length;
+  updateViewer();
+}
+
+function updateViewer() {
+  document.getElementById('imgViewerImg').src = viewerUrls[viewerIdx];
+  document.getElementById('imgViewerCounter').textContent = viewerUrls.length > 1 ? (viewerIdx+1) + ' / ' + viewerUrls.length : '';
+  document.getElementById('imgViewerPrev').style.display = viewerUrls.length > 1 ? 'block' : 'none';
+  document.getElementById('imgViewerNext').style.display = viewerUrls.length > 1 ? 'block' : 'none';
+}
