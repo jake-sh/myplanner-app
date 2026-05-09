@@ -1618,12 +1618,32 @@ setInterval(loadWeather, 30 * 60 * 1000);
 // 이미지 뷰어
 let viewerUrls = [];
 let viewerIdx = 0;
+let swipeSX = 0, swipeSY = 0;
 
 function openImgViewer(urls, idx) {
   viewerUrls = urls;
   viewerIdx = idx;
-  document.getElementById('imgViewer').style.display = 'flex';
+  const viewer = document.getElementById('imgViewer');
+  viewer.style.display = 'flex';
   updateViewer();
+
+  // 스와이프 이벤트
+  const area = document.getElementById('imgViewerSwipe');
+  area.ontouchstart = function(e) {
+    swipeSX = e.touches[0].clientX;
+    swipeSY = e.touches[0].clientY;
+  };
+  area.ontouchend = function(e) {
+    const dx = e.changedTouches[0].clientX - swipeSX;
+    const dy = e.changedTouches[0].clientY - swipeSY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+      changeViewerImg(dx < 0 ? 1 : -1);
+    }
+  };
+  // 배경 탭으로 닫기
+  viewer.onclick = function(e) {
+    if (e.target === viewer || e.target.id === 'imgViewerSwipe') closeImgViewer();
+  };
 }
 
 function closeImgViewer() {
@@ -1636,8 +1656,11 @@ function changeViewerImg(dir) {
 }
 
 function updateViewer() {
-  document.getElementById('imgViewerImg').src = viewerUrls[viewerIdx];
+  const url = viewerUrls[viewerIdx];
+  document.getElementById('imgViewerImg').src = url;
   document.getElementById('imgViewerCounter').textContent = viewerUrls.length > 1 ? (viewerIdx+1) + ' / ' + viewerUrls.length : '';
-  document.getElementById('imgViewerPrev').style.display = viewerUrls.length > 1 ? 'block' : 'none';
-  document.getElementById('imgViewerNext').style.display = viewerUrls.length > 1 ? 'block' : 'none';
+  // 다운로드 버튼
+  const dl = document.getElementById('imgViewerDownload');
+  dl.href = url;
+  dl.download = 'image_' + (viewerIdx+1) + '.jpg';
 }
