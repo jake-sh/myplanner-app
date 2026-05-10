@@ -63,6 +63,12 @@ function showScreen(id) {
 }
 
 window.addEventListener('popstate', function(e) {
+  // 이미지 뷰어가 열려있으면 닫기
+  var viewer = document.getElementById('imgViewer');
+  if (viewer && viewer.style.display === 'flex') {
+    closeImgViewer();
+    return;
+  }
   // 뒤로가기 누르면 메인 화면으로
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('fakeApp').classList.add('active');
@@ -1701,6 +1707,8 @@ function openImgViewer(urls, idx) {
   const viewer = document.getElementById('imgViewer');
   viewer.style.display = 'flex';
   updateViewer();
+  // 뒤로가기로 뷰어 닫기
+  history.pushState({ imgViewer: true }, '');
 
   // 스와이프 이벤트
   const area = document.getElementById('imgViewerSwipe');
