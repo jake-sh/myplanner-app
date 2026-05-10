@@ -32,15 +32,15 @@
     </div>
   </div>
   <div class="menu-grid" id="menuGrid">
-    <div class="menu-item" data-dot="0" ontouchstart="dotStart(event,0)" onmousedown="dotStart(event,0)"><div class="menu-icon">📋</div><div class="menu-label">할 일</div></div>
-    <div class="menu-item" data-dot="1" ontouchstart="dotStart(event,1)" onmousedown="dotStart(event,1)"><div class="menu-icon">📅</div><div class="menu-label">일정표</div></div>
-    <div class="menu-item" data-dot="2" ontouchstart="dotStart(event,2)" onmousedown="dotStart(event,2)"><div class="menu-icon">⏰</div><div class="menu-label">알림</div></div>
-    <div class="menu-item" data-dot="3" ontouchstart="dotStart(event,3)" onmousedown="dotStart(event,3)"><div class="menu-icon">📝</div><div class="menu-label">메모</div></div>
-    <div class="menu-item" data-dot="4" ontouchstart="dotStart(event,4)" onmousedown="dotStart(event,4)"><div class="menu-icon">🎯</div><div class="menu-label">목표</div></div>
-    <div class="menu-item" data-dot="5" ontouchstart="dotStart(event,5)" onmousedown="dotStart(event,5)"><div class="menu-icon">📊</div><div class="menu-label">통계</div></div>
-    <div class="menu-item" data-dot="6" ontouchstart="dotStart(event,6)" onmousedown="dotStart(event,6)"><div class="menu-icon">🗂️</div><div class="menu-label">프로젝트</div></div>
-    <div class="menu-item" data-dot="7" ontouchstart="dotStart(event,7)" onmousedown="dotStart(event,7)"><div class="menu-icon">🏷️</div><div class="menu-label">태그</div></div>
-    <div class="menu-item" data-dot="8" ontouchstart="dotStart(event,8)" onmousedown="dotStart(event,8)"><div class="menu-icon">📆</div><div class="menu-label">달력</div></div>
+    <div class="menu-item" data-dot="0" ontouchstart="dotStart(event,0)" onmousedown="dotStart(event,0)"><div class="menu-icon">📋</div><div class="menu-label" data-i18n="todo">할 일</div></div>
+    <div class="menu-item" data-dot="1" ontouchstart="dotStart(event,1)" onmousedown="dotStart(event,1)"><div class="menu-icon">📅</div><div class="menu-label" data-i18n="schedule">일정표</div></div>
+    <div class="menu-item" data-dot="2" ontouchstart="dotStart(event,2)" onmousedown="dotStart(event,2)"><div class="menu-icon">⏰</div><div class="menu-label" data-i18n="alarm">알림</div></div>
+    <div class="menu-item" data-dot="3" ontouchstart="dotStart(event,3)" onmousedown="dotStart(event,3)"><div class="menu-icon">📝</div><div class="menu-label" data-i18n="memo">메모</div></div>
+    <div class="menu-item" data-dot="4" ontouchstart="dotStart(event,4)" onmousedown="dotStart(event,4)"><div class="menu-icon">🎯</div><div class="menu-label" data-i18n="goal">목표</div></div>
+    <div class="menu-item" data-dot="5" ontouchstart="dotStart(event,5)" onmousedown="dotStart(event,5)"><div class="menu-icon">📊</div><div class="menu-label" data-i18n="stats">통계</div></div>
+    <div class="menu-item" data-dot="6" ontouchstart="dotStart(event,6)" onmousedown="dotStart(event,6)"><div class="menu-icon">🗂️</div><div class="menu-label" data-i18n="project">프로젝트</div></div>
+    <div class="menu-item" data-dot="7" ontouchstart="dotStart(event,7)" onmousedown="dotStart(event,7)"><div class="menu-icon">🏷️</div><div class="menu-label" data-i18n="tag">태그</div></div>
+    <div class="menu-item" data-dot="8" ontouchstart="dotStart(event,8)" onmousedown="dotStart(event,8)"><div class="menu-icon">📆</div><div class="menu-label" data-i18n="calendar">달력</div></div>
   </div>
 
   <!-- 날씨 위젯 -->
@@ -78,16 +78,16 @@
 <div id="settingsScreen" class="screen">
   <div class="sub-header">
     <button onclick="showScreen('fakeApp')" class="back-btn">← 뒤로</button>
-    <span class="sub-title">설정</span>
+    <span class="sub-title" data-i18n="settingsTitle">설정</span>
   </div>
   <div class="settings-content">
     <div class="settings-section">
-      <div class="settings-label">앱 이름</div>
+      <div class="settings-label" data-i18n="appNameLabel">앱 이름</div>
       <input id="appNameInput" class="settings-input" type="text" placeholder="MyPlanner"/>
-      <button class="settings-btn" onclick="saveAppName()">저장</button>
+      <button class="settings-btn" onclick="saveAppName()" data-i18n="save">저장</button>
     </div>
     <div class="settings-section">
-      <div class="settings-label">테마 색상</div>
+      <div class="settings-label" data-i18n="themeColor">테마 색상</div>
       <div class="theme-options">
         <button class="theme-btn" style="background:#4A90D9" onclick="setTheme('#4A90D9')">블루</button>
         <button class="theme-btn" style="background:#22c55e" onclick="setTheme('#22c55e')">그린</button>
@@ -96,13 +96,13 @@
       </div>
     </div>
     <div class="settings-section">
-      <div class="settings-label">알림</div>
-      <div class="settings-row"><span>앱 알림</span><label class="toggle"><input type="checkbox" id="notifApp" onchange="toggleSettingsNotif('app',this.checked)"/><span class="slider"></span></label></div>
-      <div class="settings-row"><span>일정 알림</span><label class="toggle"><input type="checkbox" id="notifCal" onchange="toggleSettingsNotif('cal',this.checked)"/><span class="slider"></span></label></div>
-      <div class="settings-row"><span>할 일 알림</span><label class="toggle"><input type="checkbox" id="notifTodo" onchange="toggleSettingsNotif('todo',this.checked)"/><span class="slider"></span></label></div>
+      <div class="settings-label" data-i18n="notifSection">알림</div>
+      <div class="settings-row"><span data-i18n="notifApp">앱 알림</span><label class="toggle"><input type="checkbox" id="notifApp" onchange="toggleSettingsNotif('app',this.checked)"/><span class="slider"></span></label></div>
+      <div class="settings-row"><span data-i18n="notifCal">일정 알림</span><label class="toggle"><input type="checkbox" id="notifCal" onchange="toggleSettingsNotif('cal',this.checked)"/><span class="slider"></span></label></div>
+      <div class="settings-row"><span data-i18n="notifTodo">할 일 알림</span><label class="toggle"><input type="checkbox" id="notifTodo" onchange="toggleSettingsNotif('todo',this.checked)"/><span class="slider"></span></label></div>
     </div>
     <div class="settings-section">
-      <div class="settings-label">언어</div>
+      <div class="settings-label" data-i18n="language">언어</div>
       <select class="settings-select"><option>한국어</option><option>English</option><option>日本語</option></select>
     </div>
     <div class="settings-section">
@@ -116,7 +116,7 @@
 <div id="todoScreen" class="screen">
   <div class="sub-header">
     <button onclick="showScreen('fakeApp')" class="back-btn">← 뒤로</button>
-    <span class="sub-title">할 일</span>
+    <span class="sub-title" data-i18n="todoTitle">할 일</span>
     <span id="todoCount" class="todo-count"></span>
   </div>
   <div id="todoSyncStatus" style="text-align:center;font-size:12px;color:#94a3b8;padding:4px 0;"></div>
@@ -131,7 +131,7 @@
 <div id="memoScreen" class="screen">
   <div class="sub-header">
     <button onclick="showScreen('fakeApp')" class="back-btn">← 뒤로</button>
-    <span class="sub-title">메모</span>
+    <span class="sub-title" data-i18n="memoTitle">메모</span>
     <button class="sub-action-btn" onclick="openNewMemo()">+ 새 메모</button>
   </div>
   <div id="memoList" class="memo-list"></div>
@@ -142,7 +142,7 @@
   <div class="sub-header">
     <button onclick="closeMemoEditor()" class="back-btn">← 목록</button>
     <span class="sub-title" id="memoEditorTitle">새 메모</span>
-    <button class="sub-action-btn" onclick="saveMemo()">저장</button>
+    <button class="sub-action-btn" onclick="saveMemo()" data-i18n="save">저장</button>
   </div>
   <div class="memo-editor-wrap">
     <input id="memoTitleInput" class="memo-title-input" type="text" placeholder="제목"/>
@@ -154,7 +154,7 @@
 <div id="calendarScreen" class="screen">
   <div class="sub-header">
     <button onclick="showScreen('fakeApp')" class="back-btn">← 뒤로</button>
-    <span class="sub-title">달력</span>
+    <span class="sub-title" data-i18n="calendarTitle">달력</span>
     <button class="cal-refresh-btn" onclick="refreshCalendar()">새로고침</button>
   </div>
   <div class="calendar-wrap">
@@ -212,7 +212,7 @@
         </svg>
       </button>
       <div style="flex:1;"></div>
-      <div class="chat-header-center"><div class="chat-friend-name">목록</div></div>
+      <div class="chat-header-center"><div class="chat-friend-name" data-i18n="chatList">목록</div></div>
       <div class="chat-header-actions">
         <button class="chat-header-btn" onclick="openAddFriend()">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -316,7 +316,7 @@
       <div style="font-size:12px;color:#94a3b8;margin-bottom:6px;">날짜</div>
       <input id="statDateInput" type="date" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;box-sizing:border-box;"/>
     </div>
-    <button class="chat-action-btn" onclick="saveStatEntry()">저장</button>
+    <button class="chat-action-btn" onclick="saveStatEntry()" data-i18n="save">저장</button>
     <button class="modal-cancel" onclick="closeAddStatModal()">취소</button>
   </div>
 </div>
@@ -432,15 +432,15 @@
   </div>
   <p style="color:#64748b;text-align:center;padding:14px 20px 0;font-size:13px;">메뉴를 드래그해서 새 패턴 입력 (최소 4개)</p>
   <div class="menu-grid" id="setupGrid">
-    <div class="menu-item" data-dot="0" ontouchstart="setupDotStart(event,0)" onmousedown="setupDotStart(event,0)"><div class="menu-icon">📋</div><div class="menu-label">할 일</div></div>
-    <div class="menu-item" data-dot="1" ontouchstart="setupDotStart(event,1)" onmousedown="setupDotStart(event,1)"><div class="menu-icon">📅</div><div class="menu-label">일정표</div></div>
-    <div class="menu-item" data-dot="2" ontouchstart="setupDotStart(event,2)" onmousedown="setupDotStart(event,2)"><div class="menu-icon">⏰</div><div class="menu-label">알림</div></div>
-    <div class="menu-item" data-dot="3" ontouchstart="setupDotStart(event,3)" onmousedown="setupDotStart(event,3)"><div class="menu-icon">📝</div><div class="menu-label">메모</div></div>
-    <div class="menu-item" data-dot="4" ontouchstart="setupDotStart(event,4)" onmousedown="setupDotStart(event,4)"><div class="menu-icon">🎯</div><div class="menu-label">목표</div></div>
-    <div class="menu-item" data-dot="5" ontouchstart="setupDotStart(event,5)" onmousedown="setupDotStart(event,5)"><div class="menu-icon">📊</div><div class="menu-label">통계</div></div>
-    <div class="menu-item" data-dot="6" ontouchstart="setupDotStart(event,6)" onmousedown="setupDotStart(event,6)"><div class="menu-icon">🗂️</div><div class="menu-label">프로젝트</div></div>
-    <div class="menu-item" data-dot="7" ontouchstart="setupDotStart(event,7)" onmousedown="setupDotStart(event,7)"><div class="menu-icon">🏷️</div><div class="menu-label">태그</div></div>
-    <div class="menu-item" data-dot="8" ontouchstart="setupDotStart(event,8)" onmousedown="setupDotStart(event,8)"><div class="menu-icon">📆</div><div class="menu-label">달력</div></div>
+    <div class="menu-item" data-dot="0" ontouchstart="setupDotStart(event,0)" onmousedown="setupDotStart(event,0)"><div class="menu-icon">📋</div><div class="menu-label" data-i18n="todo">할 일</div></div>
+    <div class="menu-item" data-dot="1" ontouchstart="setupDotStart(event,1)" onmousedown="setupDotStart(event,1)"><div class="menu-icon">📅</div><div class="menu-label" data-i18n="schedule">일정표</div></div>
+    <div class="menu-item" data-dot="2" ontouchstart="setupDotStart(event,2)" onmousedown="setupDotStart(event,2)"><div class="menu-icon">⏰</div><div class="menu-label" data-i18n="alarm">알림</div></div>
+    <div class="menu-item" data-dot="3" ontouchstart="setupDotStart(event,3)" onmousedown="setupDotStart(event,3)"><div class="menu-icon">📝</div><div class="menu-label" data-i18n="memo">메모</div></div>
+    <div class="menu-item" data-dot="4" ontouchstart="setupDotStart(event,4)" onmousedown="setupDotStart(event,4)"><div class="menu-icon">🎯</div><div class="menu-label" data-i18n="goal">목표</div></div>
+    <div class="menu-item" data-dot="5" ontouchstart="setupDotStart(event,5)" onmousedown="setupDotStart(event,5)"><div class="menu-icon">📊</div><div class="menu-label" data-i18n="stats">통계</div></div>
+    <div class="menu-item" data-dot="6" ontouchstart="setupDotStart(event,6)" onmousedown="setupDotStart(event,6)"><div class="menu-icon">🗂️</div><div class="menu-label" data-i18n="project">프로젝트</div></div>
+    <div class="menu-item" data-dot="7" ontouchstart="setupDotStart(event,7)" onmousedown="setupDotStart(event,7)"><div class="menu-icon">🏷️</div><div class="menu-label" data-i18n="tag">태그</div></div>
+    <div class="menu-item" data-dot="8" ontouchstart="setupDotStart(event,8)" onmousedown="setupDotStart(event,8)"><div class="menu-icon">📆</div><div class="menu-label" data-i18n="calendar">달력</div></div>
   </div>
   <div id="setupStatus" style="color:#60a5fa;text-align:center;font-size:14px;min-height:20px;padding:0 20px;"></div>
   <button id="savePatternBtn" class="settings-btn save-pattern-btn" onclick="savePattern()" style="display:none;">패턴 저장</button>
