@@ -135,9 +135,10 @@ html,body{height:100%;font-family:'Nunito',sans-serif;background:var(--bg);color
 }
 .theme-options{display:flex;gap:12px;flex-wrap:nowrap;align-items:center;justify-content:flex-start;}
 .theme-btn{
-  border:none;outline:none;color:transparent;
+  border:none!important;outline:none!important;color:transparent;
   width:52px;height:36px;border-radius:12px;
   cursor:pointer;font-family:inherit;flex-shrink:0;
+  box-shadow:none!important;
 }
 
 /* 토글 */
