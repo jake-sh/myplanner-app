@@ -595,13 +595,14 @@ function openAddFriend() { document.getElementById('addFriendModal').style.displ
 function closeAddFriend() { stopQrScanner(); document.getElementById('addFriendModal').style.display = 'none'; }
 
 function switchAddTab(tab) {
+  const tabMap = { 'code': 'tabCode', 'qr': 'tabQRScan', 'myqr': 'tabMyQR' };
   ['code','qr','myqr'].forEach(t => {
     document.getElementById('addTab' + t[0].toUpperCase() + t.slice(1)).style.display = 'none';
-    document.getElementById('tabBtn' + t[0].toUpperCase() + t.slice(1)).classList.remove('active');
+    document.getElementById(tabMap[t]).classList.remove('active');
   });
   const el = document.getElementById('addTab' + tab[0].toUpperCase() + tab.slice(1));
   el.style.display = tab === 'myqr' ? 'flex' : 'block';
-  document.getElementById('tabBtn' + tab[0].toUpperCase() + tab.slice(1)).classList.add('active');
+  document.getElementById(tabMap[tab]).classList.add('active');
   if (tab === 'myqr') renderMyQr();
   else if (tab === 'qr') startQrScanner();
   else stopQrScanner();
@@ -609,9 +610,9 @@ function switchAddTab(tab) {
 
 async function addFriendByCode() {
   const code = document.getElementById('friendCodeInput').value.trim().toUpperCase();
-  if (!code) { alert('코드를 입력하세요'); return; }
-  if (code === myCode) { alert('자신의 코드는 추가할 수 없습니다'); return; }
-  if (friends.includes(code)) { alert('이미 추가된 친구입니다'); return; }
+  if (!code) { alert(localStorage.getItem('lang')==='en' ? 'Please enter a code' : '코드를 입력하세요'); return; }
+  if (code === myCode) { alert(localStorage.getItem('lang')==='en' ? 'You cannot add yourself' : '자신의 코드는 추가할 수 없습니다'); return; }
+  if (friends.includes(code)) { alert(localStorage.getItem('lang')==='en' ? 'Already added' : '이미 추가된 친구입니다'); return; }
 
   // 존재하는 사용자인지 확인
   const snap = await db.collection('users').doc(code).get();
