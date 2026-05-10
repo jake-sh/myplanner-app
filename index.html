@@ -44,7 +44,7 @@
   </div>
 
   <!-- 날씨 위젯 -->
-  <div id="weatherWidget" style="margin:8px 16px 12px;background:linear-gradient(135deg,#1e3a5f,#2d6a9f);border-radius:20px;padding:14px;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,0.15);flex-shrink:0;">
+  <div id="weatherWidget" style="margin:8px 16px 12px;background:#fff;border-radius:20px;padding:14px 16px;box-shadow:0 2px 12px rgba(108,99,255,0.08);flex-shrink:0;border:1.5px solid #F0F1F8;">
     <!-- 날씨 상단 -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
       <div style="display:flex;align-items:center;gap:8px;">
@@ -54,21 +54,21 @@
             <span id="widgetTemp" style="font-size:26px;font-weight:700;">--°</span>
             <span style="font-size:11px;opacity:0.7;white-space:nowrap;"><span id="widgetTempMin">--°</span> / <span id="widgetTempMax">--°</span></span>
           </div>
-          <div id="widgetDesc" style="font-size:11px;opacity:0.8;min-height:14px;">로딩 중...</div>
+          <div id="widgetDesc" style="font-size:11px;color:#8B8FA8;font-weight:600;min-height:14px;">로딩 중...</div>
         </div>
       </div>
-      <div id="widgetLocation" style="font-size:11px;opacity:0.6;text-align:right;min-width:60px;">--</div>
+      <div id="widgetLocation" style="font-size:11px;color:#8B8FA8;font-weight:600;text-align:right;min-width:60px;">--</div>
     </div>
     <!-- 미세먼지 + 옷차림 -->
     <div style="display:flex;gap:8px;">
-      <div id="widgetDust" style="flex:1;background:rgba(255,255,255,0.15);border-radius:12px;padding:8px 12px;min-height:58px;">
-        <div id="dustLabel" style="font-size:10px;opacity:0.7;margin-bottom:4px;">미세먼지</div>
-        <div id="widgetDustVal" style="font-size:12px;font-weight:700;min-height:32px;">미세 --<br>초미세 --</div>
+      <div id="widgetDust" style="flex:1;background:#EEF0FF;border-radius:14px;padding:10px 12px;min-height:58px;">
+        <div id="dustLabel" style="font-size:10px;color:#8B8FA8;font-weight:700;margin-bottom:4px;">미세먼지</div>
+        <div id="widgetDustVal" style="font-size:12px;font-weight:700;min-height:32px;color:#1A1A2E;">미세 --<br>초미세 --</div>
         <div id="widgetDustLevel" style="font-size:10px;opacity:0.8;"></div>
       </div>
-      <div id="widgetClothes" style="flex:2;background:rgba(255,255,255,0.15);border-radius:12px;padding:8px 12px;min-height:58px;">
-        <div id="clothesLabel" style="font-size:10px;opacity:0.7;margin-bottom:4px;">👕 옷차림 추천</div>
-        <div id="widgetClothesVal" style="font-size:12px;font-weight:600;line-height:1.4;min-height:32px;">로딩 중...</div>
+      <div id="widgetClothes" style="flex:2;background:#E8F8F5;border-radius:14px;padding:10px 12px;min-height:58px;">
+        <div id="clothesLabel" style="font-size:10px;color:#8B8FA8;font-weight:700;margin-bottom:4px;">👕 옷차림 추천</div>
+        <div id="widgetClothesVal" style="font-size:12px;font-weight:700;line-height:1.4;min-height:32px;color:#1A1A2E;">로딩 중...</div>
       </div>
     </div>
   </div>
