@@ -1,143 +1,3 @@
-
-// ── i18n ──────────────────────────────────────────────
-const I18N = {
-  ko: {
-    // 메인 메뉴
-    appName: 'MyPlanner',
-    todo: t('todoTitle'), schedule: '일정표', alarm: '알림',
-    memo: '메모', goal: '목표', stats: '통계',
-    project: '프로젝트', tag: '태그', calendar: '달력',
-    settings: '설정',
-    // 설정
-    settingsTitle: '설정',
-    appNameLabel: '앱 이름',
-    save: '저장',
-    themeColor: '테마 색상',
-    blue: '블루', green: '그린', purple: '퍼플', yellow: '옐로',
-    notifSection: '알림',
-    notifApp: '앱 알림', notifCal: '일정 알림', notifTodo: '할 일 알림',
-    language: '언어',
-    back: '← 뒤로',
-    // 할일
-    todoTitle: t('todoTitle'),
-    todoPlaceholder: '새 할 일 추가...',
-    // 메모
-    memoTitle: '메모', newMemo: '새 메모',
-    memoPlaceholder: '메모를 입력하세요...',
-    memoSave: '저장', memoDelete: '삭제',
-    // 달력
-    calendarTitle: '달력',
-    // 채팅
-    chatList: '목록',
-    chatSetupTitle: '채팅 시작',
-    myCode: '내 식별 코드',
-    friendCode: '친구 식별 코드',
-    enterCode: '코드 입력...',
-    connect: '연결',
-    addFriend: '친구 추가',
-    noFriend: t('noFriend'),
-    msgPlaceholder: t('msgPlaceholder'),
-    // 공통
-    cancel: '취소', confirm: '확인', delete: '삭제',
-    autoDelete: '자동삭제',
-    // 통계
-    statsTitle: '건강 통계',
-    statInput: '수치 입력',
-    statCategory: '카테고리',
-    statValue: '수치',
-    statDate: '날짜',
-    recentRecord: '최근 기록',
-    noData: '데이터가 없어요.\n+ 입력으로 추가해보세요!',
-    // 날씨
-    loading: t('loading'),
-    clothes: '👕 옷차림 추천',
-    dust: '미세먼지',
-    locationNeeded: t('locationNeeded'),
-  },
-  en: {
-    // Main menu
-    appName: 'MyPlanner',
-    todo: 'To-Do', schedule: 'Schedule', alarm: 'Alarm',
-    memo: 'Memo', goal: 'Goals', stats: 'Stats',
-    project: 'Projects', tag: 'Tags', calendar: 'Calendar',
-    settings: 'Settings',
-    // Settings
-    settingsTitle: 'Settings',
-    appNameLabel: 'App Name',
-    save: 'Save',
-    themeColor: 'Theme Color',
-    blue: 'Blue', green: 'Green', purple: 'Purple', yellow: 'Yellow',
-    notifSection: 'Notifications',
-    notifApp: 'App Alerts', notifCal: 'Schedule Alerts', notifTodo: 'To-Do Alerts',
-    language: 'Language',
-    back: '← Back',
-    // Todo
-    todoTitle: 'To-Do',
-    todoPlaceholder: 'Add new task...',
-    // Memo
-    memoTitle: 'Memo', newMemo: 'New Memo',
-    memoPlaceholder: 'Enter memo...',
-    memoSave: 'Save', memoDelete: 'Delete',
-    // Calendar
-    calendarTitle: 'Calendar',
-    // Chat
-    chatList: 'Chats',
-    chatSetupTitle: 'Start Chat',
-    myCode: 'My ID Code',
-    friendCode: "Friend's ID Code",
-    enterCode: 'Enter code...',
-    connect: 'Connect',
-    addFriend: 'Add Friend',
-    noFriend: 'Add a friend to start chatting',
-    msgPlaceholder: 'Type a message...',
-    // Common
-    cancel: 'Cancel', confirm: 'OK', delete: 'Delete',
-    autoDelete: 'Auto-delete',
-    // Stats
-    statsTitle: 'Health Stats',
-    statInput: 'Enter Data',
-    statCategory: 'Category',
-    statValue: 'Value',
-    statDate: 'Date',
-    recentRecord: 'Recent Records',
-    noData: 'No data yet.\nTap + to add!',
-    // Weather
-    loading: 'Loading...',
-    clothes: '👕 Outfit',
-    dust: 'Air Quality',
-    locationNeeded: 'Location permission needed',
-  }
-};
-
-let currentLang = localStorage.getItem('lang') || 'ko';
-
-function t(key) {
-  return (I18N[currentLang] && I18N[currentLang][key]) || (I18N['ko'][key]) || key;
-}
-
-function applyLang() {
-  currentLang = localStorage.getItem('lang') || 'ko';
-  // data-i18n 속성으로 자동 적용
-  document.querySelectorAll('[data-i18n]').forEach(function(el) {
-    var key = el.getAttribute('data-i18n');
-    var attr = el.getAttribute('data-i18n-attr');
-    if (attr) {
-      el.setAttribute(attr, t(key));
-    } else {
-      el.textContent = t(key);
-    }
-  });
-}
-
-function setLang(lang) {
-  currentLang = lang;
-  localStorage.setItem('lang', lang);
-  applyLang();
-  // 동적 UI 갱신
-  if (document.getElementById('todoScreen').classList.contains('active')) renderTodoList();
-  if (document.getElementById('statsScreen') || document.querySelector('#fakeFeature.active')) renderStatsUI && renderStatsUI();
-}
-
 // ── FIREBASE ───────────────────────────────────────
 const firebaseConfig = {
   apiKey: "AIzaSyDmyo0wXdWXXclODKQY9vFMoBXca3ObuvM",
@@ -177,7 +37,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if (n) { document.getElementById('appTitle').textContent = n; document.title = n; }
   const t = localStorage.getItem('themeColor');
   if (t) document.documentElement.style.setProperty('--primary', t);
-  showScreen('fakeApp'); setTimeout(applyLang, 0);
+  showScreen('fakeApp');
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 });
 
@@ -369,7 +229,7 @@ const fakeData = [
   ['🏷️ 업무 (24)','🏷️ 개인 (12)','🏷️ 중요 (8)'],
   null
 ];
-const fakeTitles = [t('todoTitle'),'일정표','알림','메모','목표','통계','프로젝트','태그','달력'];
+const fakeTitles = ['할 일','일정표','알림','메모','목표','통계','프로젝트','태그','달력'];
 
 function openFakeFeature(i) {
   document.getElementById('featureTitle').textContent = fakeTitles[i];
@@ -380,14 +240,8 @@ function openFakeFeature(i) {
 }
 
 // ── SETTINGS ───────────────────────────────────────
-function changeLang(lang) {
-  setLang(lang);
-}
-
 function openSettings() {
   document.getElementById('appNameInput').value = localStorage.getItem('appName') || '';
-  var langSel = document.getElementById('langSelect');
-  if (langSel) langSel.value = currentLang;
   // 알림 토글 초기화
   document.getElementById('notifApp').checked = localStorage.getItem('notifApp') === 'true';
   document.getElementById('notifCal').checked = localStorage.getItem('notifCal') === 'true';
@@ -422,7 +276,7 @@ function openTodo() {
         const data = snap.data();
         localStorage.setItem('todos', JSON.stringify(data.todos || []));
         if (!firstLoad && data.updatedBy && data.updatedBy !== myCode) {
-          if (localStorage.getItem('notifTodo') === 'true') sendNotification(t('todoTitle'), '새로운 할 일이 있어요');
+          if (localStorage.getItem('notifTodo') === 'true') sendNotification('할 일', '새로운 할 일이 있어요');
         }
         firstLoad = false;
       }
@@ -1480,7 +1334,7 @@ function setSD(d) {
 }
 
 function openStats() {
-  document.getElementById("featureTitle").textContent = t("statsTitle");
+  document.getElementById("featureTitle").textContent = "건강 통계";
   // Firestore 리스너
   if (statListener) { statListener(); statListener = null; }
   var sid = getSharedStatId();
@@ -1527,13 +1381,13 @@ function renderStatsUI() {
 
   var chartHtml = '<div style="background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:#1e293b;">' + cat.emoji + " " + cat.label + '</div><div style="font-size:11px;color:#94a3b8;margin-bottom:12px;">단위: ' + cat.unit + '</div>';
   if (entries.length === 0) {
-    chartHtml += '<div style="text-align:center;color:#94a3b8;font-size:13px;padding:30px 0;">' + t('noData').replace('\\n','<br>') + '</div>';
+    chartHtml += '<div style="text-align:center;color:#94a3b8;font-size:13px;padding:30px 0;">데이터가 없어요.<br>+ 입력으로 추가해보세요!</div>';
   } else {
     chartHtml += '<canvas id="sCanvas" style="width:100%;"></canvas>';
   }
   chartHtml += "</div>";
 
-  var listHtml = '<div style="font-size:13px;font-weight:700;color:#64748b;margin-bottom:8px;">' + t('recentRecord') + '</div>';
+  var listHtml = '<div style="font-size:13px;font-weight:700;color:#64748b;margin-bottom:8px;">최근 기록</div>';
   entries.slice().reverse().slice(0,10).forEach(function(e, i) {
     var origIdx = entries.length - 1 - i;
     var row = '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#fff;border-radius:12px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,.05);">'
@@ -1625,7 +1479,7 @@ function openSM() {
     + '<div style="font-size:12px;color:#94a3b8;margin-bottom:4px;">카테고리</div>'
     + '<select id="smCat" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:13px;margin-bottom:12px;box-sizing:border-box;">' + selOpts + '</select>'
     + '<div style="font-size:12px;color:#94a3b8;margin-bottom:4px;">수치</div>'
-    + '<input id="smVal" type="number" step="0.1" placeholder=t("statInput") style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:16px;margin-bottom:12px;box-sizing:border-box;"/>'
+    + '<input id="smVal" type="number" step="0.1" placeholder="수치 입력" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:16px;margin-bottom:12px;box-sizing:border-box;"/>'
     + '<div style="font-size:12px;color:#94a3b8;margin-bottom:4px;">날짜</div>'
     + '<input id="smDate" type="date" value="' + today + '" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;margin-bottom:16px;box-sizing:border-box;"/>'
     + '<button id="smSaveBtn" style="width:100%;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:8px;">저장</button>'
@@ -1701,16 +1555,15 @@ function getDustLevel(pm10) {
 }
 
 function getClothes(temp, pm10) {
-  var isEn = currentLang === 'en';
-  var maskNote = pm10 > 80 ? (isEn ? ' Wear a mask' : ' 마스크 착용 권장') : '';
-  if (temp >= 28) return (isEn ? 'Sleeveless / Shorts' : '민소매·반팔·반바지') + maskNote;
-  if (temp >= 23) return (isEn ? 'T-shirt / Shorts' : '반팔·얇은 셔츠·반바지') + maskNote;
-  if (temp >= 20) return (isEn ? 'Long sleeve / Jeans' : '블라우스·긴팔·청바지') + maskNote;
-  if (temp >= 17) return (isEn ? 'Cardigan / Pants' : '얇은 가디건·긴바지') + maskNote;
-  if (temp >= 12) return (isEn ? 'Jacket / Jeans' : '자켓·가디건·청바지') + maskNote;
-  if (temp >= 9) return (isEn ? 'Trench coat / Knit' : '트렌치코트·니트') + maskNote;
-  if (temp >= 5) return (isEn ? 'Wool coat / Heattech' : '울코트·히트텍') + maskNote;
-  return (isEn ? 'Padding / Heavy coat' : '패딩·두꺼운 코트') + maskNote;
+  var dust = pm10 > 80 ? ' 마스크 착용 권장' : '';
+  if (temp >= 28) return '민소매·반팔·반바지·원피스' + dust;
+  if (temp >= 23) return '반팔·얇은 셔츠·반바지' + dust;
+  if (temp >= 20) return '블라우스·긴팔·면바지·청바지' + dust;
+  if (temp >= 17) return '얇은 가디건·긴바지' + dust;
+  if (temp >= 12) return '자켓·가디건·청바지' + dust;
+  if (temp >= 9) return '트렌치코트·니트·청바지' + dust;
+  if (temp >= 5) return '울코트·히트텍·레이어드' + dust;
+  return '패딩·두꺼운 코트·목도리' + dust;
 }
 
 async function loadWeather() {
@@ -1761,7 +1614,7 @@ async function loadWeather() {
       document.getElementById('widgetClothesVal').textContent = '날씨 정보 없음';
     }
   }, function() {
-    document.getElementById('widgetClothesVal').textContent = t('locationNeeded');
+    document.getElementById('widgetClothesVal').textContent = '위치 권한 필요';
   });
 }
 
@@ -1820,3 +1673,107 @@ function updateViewer() {
   dl.href = url;
   dl.download = 'image_' + (viewerIdx+1) + '.jpg';
 }
+
+// ── i18n ──────────────────────────────────────────────
+const I18N = {
+  ko: {
+    todo: '할 일', schedule: '일정표', alarm: '알림',
+    memo: '메모', goal: '목표', stats: '통계',
+    project: '프로젝트', tag: '태그', calendar: '달력',
+    settings: '설정', back: '← 뒤로',
+    settingsTitle: '설정', appNameLabel: '앱 이름',
+    save: '저장', themeColor: '테마 색상',
+    notifSection: '알림', notifApp: '앱 알림',
+    notifCal: '일정 알림', notifTodo: '할 일 알림',
+    language: '언어',
+    todoTitle: '할 일', todoPlaceholder: '새 할 일 추가...',
+    memoTitle: '메모', calendarTitle: '달력',
+    statsTitle: '건강 통계', statInput: '수치 입력',
+    recentRecord: '최근 기록',
+    noData: '데이터가 없어요.\n+ 입력으로 추가해보세요!',
+    chatList: '목록', noFriend: '친구를 추가하면 채팅이 시작됩니다',
+    msgPlaceholder: '메시지 입력...',
+    dust: '미세먼지', clothes: '👕 옷차림 추천',
+    loading: '로딩 중...', locationNeeded: '위치 권한 필요',
+    cancel: '취소', save2: '저장', delete: '삭제',
+  },
+  en: {
+    todo: 'To-Do', schedule: 'Schedule', alarm: 'Alarm',
+    memo: 'Memo', goal: 'Goals', stats: 'Stats',
+    project: 'Projects', tag: 'Tags', calendar: 'Calendar',
+    settings: 'Settings', back: '← Back',
+    settingsTitle: 'Settings', appNameLabel: 'App Name',
+    save: 'Save', themeColor: 'Theme Color',
+    notifSection: 'Notifications', notifApp: 'App Alerts',
+    notifCal: 'Schedule Alerts', notifTodo: 'To-Do Alerts',
+    language: 'Language',
+    todoTitle: 'To-Do', todoPlaceholder: 'Add new task...',
+    memoTitle: 'Memo', calendarTitle: 'Calendar',
+    statsTitle: 'Health Stats', statInput: 'Enter Data',
+    recentRecord: 'Recent Records',
+    noData: 'No data yet.\nTap + to add!',
+    chatList: 'Chats', noFriend: 'Add a friend to start chatting',
+    msgPlaceholder: 'Type a message...',
+    dust: 'Air Quality', clothes: '👕 Outfit Tip',
+    loading: 'Loading...', locationNeeded: 'Location permission needed',
+    cancel: 'Cancel', save2: 'Save', delete: 'Delete',
+  }
+};
+
+let currentLang = localStorage.getItem('lang') || 'ko';
+
+function t(key) {
+  return (I18N[currentLang] && I18N[currentLang][key]) || (I18N['ko'][key]) || key;
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('lang', lang);
+  applyLang();
+}
+
+function applyLang() {
+  currentLang = localStorage.getItem('lang') || 'ko';
+
+  // 언어 선택 드롭다운 동기화
+  const sel = document.getElementById('langSelect');
+  if (sel) sel.value = currentLang;
+
+  // 메인 메뉴 라벨
+  const menuLabels = document.querySelectorAll('.menu-label');
+  const menuKeys = ['todo','schedule','alarm','memo','goal','stats','project','tag','calendar'];
+  menuLabels.forEach(function(el, i) {
+    if (menuKeys[i]) el.textContent = t(menuKeys[i]);
+  });
+
+  // 설정 화면
+  _setText('settingsTitle', t('settingsTitle'));
+  _setText('appNameLabel', t('appNameLabel'));
+  _setText('themeColorLabel', t('themeColor'));
+  _setText('notifSectionLabel', t('notifSection'));
+  _setText('langLabel', t('language'));
+
+  // 할일 placeholder
+  const todoInput = document.getElementById('todoInput');
+  if (todoInput) todoInput.placeholder = t('todoPlaceholder');
+
+  // 채팅
+  const chatListTitle = document.querySelector('.chat-friend-name');
+  if (chatListTitle && chatListTitle.textContent !== '') {
+    // 친구 목록 헤더만
+  }
+  const msgInput = document.getElementById('msgInput');
+  if (msgInput) msgInput.placeholder = t('msgPlaceholder');
+
+  // 날씨 위젯
+  _setText('dustLabel', t('dust'));
+  _setText('clothesLabel', t('clothes'));
+}
+
+function _setText(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
+
+// 앱 로드 시 적용
+setTimeout(applyLang, 300);
