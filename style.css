@@ -255,12 +255,12 @@ input:checked+.slider:before{transform:translateX(20px);}
 :root{
   --chat-bg:#000000;--chat-surface:#111111;--chat-surface2:#1a1a1a;
   --chat-border:#2a2a2a;--chat-text:#f1f5f9;--chat-text2:#94a3b8;
-  --chat-bubble-mine:#6C63FF;--chat-bubble-theirs:#1a1a1a;
+  --chat-bubble-mine:var(--primary);--chat-bubble-theirs:#1a1a1a;
 }
 .chat-light{
   --chat-bg:#F8F9FF;--chat-surface:#FFFFFF;--chat-surface2:#F0F1F8;
   --chat-border:#E2E4F0;--chat-text:#1A1A2E;--chat-text2:#8B8FA8;
-  --chat-bubble-mine:#6C63FF;--chat-bubble-theirs:#F0F1F8;
+  --chat-bubble-mine:var(--primary);--chat-bubble-theirs:#F0F1F8;
 }
 #chatApp{background:var(--chat-bg);flex-direction:column;}
 .chat-header{
