@@ -43,7 +43,14 @@ window.addEventListener('DOMContentLoaded', () => {
 
 function updateFakeDate() {
   const d = new Date(), days = ['일','월','화','수','목','금','토'];
-  document.getElementById('fakeDate').textContent = `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
+  var lang = localStorage.getItem('lang') || 'ko';
+  if (lang === 'en') {
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var daysEn = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    document.getElementById('fakeDate').textContent = months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear() + ' (' + daysEn[d.getDay()] + ')';
+  } else {
+    document.getElementById('fakeDate').textContent = d.getFullYear() + '년 ' + (d.getMonth()+1) + '월 ' + d.getDate() + '일 (' + days[d.getDay()] + ')';
+  }
 }
 
 // ── SCREEN ─────────────────────────────────────────
@@ -305,7 +312,7 @@ function renderTodoList() {
   const todos = JSON.parse(localStorage.getItem('todos') || '[]');
   document.getElementById('todoCount').textContent = `${todos.filter(t=>t.done).length}/${todos.length}`;
   const el = document.getElementById('todoList');
-  if (!todos.length) { el.innerHTML = `<div class="empty-state">📋<br/>할 일이 없습니다</div>`; return; }
+  if (!todos.length) { el.innerHTML = '<div class="empty-state">📋<br/>' + (localStorage.getItem("lang")==="en" ? 'No tasks yet' : '할 일이 없습니다') + '</div>'; return; }
   el.innerHTML = todos.map((t,i) => `
     <div class="todo-item ${t.done?'todo-done':''}">
       <div class="todo-check ${t.done?'checked':''}" onclick="toggleTodo(${i})">${t.done?'✓':''}</div>
@@ -419,7 +426,13 @@ function renderCalendar() {
   const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
   const firstDay = new Date(calYear, calMonth, 1).getDay();
   const months = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
-  document.getElementById('calTitle').textContent = `${calYear}년 ${months[calMonth]}`;
+  var calLang = localStorage.getItem('lang') || 'ko';
+  if (calLang === 'en') {
+    var enMonths = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    document.getElementById('calTitle').textContent = enMonths[calMonth] + ' ' + calYear;
+  } else {
+    document.getElementById('calTitle').textContent = calYear + '년 ' + months[calMonth];
+  }
   const syncEl = document.getElementById('calSyncStatus');
   if (syncEl) syncEl.textContent = '';
   let html = '';
@@ -1524,7 +1537,15 @@ function startClock() {
     var m = String(now.getMinutes()).padStart(2,'0');
     var s = String(now.getSeconds()).padStart(2,'0');
     var days = ['일','월','화','수','목','금','토'];
-    var dateStr = (now.getMonth()+1) + '월 ' + now.getDate() + '일 (' + days[now.getDay()] + ')';
+    var lang2 = localStorage.getItem('lang') || 'ko';
+    var dateStr;
+    if (lang2 === 'en') {
+      var mns = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      var dns = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      dateStr = mns[now.getMonth()] + ' ' + now.getDate() + ' (' + dns[now.getDay()] + ')';
+    } else {
+      dateStr = (now.getMonth()+1) + '월 ' + now.getDate() + '일 (' + days[now.getDay()] + ')';
+    }
     var el = document.getElementById('widgetClock');
     var del = document.getElementById('widgetDate');
     if (el) el.innerHTML = h + ':' + m + '<span style="font-size:18px;opacity:0.7;">:' + s + '</span>';
@@ -1603,8 +1624,8 @@ async function loadWeather() {
 
       var level25 = getDustLevel(pm25);
       document.getElementById('widgetDustVal').innerHTML = 
-        '미세 <b style="color:' + level.color + '">' + level.text + '</b><br>' +
-        '초미세 <b style="color:' + level25.color + '">' + level25.text + '</b>';
+        (localStorage.getItem('lang')==='en' ? 'Fine ' : '미세 ') + '<b style="color:' + level.color + '">' + level.text + '</b><br>' +
+        (localStorage.getItem('lang')==='en' ? 'Ultra ' : '초미세 ') + '<b style="color:' + level25.color + '">' + level25.text + '</b>';
       document.getElementById('widgetDustLevel').textContent = '';
 
       // 옷차림
@@ -1831,6 +1852,42 @@ function applyLang() {
 
   // 이미지 다운로드
   _setText('imgDownloadBtn', en ? '⬇ Save' : '⬇ 저장');
+
+  // 보안설정 내부 버튼
+  _setText('themeDarkLabel', en ? 'Dark' : '다크');
+  _setText('themeLightLabel', en ? 'Light' : '라이트');
+  _setText('fontSmLabel', en ? 'S' : '소');
+  _setText('fontMdLabel', en ? 'M' : '중');
+  _setText('fontLgLabel', en ? 'L' : '대');
+  _setText('changeCodeBtn', en ? 'Change ID Code' : '식별 코드 변경');
+  _setText('closeSecretBtn', en ? 'Close' : '닫기');
+  _setText('closeAddFriendBtn', en ? 'Close' : '닫기');
+  _setText('closeTimerBtn', en ? 'Close' : '닫기');
+
+  // 달력 통계
+  _setText('calAchievedLabel', en ? 'Achieved' : '달성일');
+  _setText('calRateLabel', en ? 'Rate' : '달성률');
+  _setText('calStreakLabel', en ? 'Streak' : '연속 달성');
+
+  // 알림 토글
+  _setText('notifAppLabel', en ? 'App Alerts' : '앱 알림');
+  _setText('notifCalLabel', en ? 'Schedule Alerts' : '일정 알림');
+  _setText('notifTodoLabel', en ? 'To-Do Alerts' : '할 일 알림');
+
+  // 닉네임 설정
+  _setText('nicknameLabel', en ? 'Set your nickname' : '닉네임을 설정하세요');
+  _setText('nicknameSetBtn', en ? 'Set' : '설정');
+  _setText('exitChatBtn', en ? '← Exit' : '← 나가기');
+  var nnInput = document.getElementById('nicknameInput');
+  if (nnInput) nnInput.placeholder = en ? 'Enter nickname' : '닉네임 입력';
+
+  // 할일 빈 목록 갱신
+  var emptyState = document.querySelector('.empty-state');
+  if (emptyState) emptyState.innerHTML = '📋<br/>' + (en ? 'No tasks yet' : '할 일이 없습니다');
+
+  // 달력 갱신 (요일 헤더)
+  var calScreen = document.getElementById('calendarScreen');
+  if (calScreen && calScreen.classList.contains('active')) renderCalendar();
 }
 
 function _setText(id, text) {

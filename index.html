@@ -97,9 +97,9 @@
     </div>
     <div class="settings-section">
       <div id="notifSectionLabel" class="settings-label">알림</div>
-      <div class="settings-row"><span>앱 알림</span><label class="toggle"><input type="checkbox" id="notifApp" onchange="toggleSettingsNotif('app',this.checked)"/><span class="slider"></span></label></div>
-      <div class="settings-row"><span>일정 알림</span><label class="toggle"><input type="checkbox" id="notifCal" onchange="toggleSettingsNotif('cal',this.checked)"/><span class="slider"></span></label></div>
-      <div class="settings-row"><span>할 일 알림</span><label class="toggle"><input type="checkbox" id="notifTodo" onchange="toggleSettingsNotif('todo',this.checked)"/><span class="slider"></span></label></div>
+      <div class="settings-row"><span id="notifAppLabel">앱 알림</span><label class="toggle"><input type="checkbox" id="notifApp" onchange="toggleSettingsNotif('app',this.checked)"/><span class="slider"></span></label></div>
+      <div class="settings-row"><span id="notifCalLabel">일정 알림</span><label class="toggle"><input type="checkbox" id="notifCal" onchange="toggleSettingsNotif('cal',this.checked)"/><span class="slider"></span></label></div>
+      <div class="settings-row"><span id="notifTodoLabel">할 일 알림</span><label class="toggle"><input type="checkbox" id="notifTodo" onchange="toggleSettingsNotif('todo',this.checked)"/><span class="slider"></span></label></div>
     </div>
     <div class="settings-section">
       <div id="langLabel" class="settings-label">언어</div>
@@ -170,9 +170,9 @@
     </div>
     <div id="calGrid" class="cal-grid"></div>
     <div class="cal-stats">
-      <div class="cal-stat-box"><div id="calDoneCount" class="cal-stat-num">0</div><div class="cal-stat-label">달성일</div></div>
-      <div class="cal-stat-box"><div id="calRate" class="cal-stat-num">0%</div><div class="cal-stat-label">달성률</div></div>
-      <div class="cal-stat-box"><div id="calStreak" class="cal-stat-num">0</div><div class="cal-stat-label">연속 달성</div></div>
+      <div class="cal-stat-box"><div id="calDoneCount" class="cal-stat-num">0</div><div class="cal-stat-label" id="calAchievedLabel">달성일</div></div>
+      <div class="cal-stat-box"><div id="calRate" class="cal-stat-num">0%</div><div class="cal-stat-label" id="calRateLabel">달성률</div></div>
+      <div class="cal-stat-box"><div id="calStreak" class="cal-stat-num">0</div><div class="cal-stat-label" id="calStreakLabel">연속 달성</div></div>
     </div>
     <div class="cal-palette">
       <button class="pal-btn pal-active" data-color="done" onclick="selectPalette('done')" style="background:#FFD8D8;"></button>
@@ -197,10 +197,10 @@
 <div id="chatApp" class="screen">
   <!-- Setup -->
   <div id="chatSetup" class="chat-setup">
-    <p class="chat-setup-desc" style="font-size:22px;font-weight:700;color:#f1f5f9;">닉네임을 설정하세요</p>
-    <input id="myCodeInput" class="chat-input-field" type="text" maxlength="20" placeholder="닉네임 입력"/>
+    <p id="nicknameLabel" class="chat-setup-desc" style="font-size:22px;font-weight:700;color:#f1f5f9;">닉네임을 설정하세요</p>
+    <input id="myCodeInput" class="chat-input-field" type="text" maxlength="20" id="nicknameInput" placeholder="닉네임 입력"/>
     <button class="chat-action-btn" onclick="saveMyCode()" id="nicknameSetBtn">설정</button>
-    <button class="chat-exit-btn" onclick="exitChat()">← 나가기</button>
+    <button id="exitChatBtn" class="chat-exit-btn" onclick="exitChat()">← 나가기</button>
   </div>
 
   <!-- Friend list -->
@@ -345,7 +345,7 @@
         <div class="my-code-display" id="myCodeDisplay2"></div>
         <button class="settings-btn" onclick="regenerateCode()" id="regenCodeBtn">🔄 코드 재생성</button>
       </div>
-      <button class="modal-cancel" onclick="closeAddFriend()">닫기</button>
+      <button class="modal-cancel" id="closeAddFriendBtn" onclick="closeAddFriend()">닫기</button>
     </div>
   </div>
 
@@ -362,7 +362,7 @@
         <button class="timer-opt" onclick="setAutoDelete(7)">7분</button>
         <button class="timer-opt" onclick="setAutoDelete(10)">10분</button>
       </div>
-      <button class="modal-cancel" onclick="closeTimerModal()">닫기</button>
+      <button class="modal-cancel" id="closeTimerBtn" onclick="closeTimerModal()">닫기</button>
     </div>
   </div>
 
@@ -374,17 +374,17 @@
       <div class="secret-setting-item">
         <div class="settings-label" style="color:var(--chat-text);font-size:14px;" id="themeLabel2">테마</div>
         <div style="display:flex;gap:6px;">
-          <button class="theme-btn" id="themeDarkBtn" onclick="setChatTheme('dark')">다크</button>
-          <button class="theme-btn" id="themeLightBtn" onclick="setChatTheme('light')">라이트</button>
+          <button class="theme-btn" id="themeDarkBtn" onclick="setChatTheme('dark')" id="themeDarkLabel">다크</button>
+          <button class="theme-btn" id="themeLightBtn" onclick="setChatTheme('light')" id="themeLightLabel">라이트</button>
         </div>
       </div>
 
       <div class="secret-setting-item">
         <div class="settings-label" style="color:var(--chat-text);font-size:14px;" id="fontSizeLabel">폰트 크기</div>
         <div style="display:flex;gap:6px;">
-          <button class="font-size-btn" id="fontSmBtn" onclick="setChatFontSize(14)">소</button>
-          <button class="font-size-btn" id="fontMdBtn" onclick="setChatFontSize(18)">중</button>
-          <button class="font-size-btn" id="fontLgBtn" onclick="setChatFontSize(22)">대</button>
+          <button class="font-size-btn" id="fontSmBtn" onclick="setChatFontSize(14)" id="fontSmLabel">소</button>
+          <button class="font-size-btn" id="fontMdBtn" onclick="setChatFontSize(18)" id="fontMdLabel">중</button>
+          <button class="font-size-btn" id="fontLgBtn" onclick="setChatFontSize(22)" id="fontLgLabel">대</button>
         </div>
       </div>
 
@@ -406,8 +406,8 @@
         <div class="my-code-display" id="myCodeDisplaySettings" style="font-size:13px;padding:8px;"></div>
       </div>
 
-      <button class="settings-btn" style="background:#f59e0b;width:100%;font-size:13px;" onclick="closeSecretSettings();openChangeCode();">식별 코드 변경</button>
-      <button class="modal-cancel" style="color:var(--chat-text2);" onclick="closeSecretSettings()">닫기</button>
+      <button class="settings-btn" style="background:#f59e0b;width:100%;font-size:13px;" onclick="closeSecretSettings();openChangeCode();" id="changeCodeBtn">식별 코드 변경</button>
+      <button class="modal-cancel" id="closeSecretBtn" style="color:var(--chat-text2);" onclick="closeSecretSettings()">닫기</button>
     </div>
   </div>
 
