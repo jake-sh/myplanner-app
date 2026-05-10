@@ -1576,11 +1576,15 @@ async function loadWeather() {
       var wRes = await fetch('https://api.openweathermap.org/data/2.5/weather?lat='+lat+'&lon='+lon+'&appid='+OWM_KEY+'&units=metric&lang=kr');
       var wData = await wRes.json();
       var temp = Math.round(wData.main.temp);
+      var tempMin = Math.round(wData.main.temp_min);
+      var tempMax = Math.round(wData.main.temp_max);
       var desc = wData.weather[0].description;
       var icon = getWeatherIcon(wData.weather[0].id);
       var city = wData.name;
 
       document.getElementById('widgetTemp').textContent = temp + '°';
+      document.getElementById('widgetTempMin').textContent = tempMin + '°';
+      document.getElementById('widgetTempMax').textContent = tempMax + '°';
       document.getElementById('widgetDesc').textContent = desc;
       document.getElementById('widgetWeatherIcon').textContent = icon;
       document.getElementById('widgetLocation').textContent = '📍 ' + city;
