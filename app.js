@@ -1599,7 +1599,7 @@ function startClock() {
     }
     var el = document.getElementById('widgetClock');
     var del = document.getElementById('widgetDate');
-    if (el) el.innerHTML = h + ':' + m + '<span style="font-size:18px;opacity:0.7;">:' + s + '</span>';
+    if (el) el.innerHTML = h + ' : ' + m + '<span style="font-size:18px;opacity:0.7;"> : ' + s + '</span>';
     if (del) del.textContent = dateStr;
   }
   tick();
