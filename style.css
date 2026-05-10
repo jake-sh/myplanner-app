@@ -1,3 +1,10 @@
+@font-face {
+  font-family: 'Wilzten';
+  src: url('Wilzten.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 
 :root{
@@ -37,7 +44,7 @@ html,body{height:100%;font-family:'Nunito',sans-serif;background:var(--bg);color
   background:var(--card);
   border-bottom:1px solid #F0F1F8;
 }
-.fake-title{font-size:24px;font-weight:800;color:var(--text);letter-spacing:-0.5px;}
+.fake-title{font-size:28px;font-family:'Wilzten',cursive;color:var(--primary);letter-spacing:0;font-weight:normal;}
 .icon-btn{
   width:40px;height:40px;
   background:var(--primary-light);
