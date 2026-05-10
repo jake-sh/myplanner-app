@@ -133,10 +133,11 @@ html,body{height:100%;font-family:'Nunito',sans-serif;background:var(--bg);color
   font-size:14px;font-family:inherit;outline:none;
   background:#F8F9FF;color:var(--text);
 }
-.theme-options{display:flex;gap:12px;flex-wrap:nowrap;align-items:center;}
+.theme-options{display:flex;gap:12px;flex-wrap:nowrap;align-items:center;justify-content:flex-start;}
 .theme-btn{
-  border:none;outline:none;color:transparent;padding:9px 0;
-  border-radius:20px;cursor:pointer;font-family:inherit;flex:1;
+  border:none;outline:none;color:transparent;
+  width:52px;height:36px;border-radius:12px;
+  cursor:pointer;font-family:inherit;flex-shrink:0;
 }
 
 /* 토글 */
