@@ -554,7 +554,7 @@ function renderFriendList() {
   friends = JSON.parse(localStorage.getItem('friends') || '[]');
   const el = document.getElementById('friendList');
   if (!friends.length) {
-    el.innerHTML = `<div class="no-friend"><div class="big-icon">👤</div><div>친구를 추가하면 채팅이 시작됩니다</div></div>`;
+    el.innerHTML = '<div class="no-friend"><div class="big-icon">👤</div><div>' + (localStorage.getItem('lang')==='en' ? 'Add a friend to start chatting' : '친구를 추가하면 채팅이 시작됩니다') + '</div></div>';
     return;
   }
   el.innerHTML = friends.map(f => `
@@ -1079,8 +1079,8 @@ function updateThemeBtns() {
   const en = localStorage.getItem('lang') === 'en';
   document.getElementById('themeDarkBtn')?.classList.toggle('theme-active', theme === 'dark');
   document.getElementById('themeLightBtn')?.classList.toggle('theme-active', theme === 'light');
-  var d = document.getElementById('themeDarkLabel'); if(d) d.textContent = en ? 'Dark' : '다크';
-  var l = document.getElementById('themeLightLabel'); if(l) l.textContent = en ? 'Light' : '라이트';
+  var d = document.getElementById('themeDarkBtn'); if(d) d.textContent = en ? 'Dark' : '다크';
+  var l = document.getElementById('themeLightBtn'); if(l) l.textContent = en ? 'Light' : '라이트';
 }
 
 function updateFontSizeBtns() {
