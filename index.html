@@ -103,7 +103,7 @@
     </div>
     <div class="settings-section">
       <div class="settings-label" data-i18n="language">언어</div>
-      <select class="settings-select"><option>한국어</option><option>English</option><option>日本語</option></select>
+      <select id="langSelect" class="settings-select" onchange="changeLang(this.value)"><option value="ko">한국어</option><option value="en">English</option></select>
     </div>
     <div class="settings-section">
       <div class="settings-label">정보</div>

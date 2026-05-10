@@ -177,8 +177,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if (n) { document.getElementById('appTitle').textContent = n; document.title = n; }
   const t = localStorage.getItem('themeColor');
   if (t) document.documentElement.style.setProperty('--primary', t);
-  showScreen('fakeApp');
-  applyLang();
+  showScreen('fakeApp'); setTimeout(applyLang, 0);
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 });
 
@@ -1712,14 +1711,6 @@ function getClothes(temp, pm10) {
   if (temp >= 9) return (isEn ? 'Trench coat / Knit' : '트렌치코트·니트') + maskNote;
   if (temp >= 5) return (isEn ? 'Wool coat / Heattech' : '울코트·히트텍') + maskNote;
   return (isEn ? 'Padding / Heavy coat' : '패딩·두꺼운 코트') + maskNote;
-  
-  if (temp >= 23) return '반팔·얇은 셔츠·반바지' + dust;
-  if (temp >= 20) return '블라우스·긴팔·면바지·청바지' + dust;
-  if (temp >= 17) return '얇은 가디건·긴바지' + dust;
-  if (temp >= 12) return '자켓·가디건·청바지' + dust;
-  if (temp >= 9) return '트렌치코트·니트·청바지' + dust;
-  if (temp >= 5) return '울코트·히트텍·레이어드' + dust;
-  return '패딩·두꺼운 코트·목도리' + dust;
 }
 
 async function loadWeather() {
