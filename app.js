@@ -255,7 +255,6 @@ function openFakeFeature(i) {
 
 // ── SETTINGS ───────────────────────────────────────
 function openSettings() {
-  document.getElementById('appNameInput').value = localStorage.getItem('appName') || '';
   // 알림 토글 초기화
   document.getElementById('notifApp').checked = localStorage.getItem('notifApp') === 'true';
   document.getElementById('notifCal').checked = localStorage.getItem('notifCal') === 'true';
