@@ -1584,7 +1584,11 @@ const OWM_KEY = '4388aeee14859bf5e7351a18d1d35db0';
 function startClock() {
   function tick() {
     var now = new Date();
-    var h = String(now.getHours()).padStart(2,'0');
+    var hours = now.getHours();
+    var isEn = localStorage.getItem('lang') === 'en';
+    var ampm = hours >= 12 ? (isEn ? 'PM' : '오후') : (isEn ? 'AM' : '오전');
+    var h12 = hours % 12 || 12;
+    var h = String(h12).padStart(2,'0');
     var m = String(now.getMinutes()).padStart(2,'0');
     var s = String(now.getSeconds()).padStart(2,'0');
     var days = ['일','월','화','수','목','금','토'];
@@ -1599,7 +1603,7 @@ function startClock() {
     }
     var el = document.getElementById('widgetClock');
     var del = document.getElementById('widgetDate');
-    if (el) el.innerHTML = h + ' : ' + m + '<span style="font-size:18px;opacity:0.7;"> : ' + s + '</span>';
+    if (el) el.innerHTML = '<span style="font-size:13px;opacity:0.6;font-weight:600;margin-right:4px;">' + ampm + '</span>' + h + ' : ' + m + '<span style="font-size:18px;opacity:0.7;"> : ' + s + '</span>';
     if (del) del.textContent = dateStr;
   }
   tick();
