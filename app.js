@@ -1325,15 +1325,27 @@ function showInAppNotif(text) {
 
 // -- Health Stats --
 var STAT_CATS = {
-  weight:     { label: "체중",   unit: "kg",    color: "#4A90D9", emoji: "⚖️" },
-  bp_sys:     { label: "혈압수", unit: "mmHg",  color: "#ef4444", emoji: "🫀" },
-  bp_dia:     { label: "혈압이", unit: "mmHg",  color: "#f97316", emoji: "🫀" },
-  blood_sugar:{ label: "혈당",   unit: "mg/dL", color: "#a855f7", emoji: "🩸" },
-  sleep:      { label: "수면",   unit: "h",     color: "#6366f1", emoji: "😴" },
-  steps:      { label: "걸음",   unit: "보",    color: "#22c55e", emoji: "🚶" },
-  water:      { label: "물",     unit: "L",     color: "#06b6d4", emoji: "💧" },
-  exercise:   { label: "운동",   unit: "분",    color: "#f59e0b", emoji: "🏃" }
+  weight:     { label: "체중",   labelEn: "Weight",      unit: "kg",    color: "#4A90D9", emoji: "⚖️" },
+  bp_sys:     { label: "혈압수", labelEn: "BP(sys)",     unit: "mmHg",  color: "#ef4444", emoji: "🫀" },
+  bp_dia:     { label: "혈압이", labelEn: "BP(dia)",     unit: "mmHg",  color: "#f97316", emoji: "🫀" },
+  blood_sugar:{ label: "혈당",   labelEn: "Blood Sugar", unit: "mg/dL", color: "#a855f7", emoji: "🩸" },
+  sleep:      { label: "수면",   labelEn: "Sleep",       unit: "h",     color: "#6366f1", emoji: "😴" },
+  steps:      { label: "걸음",   labelEn: "Steps",       unit: "steps", color: "#22c55e", emoji: "🚶" },
+  water:      { label: "물",     labelEn: "Water",       unit: "L",     color: "#06b6d4", emoji: "💧" },
+  exercise:   { label: "운동",   labelEn: "Exercise",    unit: "min",   color: "#f59e0b", emoji: "🏃" }
 };
+
+function statLabel(k) {
+  var en = localStorage.getItem('lang') === 'en';
+  return en ? (STAT_CATS[k].labelEn || STAT_CATS[k].label) : STAT_CATS[k].label;
+}
+function statUnit(k) {
+  var en = localStorage.getItem('lang') === 'en';
+  if (!en) return STAT_CATS[k].unit;
+  // 영문 단위 매핑
+  var unitMap = { '보': 'steps', '분': 'min' };
+  return unitMap[STAT_CATS[k].unit] || STAT_CATS[k].unit;
+}
 var curSC = "weight";
 
 function getSharedStatId() {
@@ -1357,7 +1369,7 @@ function setSD(d) {
 }
 
 function openStats() {
-  document.getElementById("featureTitle").textContent = "건강 통계";
+  document.getElementById("featureTitle").textContent = localStorage.getItem("lang")==="en" ? "Health Stats" : "건강 통계";
   // Firestore 리스너
   if (statListener) { statListener(); statListener = null; }
   var sid = getSharedStatId();
@@ -1400,9 +1412,9 @@ function renderStatsUI() {
   });
   tabHtml += "</div>";
 
-  var addHtml = '<div style="text-align:right;margin-bottom:12px;"><button id="openSmBtn" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;">+ 입력</button></div>';
+  var addHtml = '<div style="text-align:right;margin-bottom:12px;"><button id="openSmBtn" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;">' + (localStorage.getItem('lang')==='en' ? '+ Add' : '+ 입력') + '</button></div>';
 
-  var chartHtml = '<div style="background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:#1e293b;">' + cat.emoji + " " + cat.label + '</div><div style="font-size:11px;color:#94a3b8;margin-bottom:12px;">단위: ' + cat.unit + '</div>';
+  var chartHtml = '<div style="background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:#1e293b;">' + cat.emoji + " " + statLabel(curSC) + '</div><div style="font-size:11px;color:#94a3b8;margin-bottom:12px;">' + (localStorage.getItem('lang')==='en' ? 'Unit: ' : '단위: ') + statUnit(curSC) + '</div>';
   if (entries.length === 0) {
     chartHtml += '<div style="text-align:center;color:#94a3b8;font-size:13px;padding:30px 0;">데이터가 없어요.<br>+ 입력으로 추가해보세요!</div>';
   } else {
@@ -1410,7 +1422,7 @@ function renderStatsUI() {
   }
   chartHtml += "</div>";
 
-  var listHtml = '<div style="font-size:13px;font-weight:700;color:#64748b;margin-bottom:8px;">최근 기록</div>';
+  var listHtml = '<div style="font-size:13px;font-weight:700;color:#64748b;margin-bottom:8px;">' + (localStorage.getItem('lang')==='en' ? 'Recent Records' : '최근 기록') + '</div>';
   entries.slice().reverse().slice(0,10).forEach(function(e, i) {
     var origIdx = entries.length - 1 - i;
     var row = '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#fff;border-radius:12px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,.05);">'
@@ -1494,7 +1506,7 @@ function openSM() {
 
   var selOpts = "";
   Object.keys(STAT_CATS).forEach(function(k){
-    selOpts += '<option value="' + k + '"' + (k===curSC?" selected":"") + '>' + STAT_CATS[k].emoji + " " + STAT_CATS[k].label + " (" + STAT_CATS[k].unit + ")</option>";
+    selOpts += '<option value="' + k + '"' + (k===curSC?" selected":"") + '>' + STAT_CATS[k].emoji + " " + statLabel(k) + " (" + statUnit(k) + ")</option>";
   });
 
   overlay.innerHTML = '<div style="background:#fff;border-radius:20px;padding:24px;width:85%;max-width:320px;">'
