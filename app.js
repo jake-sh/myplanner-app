@@ -1273,34 +1273,12 @@ async function setBadge(count) {
 let unreadCount = 0;
 
 // 설정 화면 알림 토글
-async function toggleSettingsNotif(type, enabled) {
-  if (enabled) {
-    // 권한 요청
-    if (typeof Notification === 'undefined') {
-      alert('이 브라우저는 알림을 지원하지 않습니다');
-      document.getElementById('notif' + type.charAt(0).toUpperCase() + type.slice(1)).checked = false;
-      return;
-    }
-    if (Notification.permission === 'denied') {
-      alert('알림이 차단되어 있습니다.\n브라우저/시스템 설정에서 직접 허용해주세요.');
-      document.getElementById('notif' + type.charAt(0).toUpperCase() + type.slice(1)).checked = false;
-      return;
-    }
-    if (Notification.permission === 'default') {
-      const p = await Notification.requestPermission();
-      if (p !== 'granted') {
-        document.getElementById('notif' + type.charAt(0).toUpperCase() + type.slice(1)).checked = false;
-        return;
-      }
-    }
-    // SW 등록 확인
-    await getSW();
-  }
-  localStorage.setItem('notif' + type.charAt(0).toUpperCase() + type.slice(1), enabled);
-  // notifEnabled는 앱알림 토글과 동기화
+function toggleSettingsNotif(type, enabled) {
+  var key = 'notif' + type.charAt(0).toUpperCase() + type.slice(1);
+  localStorage.setItem(key, enabled ? 'true' : 'false');
   if (type === 'app') {
     notifEnabled = enabled;
-    localStorage.setItem('notifEnabled', enabled);
+    localStorage.setItem('notifEnabled', enabled ? 'true' : 'false');
   }
 }
 
