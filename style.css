@@ -133,9 +133,9 @@ html,body{height:100%;font-family:'Nunito',sans-serif;background:var(--bg);color
   font-size:14px;font-family:inherit;outline:none;
   background:#F8F9FF;color:var(--text);
 }
-.theme-options{display:flex;gap:6px;flex-wrap:nowrap;}
+.theme-options{display:flex;gap:12px;flex-wrap:nowrap;align-items:center;}
 .theme-btn{
-  border:none;color:#fff;padding:9px 0;
+  border:none;color:transparent;padding:9px 0;
   border-radius:20px;font-size:12px;font-weight:700;
   cursor:pointer;font-family:inherit;flex:1;text-align:center;
 }
@@ -491,3 +491,12 @@ input:checked+.slider:before{transform:translateX(20px);}
   flex:1;font-size:16px;font-weight:700;
   color:var(--chat-text);
 }
+
+/* 색상 테마 원형 버튼 */
+.color-dot-btn{
+  width:36px;height:36px;border-radius:50%;
+  border:3px solid transparent;
+  cursor:pointer;transition:transform .15s,border-color .15s;
+  flex-shrink:0;padding:0;
+}
+.color-dot-btn:active{transform:scale(.9);}
