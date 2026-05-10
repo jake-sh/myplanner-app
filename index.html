@@ -330,10 +330,10 @@
         <button class="tab-btn" id="tabQRScan" onclick="switchAddTab('qr')">QR 스캔</button>
         <button class="tab-btn" id="tabMyQR" onclick="switchAddTab('myqr')">내 QR</button>
       </div>
-      <div id="addTabCode" style="display:flex;flex-direction:column;gap:14px;margin-bottom:14px;">
-        <p id="friendCodeDesc" class="modal-desc">친구의 식별 코드를 입력하세요</p>
-        <input id="friendCodeInput" class="chat-input-field" type="text" id="friendCodeInput2" placeholder="친구 코드 입력"/>
-        <button class="chat-action-btn" onclick="addFriendByCode()" id="addFriendBtn">추가</button>
+      <div id="addTabCode" style="margin-bottom:14px;">
+        <p id="friendCodeDesc" class="modal-desc" style="margin-bottom:14px;">친구의 식별 코드를 입력하세요</p>
+        <input id="friendCodeInput" class="chat-input-field" type="text" id="friendCodeInput2" placeholder="친구 코드 입력" style="display:block;margin-bottom:14px;"/>
+        <button class="chat-action-btn" onclick="addFriendByCode()" id="addFriendBtn" style="display:block;width:100%;">추가</button>
       </div>
       <div id="addTabQr" style="display:none">
         <p id="qrScanDesc" class="modal-desc">친구의 QR코드를 스캔하세요</p>
