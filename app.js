@@ -33,11 +33,14 @@ let editingMemoIndex = null;
 // ── INIT ───────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   updateFakeDate();
+  startClock();
+  loadWeather();
   const n = localStorage.getItem('appName');
   if (n) { document.getElementById('appTitle').textContent = n; document.title = n; }
   const t = localStorage.getItem('themeColor');
   if (t) { document.documentElement.style.setProperty('--primary', t); setTimeout(function(){ applyMenuTheme(t); }, 100); }
   showScreen('fakeApp');
+  setTimeout(applyLang, 0);
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 });
 
@@ -1691,9 +1694,16 @@ async function loadWeather() {
 }
 
 // 초기 실행
-startClock();
-loadWeather();
-// 30분마다 날씨 갱신
+// DOM 로드 후 실행
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function() {
+    startClock();
+    loadWeather();
+  });
+} else {
+  startClock();
+  loadWeather();
+}
 setInterval(loadWeather, 30 * 60 * 1000);
 
 // 이미지 뷰어
