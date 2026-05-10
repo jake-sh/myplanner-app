@@ -1734,40 +1734,55 @@ function setLang(lang) {
 
 function applyLang() {
   currentLang = localStorage.getItem('lang') || 'ko';
+  var en = currentLang === 'en';
 
   // 언어 선택 드롭다운 동기화
-  const sel = document.getElementById('langSelect');
+  var sel = document.getElementById('langSelect');
   if (sel) sel.value = currentLang;
 
   // 메인 메뉴 라벨
-  const menuLabels = document.querySelectorAll('.menu-label');
-  const menuKeys = ['todo','schedule','alarm','memo','goal','stats','project','tag','calendar'];
-  menuLabels.forEach(function(el, i) {
-    if (menuKeys[i]) el.textContent = t(menuKeys[i]);
-  });
+  var menuLabels = document.querySelectorAll('#menuGrid .menu-label');
+  var menuKeys = ['todo','schedule','alarm','memo','goal','stats','project','tag','calendar'];
+  menuLabels.forEach(function(el, i) { if (menuKeys[i]) el.textContent = t(menuKeys[i]); });
 
-  // 설정 화면
+  // 서브타이틀
   _setText('settingsTitle', t('settingsTitle'));
+  _setText('todoTitle', t('todoTitle'));
+  _setText('memoTitle', t('memoTitle'));
+  _setText('calendarTitle', t('calendarTitle'));
+  _setText('statsTitle', t('statsTitle'));
+  _setText('chatListTitle', t('chatList'));
+  _setText('newMemoTitle', en ? 'New Memo' : '새 메모');
+
+  // 설정 라벨
   _setText('appNameLabel', t('appNameLabel'));
   _setText('themeColorLabel', t('themeColor'));
   _setText('notifSectionLabel', t('notifSection'));
   _setText('langLabel', t('language'));
 
-  // 할일 placeholder
-  const todoInput = document.getElementById('todoInput');
-  if (todoInput) todoInput.placeholder = t('todoPlaceholder');
+  // 뒤로가기 버튼
+  document.querySelectorAll('[data-i18n-back]').forEach(function(el) {
+    el.textContent = en ? '← Back' : '← 뒤로';
+  });
+  var memoBack = document.getElementById('memoListBack');
+  if (memoBack) memoBack.textContent = en ? '← List' : '← 목록';
 
-  // 채팅
-  const chatListTitle = document.querySelector('.chat-friend-name');
-  if (chatListTitle && chatListTitle.textContent !== '') {
-    // 친구 목록 헤더만
-  }
-  const msgInput = document.getElementById('msgInput');
+  // placeholder
+  var todoInputEl = document.getElementById('todoInputEl') || document.getElementById('todoInput');
+  if (todoInputEl) todoInputEl.placeholder = t('todoPlaceholder');
+  var msgInput = document.getElementById('msgInput');
   if (msgInput) msgInput.placeholder = t('msgPlaceholder');
+  var memoTP = document.getElementById('memoTitlePlaceholder') || document.getElementById('memoTitleInput');
+  if (memoTP) memoTP.placeholder = en ? 'Title' : '제목';
 
   // 날씨 위젯
   _setText('dustLabel', t('dust'));
   _setText('clothesLabel', t('clothes'));
+
+  // 저장 버튼
+  document.querySelectorAll('.settings-btn[onclick*="saveAppName"], .settings-btn[onclick*="saveName"]').forEach(function(el) {
+    el.textContent = t('save');
+  });
 }
 
 function _setText(id, text) {

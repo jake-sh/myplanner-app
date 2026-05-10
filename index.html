@@ -77,7 +77,7 @@
 <!-- ===== FAKE SETTINGS ===== -->
 <div id="settingsScreen" class="screen">
   <div class="sub-header">
-    <button onclick="showScreen('fakeApp')" class="back-btn">← 뒤로</button>
+    <button onclick="showScreen('fakeApp')" class="back-btn" data-i18n-back="1">← 뒤로</button>
     <span id="settingsTitle" class="sub-title">설정</span>
   </div>
   <div class="settings-content">
@@ -115,13 +115,13 @@
 <!-- ===== 할 일 ===== -->
 <div id="todoScreen" class="screen">
   <div class="sub-header">
-    <button onclick="showScreen('fakeApp')" class="back-btn">← 뒤로</button>
-    <span class="sub-title">할 일</span>
+    <button onclick="showScreen('fakeApp')" class="back-btn" data-i18n-back="1">← 뒤로</button>
+    <span id="todoTitle" class="sub-title">할 일</span>
     <span id="todoCount" class="todo-count"></span>
   </div>
   <div id="todoSyncStatus" style="text-align:center;font-size:12px;color:#94a3b8;padding:4px 0;"></div>
   <div class="todo-add-bar">
-    <input id="todoInput" class="todo-add-input" type="text" placeholder="새 할 일 추가..." onkeydown="if(event.key==='Enter')addTodo()"/>
+    <input id="todoInput" class="todo-add-input" type="text" id="todoInputEl" placeholder="새 할 일 추가..." onkeydown="if(event.key==='Enter')addTodo()"/>
     <button class="todo-add-btn" onclick="addTodo()">+</button>
   </div>
   <div id="todoList" class="todo-list"></div>
@@ -130,8 +130,8 @@
 <!-- ===== 메모 ===== -->
 <div id="memoScreen" class="screen">
   <div class="sub-header">
-    <button onclick="showScreen('fakeApp')" class="back-btn">← 뒤로</button>
-    <span class="sub-title">메모</span>
+    <button onclick="showScreen('fakeApp')" class="back-btn" data-i18n-back="1">← 뒤로</button>
+    <span id="memoTitle" class="sub-title">메모</span>
     <button class="sub-action-btn" onclick="openNewMemo()">+ 새 메모</button>
   </div>
   <div id="memoList" class="memo-list"></div>
@@ -140,12 +140,12 @@
 <!-- ===== 메모 에디터 ===== -->
 <div id="memoEditorScreen" class="screen">
   <div class="sub-header">
-    <button onclick="closeMemoEditor()" class="back-btn">← 목록</button>
-    <span class="sub-title" id="memoEditorTitle">새 메모</span>
+    <button onclick="closeMemoEditor()" id="memoListBack" class="back-btn">← 목록</button>
+    <span class="sub-title" id="memoEditorTitle" id="newMemoTitle">새 메모</span>
     <button class="sub-action-btn" onclick="saveMemo()">저장</button>
   </div>
   <div class="memo-editor-wrap">
-    <input id="memoTitleInput" class="memo-title-input" type="text" placeholder="제목"/>
+    <input id="memoTitleInput" class="memo-title-input" type="text" id="memoTitlePlaceholder" placeholder="제목"/>
     <textarea id="memoContentInput" class="memo-content-input" placeholder="내용을 입력하세요..."></textarea>
   </div>
 </div>
@@ -153,8 +153,8 @@
 <!-- ===== 달력 ===== -->
 <div id="calendarScreen" class="screen">
   <div class="sub-header">
-    <button onclick="showScreen('fakeApp')" class="back-btn">← 뒤로</button>
-    <span class="sub-title">달력</span>
+    <button onclick="showScreen('fakeApp')" class="back-btn" data-i18n-back="1">← 뒤로</button>
+    <span id="calendarTitle" class="sub-title">달력</span>
     <button class="cal-refresh-btn" onclick="refreshCalendar()">새로고침</button>
   </div>
   <div class="calendar-wrap">
@@ -187,7 +187,7 @@
 <!-- ===== FAKE FEATURE ===== -->
 <div id="fakeFeature" class="screen">
   <div class="sub-header">
-    <button onclick="showScreen('fakeApp')" class="back-btn">← 뒤로</button>
+    <button onclick="showScreen('fakeApp')" class="back-btn" data-i18n-back="1">← 뒤로</button>
     <span id="featureTitle" class="sub-title"></span>
   </div>
   <div id="featureContent" class="feature-content"></div>
@@ -212,7 +212,7 @@
         </svg>
       </button>
       <div style="flex:1;"></div>
-      <div class="chat-header-center"><div class="chat-friend-name">목록</div></div>
+      <div class="chat-header-center"><div id="chatListTitle" class="chat-friend-name">목록</div></div>
       <div class="chat-header-actions">
         <button class="chat-header-btn" onclick="openAddFriend()">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -263,7 +263,7 @@
         </svg>
       </button>
       <input type="file" id="fileInput" accept="image/*,video/*" multiple style="display:none" onchange="handleFileSelect(event)"/>
-      <input id="msgInput" class="msg-input" type="text" placeholder="메시지 입력..." onkeydown="if(event.key==='Enter')sendMessage()"/>
+      <input id="msgInput" class="msg-input" type="text" placeholder="메시지 입력..." id="msgInputEl" onkeydown="if(event.key==='Enter')sendMessage()"/>
       <button class="send-btn" onclick="sendMessage()">➤</button>
     </div>
   </div>
@@ -272,8 +272,8 @@
 <!-- ===== STATS SCREEN ===== -->
 <div id="statsScreen" class="screen">
   <div class="sub-header">
-    <button onclick="showScreen('fakeApp')" class="back-btn">← 뒤로</button>
-    <span class="sub-title">건강 통계</span>
+    <button onclick="showScreen('fakeApp')" class="back-btn" data-i18n-back="1">← 뒤로</button>
+    <span id="statsTitle" class="sub-title">건강 통계</span>
     <button onclick="openAddStatModal()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;">+ 입력</button>
   </div>
   <div style="padding:20px;font-size:18px;color:red;">테스트 - 화면 열림</div>
