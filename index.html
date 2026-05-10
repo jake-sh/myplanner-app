@@ -24,7 +24,7 @@
   <div class="fake-date-banner" style="display:flex;justify-content:space-between;align-items:center;">
     <div>
       <div id="fakeDate" class="fake-date"></div>
-      <div class="fake-subtitle">오늘의 일정을 확인하세요</div>
+      <div class="fake-subtitle"><span id="dateSubtitle">오늘의 일정을 확인하세요</span></div>
     </div>
     <div style="text-align:right;">
       <div id="widgetClock" style="font-size:26px;font-weight:700;letter-spacing:-1px;line-height:1;color:#fff;"></div>
@@ -84,15 +84,15 @@
     <div class="settings-section">
       <div id="appNameLabel" class="settings-label">앱 이름</div>
       <input id="appNameInput" class="settings-input" type="text" placeholder="MyPlanner"/>
-      <button class="settings-btn" onclick="saveAppName()">저장</button>
+      <button class="settings-btn" onclick="saveAppName()" id="memoSaveBtn">저장</button>
     </div>
     <div class="settings-section">
       <div id="themeColorLabel" class="settings-label">테마 색상</div>
       <div class="theme-options">
-        <button class="theme-btn" style="background:#4A90D9" onclick="setTheme('#4A90D9')">블루</button>
-        <button class="theme-btn" style="background:#22c55e" onclick="setTheme('#22c55e')">그린</button>
-        <button class="theme-btn" style="background:#8b5cf6" onclick="setTheme('#8b5cf6')">퍼플</button>
-        <button class="theme-btn" style="background:#f59e0b" onclick="setTheme('#f59e0b')">옐로</button>
+        <button class="theme-btn" style="background:#4A90D9" onclick="setTheme('#4A90D9')" id="themeBlue">블루</button>
+        <button class="theme-btn" style="background:#22c55e" onclick="setTheme('#22c55e')" id="themeGreen">그린</button>
+        <button class="theme-btn" style="background:#8b5cf6" onclick="setTheme('#8b5cf6')" id="themePurple">퍼플</button>
+        <button class="theme-btn" style="background:#f59e0b" onclick="setTheme('#f59e0b')" id="themeYellow">옐로</button>
       </div>
     </div>
     <div class="settings-section">
@@ -106,7 +106,7 @@
       <select id="langSelect" class="settings-select" onchange="setLang(this.value)"><option value="ko">한국어</option><option value="en">English</option></select>
     </div>
     <div class="settings-section">
-      <div class="settings-label">정보</div>
+      <div class="settings-label" id="infoLabel">정보</div>
       <div class="settings-desc">MyPlanner v1.0.0</div>
     </div>
   </div>
@@ -132,7 +132,7 @@
   <div class="sub-header">
     <button onclick="showScreen('fakeApp')" class="back-btn" data-i18n-back="1">← 뒤로</button>
     <span id="memoTitle" class="sub-title">메모</span>
-    <button class="sub-action-btn" onclick="openNewMemo()">+ 새 메모</button>
+    <button class="sub-action-btn" onclick="openNewMemo()" id="newMemoBtn">+ 새 메모</button>
   </div>
   <div id="memoList" class="memo-list"></div>
 </div>
@@ -155,7 +155,7 @@
   <div class="sub-header">
     <button onclick="showScreen('fakeApp')" class="back-btn" data-i18n-back="1">← 뒤로</button>
     <span id="calendarTitle" class="sub-title">달력</span>
-    <button class="cal-refresh-btn" onclick="refreshCalendar()">새로고침</button>
+    <button class="cal-refresh-btn" onclick="refreshCalendar()" id="calRefreshBtn">새로고침</button>
   </div>
   <div class="calendar-wrap">
     <div class="cal-nav-bar">
@@ -199,7 +199,7 @@
   <div id="chatSetup" class="chat-setup">
     <p class="chat-setup-desc" style="font-size:22px;font-weight:700;color:#f1f5f9;">닉네임을 설정하세요</p>
     <input id="myCodeInput" class="chat-input-field" type="text" maxlength="20" placeholder="닉네임 입력"/>
-    <button class="chat-action-btn" onclick="saveMyCode()">설정</button>
+    <button class="chat-action-btn" onclick="saveMyCode()" id="nicknameSetBtn">설정</button>
     <button class="chat-exit-btn" onclick="exitChat()">← 나가기</button>
   </div>
 
@@ -274,9 +274,8 @@
   <div class="sub-header">
     <button onclick="showScreen('fakeApp')" class="back-btn" data-i18n-back="1">← 뒤로</button>
     <span id="statsTitle" class="sub-title">건강 통계</span>
-    <button onclick="openAddStatModal()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;">+ 입력</button>
+    <button onclick="openAddStatModal()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;" id="statAddBtn">+ 입력</button>
   </div>
-  <div style="padding:20px;font-size:18px;color:red;">테스트 - 화면 열림</div>
   <div id="statCategoryTabs" style="display:flex;gap:8px;padding:12px 16px;overflow-x:auto;"></div>
   <div style="padding:0 16px 16px;">
     <div style="background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
@@ -294,9 +293,9 @@
 
 <div id="addStatModal" class="modal" style="display:none">
   <div class="modal-box">
-    <div class="modal-title">수치 입력</div>
+    <div class="modal-title" id="statInputTitle">수치 입력</div>
     <div style="margin-bottom:12px;">
-      <div style="font-size:12px;color:#94a3b8;margin-bottom:6px;">카테고리</div>
+      <div style="font-size:12px;color:#94a3b8;margin-bottom:6px;" id="statCatLabel">카테고리</div>
       <select id="statCatSelect" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;background:#f8fafc;">
         <option value="weight">⚖️ 체중 (kg)</option>
         <option value="bp_sys">🫀 혈압 수축기 (mmHg)</option>
@@ -309,11 +308,11 @@
       </select>
     </div>
     <div style="margin-bottom:12px;">
-      <div style="font-size:12px;color:#94a3b8;margin-bottom:6px;">수치</div>
+      <div style="font-size:12px;color:#94a3b8;margin-bottom:6px;" id="statValLabel">수치</div>
       <input id="statValueInput" type="number" step="0.1" placeholder="수치 입력" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:16px;box-sizing:border-box;"/>
     </div>
     <div style="margin-bottom:16px;">
-      <div style="font-size:12px;color:#94a3b8;margin-bottom:6px;">날짜</div>
+      <div style="font-size:12px;color:#94a3b8;margin-bottom:6px;" id="statDateLabel">날짜</div>
       <input id="statDateInput" type="date" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;box-sizing:border-box;"/>
     </div>
     <button class="chat-action-btn" onclick="saveStatEntry()">저장</button>
@@ -324,16 +323,16 @@
 <!-- Add Friend Modal -->
   <div id="addFriendModal" class="modal" style="display:none">
     <div class="modal-box">
-      <div class="modal-title">친구 추가</div>
+      <div class="modal-title" id="addFriendTitle">친구 추가</div>
       <div class="add-friend-tabs">
-        <button class="tab-btn active" id="tabBtnCode" onclick="switchAddTab('code')">코드</button>
-        <button class="tab-btn" id="tabBtnQr" onclick="switchAddTab('qr')">QR 스캔</button>
-        <button class="tab-btn" id="tabBtnMyqr" onclick="switchAddTab('myqr')">내 QR</button>
+        <button class="tab-btn active" id="tabBtnCode" onclick="switchAddTab('code')" id="tabCode">코드</button>
+        <button class="tab-btn" id="tabBtnQr" onclick="switchAddTab('qr')" id="tabQRScan">QR 스캔</button>
+        <button class="tab-btn" id="tabBtnMyqr" onclick="switchAddTab('myqr')" id="tabMyQR">내 QR</button>
       </div>
       <div id="addTabCode">
         <p class="modal-desc">친구의 식별 코드를 입력하세요</p>
         <input id="friendCodeInput" class="chat-input-field" type="text" placeholder="친구 코드 입력"/>
-        <button class="chat-action-btn" onclick="addFriendByCode()">추가</button>
+        <button class="chat-action-btn" onclick="addFriendByCode()" id="addFriendBtn">추가</button>
       </div>
       <div id="addTabQr" style="display:none">
         <p class="modal-desc">친구의 QR코드를 스캔하세요</p>
@@ -344,7 +343,7 @@
         <p class="modal-desc">내 QR코드를 친구에게 보여주세요</p>
         <div id="myQrCode"></div>
         <div class="my-code-display" id="myCodeDisplay2"></div>
-        <button class="settings-btn" onclick="regenerateCode()">🔄 코드 재생성</button>
+        <button class="settings-btn" onclick="regenerateCode()" id="regenCodeBtn">🔄 코드 재생성</button>
       </div>
       <button class="modal-cancel" onclick="closeAddFriend()">닫기</button>
     </div>
@@ -353,7 +352,7 @@
   <!-- Timer Modal -->
   <div id="timerModal" class="modal" style="display:none">
     <div class="modal-box">
-      <div class="modal-title">자동삭제 시간</div>
+      <div class="modal-title" id="autoDeleteTitle">자동삭제 시간</div>
       <p class="modal-desc" style="color:#94a3b8;font-size:12px;">변경 시 상대방 동의가 필요합니다</p>
       <div class="timer-options">
         <button class="timer-opt" onclick="setAutoDelete(1)">1분</button>
@@ -370,10 +369,10 @@
   <!-- Secret Settings Modal -->
   <div id="secretSettingsModal" class="modal" style="display:none">
     <div class="modal-box">
-      <div class="modal-title" style="color:var(--chat-text);">보안 설정</div>
+      <div class="modal-title" style="color:var(--chat-text);" id="securityTitle">보안 설정</div>
 
       <div class="secret-setting-item">
-        <div class="settings-label" style="color:var(--chat-text);font-size:14px;">테마</div>
+        <div class="settings-label" style="color:var(--chat-text);font-size:14px;" id="themeLabel2">테마</div>
         <div style="display:flex;gap:6px;">
           <button class="theme-btn" id="themeDarkBtn" onclick="setChatTheme('dark')">다크</button>
           <button class="theme-btn" id="themeLightBtn" onclick="setChatTheme('light')">라이트</button>
@@ -381,7 +380,7 @@
       </div>
 
       <div class="secret-setting-item">
-        <div class="settings-label" style="color:var(--chat-text);font-size:14px;">폰트 크기</div>
+        <div class="settings-label" style="color:var(--chat-text);font-size:14px;" id="fontSizeLabel">폰트 크기</div>
         <div style="display:flex;gap:6px;">
           <button class="font-size-btn" id="fontSmBtn" onclick="setChatFontSize(14)">소</button>
           <button class="font-size-btn" id="fontMdBtn" onclick="setChatFontSize(18)">중</button>
@@ -390,20 +389,20 @@
       </div>
 
       <div class="secret-setting-item">
-        <div class="settings-label" style="color:var(--chat-text);font-size:14px;">잠금 패턴</div>
-        <button class="settings-btn" style="font-size:13px;padding:8px 14px;" onclick="closeSecretSettings();openPatternSetup();">패턴 변경</button>
+        <div class="settings-label" style="color:var(--chat-text);font-size:14px;" id="lockPatternLabel">잠금 패턴</div>
+        <button class="settings-btn" style="font-size:13px;padding:8px 14px;" onclick="closeSecretSettings();openPatternSetup();" id="patternChangeBtn">패턴 변경</button>
       </div>
 
       <div class="secret-setting-item">
         <div>
-          <div class="settings-label" style="color:var(--chat-text);font-size:14px;">강화 보안</div>
-          <div style="font-size:11px;color:var(--chat-text2);margin-top:2px;">화면 이탈 시 채팅 자동 잠금</div>
+          <div class="settings-label" style="color:var(--chat-text);font-size:14px;" id="enhancedSecLabel">강화 보안</div>
+          <div style="font-size:11px;color:var(--chat-text2);margin-top:2px;" id="autoLockDesc">화면 이탈 시 채팅 자동 잠금</div>
         </div>
         <label class="toggle"><input type="checkbox" id="autoLockToggle" onchange="toggleAutoLock(this.checked)"/><span class="slider"></span></label>
       </div>
 
       <div class="secret-setting-item">
-        <div class="settings-label" style="color:var(--chat-text);font-size:14px;">내 코드</div>
+        <div class="settings-label" style="color:var(--chat-text);font-size:14px;" id="myCodeLabel">내 코드</div>
         <div class="my-code-display" id="myCodeDisplaySettings" style="font-size:13px;padding:8px;"></div>
       </div>
 
@@ -415,10 +414,10 @@
   <!-- Change Code Modal -->
   <div id="changeCodeModal" class="modal" style="display:none">
     <div class="modal-box">
-      <div class="modal-title">식별 코드 변경</div>
+      <div class="modal-title" id="changeCodeTitle">식별 코드 변경</div>
       <p class="modal-desc">⚠️ 변경 시 모든 친구가 양측에서 삭제됩니다</p>
       <input id="newCodeInput" class="chat-input-field" type="text" maxlength="20" placeholder="새 식별 코드 입력"/>
-      <button class="chat-action-btn" style="background:#f59e0b;" onclick="confirmChangeCode()">변경 확인</button>
+      <button class="chat-action-btn" style="background:#f59e0b;" onclick="confirmChangeCode()" id="changeCodeConfirm">변경 확인</button>
       <button class="modal-cancel" onclick="closeChangeCode()">취소</button>
     </div>
   </div>
@@ -443,7 +442,7 @@
     <div class="menu-item" data-dot="8" ontouchstart="setupDotStart(event,8)" onmousedown="setupDotStart(event,8)"><div class="menu-icon">📆</div><div class="menu-label">달력</div></div>
   </div>
   <div id="setupStatus" style="color:#60a5fa;text-align:center;font-size:14px;min-height:20px;padding:0 20px;"></div>
-  <button id="savePatternBtn" class="settings-btn save-pattern-btn" onclick="savePattern()" style="display:none;">패턴 저장</button>
+  <button id="savePatternBtn" class="settings-btn save-pattern-btn" onclick="savePattern()" style="display:none;" id="patternSaveBtn">패턴 저장</button>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -466,7 +465,7 @@ try {
 <!-- 이미지 뷰어 -->
 <div id="imgViewer" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:9999;flex-direction:column;align-items:center;justify-content:center;">
   <button onclick="closeImgViewer()" style="position:absolute;top:20px;right:20px;background:none;border:none;color:#fff;font-size:28px;cursor:pointer;z-index:2;">×</button>
-  <a id="imgViewerDownload" download style="position:absolute;top:20px;left:20px;background:rgba(255,255,255,0.15);border:none;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;cursor:pointer;text-decoration:none;z-index:2;">⬇ 저장</a>
+  <a id="imgViewerDownload" download style="position:absolute;top:20px;left:20px;background:rgba(255,255,255,0.15);border:none;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;cursor:pointer;text-decoration:none;z-index:2;" id="imgDownloadBtn">⬇ 저장</a>
   <div id="imgViewerCounter" style="position:absolute;top:24px;left:50%;transform:translateX(-50%);color:#fff;font-size:14px;z-index:2;"></div>
   <div id="imgViewerSwipe" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;touch-action:pan-y;">
     <img id="imgViewerImg" style="max-width:95vw;max-height:90vh;object-fit:contain;border-radius:8px;pointer-events:none;user-select:none;"/>
