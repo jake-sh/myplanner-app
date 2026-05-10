@@ -1,6 +1,6 @@
 {
-  "name": "my planner",
-  "short_name": "my planner",
+  "name": "MyPlanner",
+  "short_name": "MyPlanner",
   "description": "일정 및 할 일 관리 앱",
   "start_url": "/myplanner-app/",
   "scope": "/myplanner-app/",
