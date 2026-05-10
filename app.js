@@ -1097,10 +1097,10 @@ function applyChatTheme() {
 function updateThemeBtns() {
   const theme = localStorage.getItem('chatTheme') || 'dark';
   const en = localStorage.getItem('lang') === 'en';
-  document.getElementById('themeDarkBtn')?.classList.toggle('theme-active', theme === 'dark');
-  document.getElementById('themeLightBtn')?.classList.toggle('theme-active', theme === 'light');
-  var d = document.getElementById('themeDarkBtn'); if(d) d.textContent = en ? 'Dark' : '다크';
-  var l = document.getElementById('themeLightBtn'); if(l) l.textContent = en ? 'Light' : '라이트';
+  var d = document.getElementById('themeDarkBtn');
+  var l = document.getElementById('themeLightBtn');
+  if(d) { d.classList.toggle('theme-active', theme === 'dark'); d.textContent = en ? 'Dark' : '다크'; }
+  if(l) { l.classList.toggle('theme-active', theme === 'light'); l.textContent = en ? 'Light' : '라이트'; }
 }
 
 function updateFontSizeBtns() {
@@ -1859,7 +1859,7 @@ function applyLang() {
   _setText('autoDeleteTitle', en ? 'Auto-Delete Timer' : '자동삭제 시간');
 
   // 보안설정
-  _setText('securityTitle', en ? 'Security' : '보안 설정');
+  _setText('securityTitle', en ? 'Settings' : '설정');
   _setText('themeLabel2', en ? 'Theme' : '테마');
   _setText('fontSizeLabel', en ? 'Font Size' : '폰트 크기');
   _setText('lockPatternLabel', en ? 'Lock Pattern' : '잠금 패턴');
@@ -1894,8 +1894,8 @@ function applyLang() {
   _setText('imgDownloadBtn', en ? '⬇ Save' : '⬇ 저장');
 
   // 보안설정 내부 버튼
-  _setText('themeDarkLabel', en ? 'Dark' : '다크');
-  _setText('themeLightLabel', en ? 'Light' : '라이트');
+  var dBtn = document.getElementById('themeDarkBtn'); if(dBtn) dBtn.textContent = en ? 'Dark' : '다크';
+  var lBtn = document.getElementById('themeLightBtn'); if(lBtn) lBtn.textContent = en ? 'Light' : '라이트';
   _setText('fontSmLabel', en ? 'S' : '소');
   _setText('fontMdLabel', en ? 'M' : '중');
   _setText('fontLgLabel', en ? 'L' : '대');
