@@ -1603,7 +1603,8 @@ async function loadWeather() {
     var lon = pos.coords.longitude;
     try {
       // 날씨
-      var wRes = await fetch('https://api.openweathermap.org/data/2.5/weather?lat='+lat+'&lon='+lon+'&appid='+OWM_KEY+'&units=metric&lang=kr');
+      var wLang = localStorage.getItem('lang')==='en' ? 'en' : 'kr';
+      var wRes = await fetch('https://api.openweathermap.org/data/2.5/weather?lat='+lat+'&lon='+lon+'&appid='+OWM_KEY+'&units=metric&lang='+wLang);
       var wData = await wRes.json();
       var temp = Math.round(wData.main.temp);
       var desc = wData.weather[0].description;
@@ -1633,8 +1634,8 @@ async function loadWeather() {
 
       var level25 = getDustLevel(pm25);
       document.getElementById('widgetDustVal').innerHTML = 
-        (localStorage.getItem('lang')==='en' ? 'Fine ' : '미세 ') + '<b style="color:' + level.color + '">' + level.text + '</b><br>' +
-        (localStorage.getItem('lang')==='en' ? 'Ultra ' : '초미세 ') + '<b style="color:' + level25.color + '">' + level25.text + '</b>';
+        (localStorage.getItem('lang')==='en' ? 'Fine dust ' : '미세 ') + '<b style="color:' + level.color + '">' + level.text + '</b><br>' +
+        (localStorage.getItem('lang')==='en' ? 'Ultra-fine ' : '초미세 ') + '<b style="color:' + level25.color + '">' + level25.text + '</b>';
       document.getElementById('widgetDustLevel').textContent = '';
 
       // 옷차림
@@ -1765,6 +1766,7 @@ function setLang(lang) {
 function applyLang() {
   currentLang = localStorage.getItem('lang') || 'ko';
   var en = currentLang === 'en';
+  updateFakeDate();
 
   var sel = document.getElementById('langSelect');
   if (sel) sel.value = currentLang;
