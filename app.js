@@ -1576,18 +1576,23 @@ async function loadWeather() {
       var wRes = await fetch('https://api.openweathermap.org/data/2.5/weather?lat='+lat+'&lon='+lon+'&appid='+OWM_KEY+'&units=metric&lang=kr');
       var wData = await wRes.json();
       var temp = Math.round(wData.main.temp);
-      var tempMin = Math.round(wData.main.temp_min);
-      var tempMax = Math.round(wData.main.temp_max);
       var desc = wData.weather[0].description;
       var icon = getWeatherIcon(wData.weather[0].id);
       var city = wData.name;
 
       document.getElementById('widgetTemp').textContent = temp + '°';
-      document.getElementById('widgetTempMin').textContent = tempMin + '°';
-      document.getElementById('widgetTempMax').textContent = tempMax + '°';
       document.getElementById('widgetDesc').textContent = desc;
       document.getElementById('widgetWeatherIcon').textContent = icon;
       document.getElementById('widgetLocation').textContent = '📍 ' + city;
+
+      // 오늘 최저/최고 - forecast API 사용
+      var fRes = await fetch('https://api.openweathermap.org/data/2.5/forecast?lat='+lat+'&lon='+lon+'&appid='+OWM_KEY+'&units=metric&cnt=8');
+      var fData = await fRes.json();
+      var todayTemps = fData.list.map(function(item){ return item.main.temp; });
+      var tMin = Math.round(Math.min.apply(null, todayTemps));
+      var tMax = Math.round(Math.max.apply(null, todayTemps));
+      document.getElementById('widgetTempMin').textContent = tMin + '°';
+      document.getElementById('widgetTempMax').textContent = tMax + '°';
 
       // 미세먼지
       var aRes = await fetch('https://api.openweathermap.org/data/2.5/air_pollution?lat='+lat+'&lon='+lon+'&appid='+OWM_KEY);
