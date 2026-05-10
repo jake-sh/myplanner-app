@@ -36,7 +36,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const n = localStorage.getItem('appName');
   if (n) { document.getElementById('appTitle').textContent = n; document.title = n; }
   const t = localStorage.getItem('themeColor');
-  if (t) document.documentElement.style.setProperty('--primary', t);
+  if (t) { document.documentElement.style.setProperty('--primary', t); setTimeout(function(){ applyMenuTheme(t); }, 100); }
   showScreen('fakeApp');
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 });
@@ -262,7 +262,27 @@ function saveAppName() {
   document.title = n;
   alert('저장되었습니다');
 }
-function setTheme(c) { document.documentElement.style.setProperty('--primary', c); localStorage.setItem('themeColor', c); }
+function setTheme(c) {
+  document.documentElement.style.setProperty('--primary', c);
+  localStorage.setItem('themeColor', c);
+  applyMenuTheme(c);
+}
+
+function applyMenuTheme(c) {
+  var isGray = (c === '#6b7280');
+  var items = document.querySelectorAll('.menu-item');
+  var pastelColors = [
+    '#E8F8F5','#E8F4FF','#FFE8EE','#FFF8E8',
+    '#FFF0E8','#EDFBF0','#EEE8FF','#F5E8FF','#E8EEFF'
+  ];
+  items.forEach(function(item, i) {
+    if (isGray) {
+      item.style.background = '#F0F1F4';
+    } else {
+      item.style.background = pastelColors[i] || '#fff';
+    }
+  });
+}
 
 // ── 할 일 ───────────────────────────────────────────
 function getSharedTodoId() {
