@@ -133,11 +133,11 @@ html,body{height:100%;font-family:'Nunito',sans-serif;background:var(--bg);color
   font-size:14px;font-family:inherit;outline:none;
   background:#F8F9FF;color:var(--text);
 }
-.theme-options{display:flex;gap:8px;flex-wrap:wrap;}
+.theme-options{display:flex;gap:6px;flex-wrap:nowrap;}
 .theme-btn{
-  border:none;color:#fff;padding:9px 18px;
-  border-radius:20px;font-size:13px;font-weight:700;
-  cursor:pointer;font-family:inherit;
+  border:none;color:#fff;padding:9px 0;
+  border-radius:20px;font-size:12px;font-weight:700;
+  cursor:pointer;font-family:inherit;flex:1;text-align:center;
 }
 
 /* 토글 */
