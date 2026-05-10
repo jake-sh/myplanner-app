@@ -31,7 +31,7 @@
   --pastel-blue:#E8EEFF;
 }
 
-html,body{height:100%;font-family:'Figtree',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;} #widgetClock{font-family:'Figtree',sans-serif;}
+html,body{height:100%;font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;} #widgetClock{font-family:'Sora',sans-serif;}
 
 .screen{position:fixed;inset:0;display:none;flex-direction:column;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;z-index:1;} #chatApp{overflow:hidden;}
 #fakeApp{overflow-y:hidden;}
