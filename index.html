@@ -323,14 +323,14 @@
 
 <!-- Add Friend Modal -->
   <div id="addFriendModal" class="modal" style="display:none">
-    <div class="modal-box">
-      <div class="modal-title" id="addFriendTitle">친구 추가</div>
-      <div class="add-friend-tabs">
+    <div class="modal-box" style="gap:0;">
+      <div class="modal-title" id="addFriendTitle" style="margin-bottom:14px;">친구 추가</div>
+      <div class="add-friend-tabs" style="margin-bottom:14px;">
         <button class="tab-btn active" id="tabCode" onclick="switchAddTab('code')">코드</button>
         <button class="tab-btn" id="tabQRScan" onclick="switchAddTab('qr')">QR 스캔</button>
         <button class="tab-btn" id="tabMyQR" onclick="switchAddTab('myqr')">내 QR</button>
       </div>
-      <div id="addTabCode" style="display:flex;flex-direction:column;gap:14px;">
+      <div id="addTabCode" style="display:flex;flex-direction:column;gap:14px;margin-bottom:14px;">
         <p id="friendCodeDesc" class="modal-desc">친구의 식별 코드를 입력하세요</p>
         <input id="friendCodeInput" class="chat-input-field" type="text" id="friendCodeInput2" placeholder="친구 코드 입력"/>
         <button class="chat-action-btn" onclick="addFriendByCode()" id="addFriendBtn">추가</button>
