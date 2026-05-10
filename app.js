@@ -620,7 +620,7 @@ async function addFriendByCode() {
   friends.push(code); localStorage.setItem('friends', JSON.stringify(friends));
   await db.collection('users').doc(myCode).set({ friends: firebase.firestore.FieldValue.arrayUnion(code) }, { merge: true });
   await db.collection('users').doc(code).set({ friends: firebase.firestore.FieldValue.arrayUnion(myCode) }, { merge: true });
-  renderFriendList(); closeAddFriend(); alert(`${code} 추가되었습니다`);
+  renderFriendList(); closeAddFriend(); alert(localStorage.getItem('lang')==='en' ? code + ' has been added' : code + ' 추가되었습니다');
 }
 
 function renderMyQr() {
@@ -640,7 +640,7 @@ function startQrScanner() {
       friends.push(code); localStorage.setItem('friends', JSON.stringify(friends));
       db.collection('users').doc(myCode).set({ friends: firebase.firestore.FieldValue.arrayUnion(code) }, { merge: true });
       db.collection('users').doc(code).set({ friends: firebase.firestore.FieldValue.arrayUnion(myCode) }, { merge: true });
-      renderFriendList(); closeAddFriend(); alert(`${code} 추가되었습니다`);
+      renderFriendList(); closeAddFriend(); alert(localStorage.getItem('lang')==='en' ? code + ' has been added' : code + ' 추가되었습니다');
     }
   }, () => {}).catch(() => { wrap.innerHTML = '<p style="color:#64748b;font-size:13px;text-align:center;">카메라 권한이 필요합니다</p>'; });
 }
@@ -1075,16 +1075,25 @@ function applyChatTheme() {
 
 function updateThemeBtns() {
   const theme = localStorage.getItem('chatTheme') || 'dark';
+  const en = localStorage.getItem('lang') === 'en';
   document.getElementById('themeDarkBtn')?.classList.toggle('theme-active', theme === 'dark');
   document.getElementById('themeLightBtn')?.classList.toggle('theme-active', theme === 'light');
+  var d = document.getElementById('themeDarkLabel'); if(d) d.textContent = en ? 'Dark' : '다크';
+  var l = document.getElementById('themeLightLabel'); if(l) l.textContent = en ? 'Light' : '라이트';
 }
 
 function updateFontSizeBtns() {
   const size = parseInt(localStorage.getItem('chatFontSize') || '18');
+  const en = localStorage.getItem('lang') === 'en';
   const map = { 'fontSmBtn': 14, 'fontMdBtn': 18, 'fontLgBtn': 22 };
+  const labels = { 'fontSmBtn': en?'S':'소', 'fontMdBtn': en?'M':'중', 'fontLgBtn': en?'L':'대' };
   Object.entries(map).forEach(([id, s]) => {
-    document.getElementById(id)?.classList.toggle('font-active', s === size);
+    const el = document.getElementById(id);
+    if (el) { el.classList.toggle('font-active', s === size); el.textContent = labels[id]; }
   });
+  var sl = document.getElementById('fontSmLabel'); if(sl) sl.textContent = en?'S':'소';
+  var ml = document.getElementById('fontMdLabel'); if(ml) ml.textContent = en?'M':'중';
+  var ll = document.getElementById('fontLgLabel'); if(ll) ll.textContent = en?'L':'대';
 }
 
 function toggleAutoLock(enabled) {
@@ -1888,6 +1897,17 @@ function applyLang() {
   // 달력 갱신 (요일 헤더)
   var calScreen = document.getElementById('calendarScreen');
   if (calScreen && calScreen.classList.contains('active')) renderCalendar();
+
+  // 친구추가 모달
+  _setText('friendCodeDesc', en ? "Enter your friend's ID code" : '친구의 식별 코드를 입력하세요');
+  var fci = document.getElementById('friendCodeInput2') || document.getElementById('friendCodeInput');
+  if (fci) fci.placeholder = en ? 'Enter friend code' : '친구 코드 입력';
+  _setText('qrScanDesc', en ? "Scan your friend's QR code" : '친구의 QR코드를 스캔하세요');
+  _setText('myQrDesc', en ? 'Show your QR code to your friend' : '내 QR코드를 친구에게 보여주세요');
+
+  // 닉네임 placeholder
+  var nnInput2 = document.getElementById('myCodeInput');
+  if (nnInput2) nnInput2.placeholder = en ? 'Enter nickname' : '닉네임 입력';
 }
 
 function _setText(id, text) {

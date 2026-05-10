@@ -330,17 +330,17 @@
         <button class="tab-btn" id="tabBtnMyqr" onclick="switchAddTab('myqr')" id="tabMyQR">내 QR</button>
       </div>
       <div id="addTabCode">
-        <p class="modal-desc">친구의 식별 코드를 입력하세요</p>
-        <input id="friendCodeInput" class="chat-input-field" type="text" placeholder="친구 코드 입력"/>
+        <p id="friendCodeDesc" class="modal-desc">친구의 식별 코드를 입력하세요</p>
+        <input id="friendCodeInput" class="chat-input-field" type="text" id="friendCodeInput2" placeholder="친구 코드 입력"/>
         <button class="chat-action-btn" onclick="addFriendByCode()" id="addFriendBtn">추가</button>
       </div>
       <div id="addTabQr" style="display:none">
-        <p class="modal-desc">친구의 QR코드를 스캔하세요</p>
+        <p id="qrScanDesc" class="modal-desc">친구의 QR코드를 스캔하세요</p>
         <div id="qrScannerWrap"></div>
         <div id="qrScanResult" style="color:#60a5fa;font-size:13px;text-align:center;margin-top:8px;"></div>
       </div>
       <div id="addTabMyqr" style="display:none;flex-direction:column;align-items:center;gap:12px;">
-        <p class="modal-desc">내 QR코드를 친구에게 보여주세요</p>
+        <p id="myQrDesc" class="modal-desc">내 QR코드를 친구에게 보여주세요</p>
         <div id="myQrCode"></div>
         <div class="my-code-display" id="myCodeDisplay2"></div>
         <button class="settings-btn" onclick="regenerateCode()" id="regenCodeBtn">🔄 코드 재생성</button>
