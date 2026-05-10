@@ -510,3 +510,11 @@ input:checked+.slider:before{transform:translateX(20px);}
   transition:background .15s;white-space:nowrap;
 }
 .chat-theme-btn.theme-active{background:var(--primary);color:#fff;border-color:var(--primary);}
+
+/* 채팅 메시지 리스트 */
+.message-list{
+  flex:1;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  padding:10px 0 4px;
+  display:flex;flex-direction:column;
+}
