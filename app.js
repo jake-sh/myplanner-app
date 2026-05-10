@@ -33,8 +33,6 @@ let editingMemoIndex = null;
 // ── INIT ───────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   updateFakeDate();
-  startClock();
-  loadWeather();
   const n = localStorage.getItem('appName');
   if (n) { document.getElementById('appTitle').textContent = n; document.title = n; }
   const t = localStorage.getItem('themeColor');
@@ -1695,14 +1693,13 @@ async function loadWeather() {
 
 // 초기 실행
 // DOM 로드 후 실행
+// 초기 실행 - DOM 로드 후
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', function() {
-    startClock();
-    loadWeather();
+    setTimeout(function() { startClock(); loadWeather(); }, 200);
   });
 } else {
-  startClock();
-  loadWeather();
+  setTimeout(function() { startClock(); loadWeather(); }, 200);
 }
 setInterval(loadWeather, 30 * 60 * 1000);
 
