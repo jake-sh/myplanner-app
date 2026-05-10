@@ -1816,6 +1816,7 @@ function applyLang() {
   _setText('themeGreen', en ? 'Green' : '그린');
   _setText('themePurple', en ? 'Purple' : '퍼플');
   _setText('themeYellow', en ? 'Yellow' : '옐로');
+  _setText('themeGray', en ? 'Gray' : '그레이');
   _setText('notifAppLabel', en ? 'App Alerts' : '앱 알림');
   _setText('notifCalLabel', en ? 'Schedule Alerts' : '일정 알림');
   _setText('notifTodoLabel', en ? 'To-Do Alerts' : '할 일 알림');

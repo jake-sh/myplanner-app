@@ -252,9 +252,9 @@ input:checked+.slider:before{transform:translateX(20px);}
 
 /* ══ 채팅 ══ */
 :root{
-  --chat-bg:#0f172a;--chat-surface:#1e293b;--chat-surface2:#0f172a;
-  --chat-border:#334155;--chat-text:#f1f5f9;--chat-text2:#94a3b8;
-  --chat-bubble-mine:#3b82f6;--chat-bubble-theirs:#1e293b;
+  --chat-bg:#000000;--chat-surface:#111111;--chat-surface2:#1a1a1a;
+  --chat-border:#2a2a2a;--chat-text:#f1f5f9;--chat-text2:#94a3b8;
+  --chat-bubble-mine:#6C63FF;--chat-bubble-theirs:#1a1a1a;
 }
 .chat-light{
   --chat-bg:#F8F9FF;--chat-surface:#FFFFFF;--chat-surface2:#F0F1F8;
@@ -468,3 +468,26 @@ input:checked+.slider:before{transform:translateX(20px);}
 .modal-title{color:var(--chat-text);}
 .modal-cancel{color:var(--chat-text2)!important;}
 .font-size-btn.font-active{background:var(--primary)!important;color:#fff!important;border-color:var(--primary)!important;}
+
+/* ══ 친구 목록 아이템 ══ */
+.friend-list-wrap{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px;}
+.friend-item{
+  display:flex;align-items:center;gap:14px;
+  padding:14px 16px;margin-bottom:8px;
+  background:var(--chat-surface);
+  border-radius:18px;
+  border:1px solid var(--chat-border);
+  cursor:pointer;transition:opacity .15s;
+}
+.friend-item:active{opacity:.7;}
+.friend-avatar{
+  width:46px;height:46px;border-radius:50%;
+  background:var(--primary);
+  color:#fff;font-size:18px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;text-transform:uppercase;
+}
+.friend-name{
+  flex:1;font-size:16px;font-weight:700;
+  color:var(--chat-text);
+}
