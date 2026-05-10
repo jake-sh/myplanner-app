@@ -1008,6 +1008,8 @@ async function handleFileSelect(e) {
 async function sendMessage() {
   const input = document.getElementById('msgInput'); const text = input.value.trim();
   if (!text || !chatRoomId) return; input.value = '';
+  // 키패드 유지 - 포커스 즉시 복원
+  input.focus();
   await db.collection('rooms').doc(chatRoomId).collection('messages').add({
     sender: myCode, receiverId: activeFriendCode, text, type: 'text',
     ts: firebase.firestore.Timestamp.now(),

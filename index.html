@@ -265,7 +265,7 @@
       </button>
       <input type="file" id="fileInput" accept="image/*,video/*" multiple style="display:none" onchange="handleFileSelect(event)"/>
       <input id="msgInput" class="msg-input" type="text" placeholder="메시지 입력..." id="msgInputEl" onkeydown="if(event.key==='Enter')sendMessage()"/>
-      <button class="send-btn" onclick="sendMessage()">➤</button>
+      <button class="send-btn" onmousedown="event.preventDefault()" onclick="sendMessage()">➤</button>
     </div>
   </div>
 
