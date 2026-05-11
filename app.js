@@ -284,32 +284,34 @@ function applyDarkMode() {
   }
   var toggle = document.getElementById('darkModeToggle');
   if (toggle) toggle.checked = enabled;
-  // 그레이 테마 + 다크모드시 타이틀 흰색
-  var titleEl = document.getElementById('appTitle');
+  // 타이틀 색상 처리
   var themeColor = localStorage.getItem('themeColor') || '#6C63FF';
-  if (titleEl) {
-    if (enabled && themeColor === '#6b7280') {
-      titleEl.style.color = '#FFFFFF';
-    } else {
-      titleEl.style.color = '';
-    }
+  var titleColor;
+  if (!enabled) {
+    titleColor = ''; // 라이트모드: CSS 기본값
+  } else if (themeColor === '#6b7280') {
+    titleColor = '#FFFFFF'; // 그레이+다크: 흰색
+  } else {
+    titleColor = themeColor; // 다른테마+다크: 테마색
   }
+  ['appTitle','titleMy','titlePlanner'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) {
+      if (titleColor) {
+        el.style.setProperty('color', titleColor, 'important');
+      } else {
+        el.style.removeProperty('color');
+      }
+    }
+  });
 }
 
 function setTheme(c) {
   document.documentElement.style.setProperty('--primary', c);
   localStorage.setItem('themeColor', c);
   applyMenuTheme(c);
-  // 그레이 테마 + 다크모드시 타이틀 흰색
-  var titleEl = document.getElementById('appTitle');
-  if (titleEl) {
-    var isDark = localStorage.getItem('darkMode') === 'true';
-    if (isDark && c === '#6b7280') {
-      titleEl.style.color = '#FFFFFF';
-    } else {
-      titleEl.style.color = '';
-    }
-  }
+  // 테마 변경 시 타이틀 색상 재적용
+  applyDarkMode();
 }
 
 function applyMenuTheme(c) {
