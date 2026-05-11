@@ -690,3 +690,18 @@ body.dark-mode .theme-btn.selected {
   outline: 1.5px solid #FFFFFF !important;
   outline-offset: 2px !important;
 }
+
+/* SVG 메뉴 아이콘 색상 */
+.menu-icon { display:flex; align-items:center; justify-content:center; }
+.menu-icon svg { color: #1A1A2E; opacity: 0.75; }
+.menu-item:nth-child(1) .menu-icon svg { color: #10B981; opacity:1; }
+.menu-item:nth-child(2) .menu-icon svg { color: #3B82F6; opacity:1; }
+.menu-item:nth-child(3) .menu-icon svg { color: #F43F5E; opacity:1; }
+.menu-item:nth-child(4) .menu-icon svg { color: #F59E0B; opacity:1; }
+.menu-item:nth-child(5) .menu-icon svg { color: #F97316; opacity:1; }
+.menu-item:nth-child(6) .menu-icon svg { color: #22C55E; opacity:1; }
+.menu-item:nth-child(7) .menu-icon svg { color: #8B5CF6; opacity:1; }
+.menu-item:nth-child(8) .menu-icon svg { color: #A855F7; opacity:1; }
+.menu-item:nth-child(9) .menu-icon svg { color: #38BDF8; opacity:1; }
+/* 다크모드 */
+body.dark-mode .menu-icon svg { opacity: 0.9; }
