@@ -327,7 +327,7 @@ function applyIconStyle() {
   // 테마색 미적용시 적용할 색상
   var themeIconColor = (isDark && isGray) ? '#FFFFFF' : themeColor;
 
-  document.querySelectorAll('.menu-item').forEach(function(item, i) {
+  document.querySelectorAll('#menuGrid .menu-item').forEach(function(item, i) {
     var iconEl = item.querySelector('.menu-icon');
     if (!iconEl) return;
     if (style === 'emoji') {
