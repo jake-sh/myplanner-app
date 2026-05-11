@@ -318,6 +318,7 @@ function updateSvgColorBtns() {
 }
 
 function applyIconStyle() {
+  if (isDragging || isSetupDragging) return; // 드래그 중 스킵
   var style = localStorage.getItem('iconStyle') || 'svg';
   var colorMode = localStorage.getItem('svgColorMode') || 'on';
   var isDark = localStorage.getItem('darkMode') === 'true';
@@ -336,7 +337,7 @@ function applyIconStyle() {
       iconEl.style.color = '';
     } else {
       var svgHtml = SVG_ICONS[i] || '';
-      iconEl.innerHTML = svgHtml;
+      if (!iconEl.querySelector('svg')) iconEl.innerHTML = svgHtml;
       iconEl.style.fontSize = '';
       var svgEl = iconEl.querySelector('svg');
       if (svgEl) {
