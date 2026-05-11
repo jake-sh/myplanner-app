@@ -327,12 +327,9 @@ function applyThemeBtnBorder(c) {
     var btn = document.getElementById(id);
     if (!btn) return;
     if (colors[id] === c) {
-      btn.style.outline = '3px solid #fff';
-      btn.style.outlineOffset = '2px';
-      btn.style.boxShadow = '0 0 0 5px ' + c;
+      btn.classList.add('selected');
     } else {
-      btn.style.outline = 'none';
-      btn.style.boxShadow = 'none';
+      btn.classList.remove('selected');
     }
   });
 }
