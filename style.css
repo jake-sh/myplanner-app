@@ -767,3 +767,9 @@ body.dark-mode #tagAutoDelete {
 body.dark-mode #tagList > div {
   background:#1A1A1A !important;
 }
+
+/* 옷차림 텍스트 선택 방지 */
+#widgetClothes, #widgetClothes * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
