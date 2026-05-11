@@ -255,10 +255,11 @@ function openFakeFeature(i) {
 
 // ── SETTINGS ───────────────────────────────────────
 function openSettings() {
-  // 알림 토글 초기화
   document.getElementById('notifApp').checked = localStorage.getItem('notifApp') === 'true';
   document.getElementById('notifCal').checked = localStorage.getItem('notifCal') === 'true';
   document.getElementById('notifTodo').checked = localStorage.getItem('notifTodo') === 'true';
+  var t = localStorage.getItem('themeColor') || '#6C63FF';
+  setTimeout(function(){ applyThemeBtnBorder(t); }, 50);
   showScreen('settingsScreen');
 }
 function saveAppName() {
@@ -310,8 +311,25 @@ function setTheme(c) {
   document.documentElement.style.setProperty('--primary', c);
   localStorage.setItem('themeColor', c);
   applyMenuTheme(c);
-  // 테마 변경 시 타이틀 색상 재적용
   applyDarkMode();
+  applyThemeBtnBorder(c);
+}
+
+function applyThemeBtnBorder(c) {
+  var ids = ['themeBlue','themeGreen','themePurple','themeYellow','themeGray'];
+  var colors = {'themeBlue':'#4A90D9','themeGreen':'#22c55e','themePurple':'#8b5cf6','themeYellow':'#f59e0b','themeGray':'#6b7280'};
+  ids.forEach(function(id) {
+    var btn = document.getElementById(id);
+    if (!btn) return;
+    if (colors[id] === c) {
+      btn.style.outline = '3px solid #fff';
+      btn.style.outlineOffset = '2px';
+      btn.style.boxShadow = '0 0 0 5px ' + c;
+    } else {
+      btn.style.outline = 'none';
+      btn.style.boxShadow = 'none';
+    }
+  });
 }
 
 function applyMenuTheme(c) {
