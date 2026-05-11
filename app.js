@@ -32,18 +32,24 @@ let editingMemoIndex = null;
 
 // ── INIT ───────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
+  // 1. 테마/다크/타이틀 즉시 적용
+  var t = localStorage.getItem('themeColor');
+  if (t) document.documentElement.style.setProperty('--primary', t);
+  applyDarkMode();
+  applyTitle();
+  // 2. 날짜/시계
   updateFakeDate();
-  const n = localStorage.getItem('appName');
-  if (n) { document.getElementById('appTitle').textContent = n; document.title = n; }
-  const t = localStorage.getItem('themeColor');
-  if (t) { 
-    document.documentElement.style.setProperty('--primary', t); 
-    setTimeout(function(){ applyMenuTheme(t); applyThemeBtnBorder(t); }, 150); 
-  } else {
-    setTimeout(function(){ applyThemeBtnBorder('#6C63FF'); }, 150);
-  }
+  startClock();
+  // 3. 화면 표시
   showScreen('fakeApp');
-  setTimeout(applyLang, 0);
+  // 4. 나머지 비동기
+  setTimeout(function() {
+    if (t) { applyMenuTheme(t); applyThemeBtnBorder(t); }
+    else { applyThemeBtnBorder('#6C63FF'); }
+    applyIconStyle();
+    applyLang();
+    loadWeather();
+  }, 100);
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 });
 
@@ -1984,16 +1990,7 @@ async function loadWeather() {
   });
 }
 
-// 초기 실행
-// DOM 로드 후 실행
-// 초기 실행 - DOM 로드 후
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(function() { startClock(); loadWeather(); }, 200);
-  });
-} else {
-  setTimeout(function() { startClock(); loadWeather(); }, 200);
-}
+// 날씨 주기적 갱신
 setInterval(loadWeather, 30 * 60 * 1000);
 
 // 이미지 뷰어
