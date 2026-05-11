@@ -2078,51 +2078,52 @@ function getClothes(temp, pm10) {
   return '패딩·두꺼운 코트·목도리' + dust;
 }
 
+var _weatherCache = null;
+
+function renderWeatherUI(data) {
+  if (!data) return;
+  var en = localStorage.getItem('lang') === 'en';
+  document.getElementById('widgetTemp').textContent = data.temp + '°';
+  document.getElementById('widgetDesc').textContent = data.desc;
+  document.getElementById('widgetWeatherIcon').textContent = data.icon;
+  document.getElementById('widgetLocation').textContent = data.city;
+  document.getElementById('widgetTempMin').textContent = data.tMin + '°';
+  document.getElementById('widgetTempMax').textContent = data.tMax + '°';
+  var level = getDustLevel(data.pm10);
+  var level25 = getDustLevel(data.pm25);
+  document.getElementById('widgetDustVal').innerHTML =
+    (en ? 'Fine dust ' : '미세 ') + '<b style="color:' + level.color + '">' + level.text + '</b><br>' +
+    (en ? 'Ultra-fine ' : '초미세 ') + '<b style="color:' + level25.color + '">' + level25.text + '</b>';
+  document.getElementById('widgetDustLevel').textContent = '';
+  document.getElementById('widgetClothesVal').textContent = getClothes(data.temp, data.pm10);
+}
+
 async function loadWeather() {
   if (!navigator.geolocation) return;
   navigator.geolocation.getCurrentPosition(async function(pos) {
     var lat = pos.coords.latitude;
     var lon = pos.coords.longitude;
     try {
-      // 날씨
-      var wLang = localStorage.getItem('lang')==='en' ? 'en' : 'kr';
+      var en = localStorage.getItem('lang') === 'en';
+      var wLang = en ? 'en' : 'kr';
       var wRes = await fetch('https://api.openweathermap.org/data/2.5/weather?lat='+lat+'&lon='+lon+'&appid='+OWM_KEY+'&units=metric&lang='+wLang);
       var wData = await wRes.json();
-      var temp = Math.round(wData.main.temp);
-      var desc = wData.weather[0].description;
-      var icon = getWeatherIcon(wData.weather[0].id);
-      var city = wData.name;
-
-      document.getElementById('widgetTemp').textContent = temp + '°';
-      document.getElementById('widgetDesc').textContent = desc;
-      document.getElementById('widgetWeatherIcon').textContent = icon;
-      document.getElementById('widgetLocation').textContent = city;
-
-      // 오늘 최저/최고 - forecast API 사용
       var fRes = await fetch('https://api.openweathermap.org/data/2.5/forecast?lat='+lat+'&lon='+lon+'&appid='+OWM_KEY+'&units=metric&cnt=8');
       var fData = await fRes.json();
       var todayTemps = fData.list.map(function(item){ return item.main.temp; });
-      var tMin = Math.round(Math.min.apply(null, todayTemps));
-      var tMax = Math.round(Math.max.apply(null, todayTemps));
-      document.getElementById('widgetTempMin').textContent = tMin + '°';
-      document.getElementById('widgetTempMax').textContent = tMax + '°';
-
-      // 미세먼지
       var aRes = await fetch('https://api.openweathermap.org/data/2.5/air_pollution?lat='+lat+'&lon='+lon+'&appid='+OWM_KEY);
       var aData = await aRes.json();
-      var pm10 = Math.round(aData.list[0].components.pm10);
-      var pm25 = Math.round(aData.list[0].components.pm2_5);
-      var level = getDustLevel(pm10);
-
-      var level25 = getDustLevel(pm25);
-      document.getElementById('widgetDustVal').innerHTML = 
-        (localStorage.getItem('lang')==='en' ? 'Fine dust ' : '미세 ') + '<b style="color:' + level.color + '">' + level.text + '</b><br>' +
-        (localStorage.getItem('lang')==='en' ? 'Ultra-fine ' : '초미세 ') + '<b style="color:' + level25.color + '">' + level25.text + '</b>';
-      document.getElementById('widgetDustLevel').textContent = '';
-
-      // 옷차림
-      document.getElementById('widgetClothesVal').textContent = getClothes(temp, pm10);
-
+      _weatherCache = {
+        temp: Math.round(wData.main.temp),
+        desc: wData.weather[0].description,
+        icon: getWeatherIcon(wData.weather[0].id),
+        city: wData.name,
+        tMin: Math.round(Math.min.apply(null, todayTemps)),
+        tMax: Math.round(Math.max.apply(null, todayTemps)),
+        pm10: Math.round(aData.list[0].components.pm10),
+        pm25: Math.round(aData.list[0].components.pm2_5),
+      };
+      renderWeatherUI(_weatherCache);
     } catch(e) {
       var en = localStorage.getItem('lang') === 'en';
       document.getElementById('widgetClothesVal').textContent = en ? 'No weather info' : '날씨 정보 없음';
@@ -2244,6 +2245,7 @@ function setLang(lang) {
   currentLang = lang;
   localStorage.setItem('lang', lang);
   applyLang();
+  renderWeatherUI(_weatherCache);
 }
 
 function applyLang() {
