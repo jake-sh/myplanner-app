@@ -683,10 +683,10 @@ body.dark-mode #titlePlanner { color:inherit; }
 
 /* 선택된 테마 버튼 테두리 */
 .theme-btn.selected {
-  outline: 3px solid #222222 !important;
-  outline-offset: 3px !important;
+  outline: 1.5px solid #222222 !important;
+  outline-offset: 2px !important;
 }
 body.dark-mode .theme-btn.selected {
-  outline: 3px solid #FFFFFF !important;
-  outline-offset: 3px !important;
+  outline: 1.5px solid #FFFFFF !important;
+  outline-offset: 2px !important;
 }
