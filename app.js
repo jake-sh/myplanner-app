@@ -36,7 +36,12 @@ window.addEventListener('DOMContentLoaded', () => {
   const n = localStorage.getItem('appName');
   if (n) { document.getElementById('appTitle').textContent = n; document.title = n; }
   const t = localStorage.getItem('themeColor');
-  if (t) { document.documentElement.style.setProperty('--primary', t); setTimeout(function(){ applyMenuTheme(t); }, 100); }
+  if (t) { 
+    document.documentElement.style.setProperty('--primary', t); 
+    setTimeout(function(){ applyMenuTheme(t); applyThemeBtnBorder(t); }, 150); 
+  } else {
+    setTimeout(function(){ applyThemeBtnBorder('#6C63FF'); }, 150);
+  }
   showScreen('fakeApp');
   setTimeout(applyLang, 0);
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -258,9 +263,9 @@ function openSettings() {
   document.getElementById('notifApp').checked = localStorage.getItem('notifApp') === 'true';
   document.getElementById('notifCal').checked = localStorage.getItem('notifCal') === 'true';
   document.getElementById('notifTodo').checked = localStorage.getItem('notifTodo') === 'true';
-  var t = localStorage.getItem('themeColor') || '#6C63FF';
-  setTimeout(function(){ applyThemeBtnBorder(t); }, 50);
   showScreen('settingsScreen');
+  var t2 = localStorage.getItem('themeColor') || '#6C63FF';
+  setTimeout(function(){ applyThemeBtnBorder(t2); }, 200);
 }
 function saveAppName() {
   const n = document.getElementById('appNameInput').value.trim() || 'MyPlanner';
