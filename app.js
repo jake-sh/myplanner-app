@@ -2240,7 +2240,7 @@ function applyLang() {
   _setText('memoTitle', en ? 'Memo' : '메모');
   _setText('calendarTitle', en ? 'Calendar' : '달력');
   _setText('statsTitle', en ? 'Health Stats' : '건강 통계');
-  _setText('chatListTitle', en ? 'Chats' : '목록');
+  _setText('chatListTitle', en ? 'List' : '목록');
   _setText('newMemoTitle', en ? 'New Memo' : '새 메모');
   _setText('featureTitle', document.getElementById('featureTitle') ? document.getElementById('featureTitle').textContent : '');
 
