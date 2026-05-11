@@ -1732,14 +1732,7 @@ function showInAppNotif(text) {
 
 
 function openNaverMap() {
-  var appUrl = 'nmap://';
-  var webUrl = 'https://map.naver.com';
-  var a = document.createElement('a');
-  a.href = appUrl;
-  a.click();
-  setTimeout(function() {
-    window.open(webUrl, '_blank');
-  }, 1000);
+  window.open('https://map.naver.com', '_blank');
 }
 
 function hideInAppNotif() {
