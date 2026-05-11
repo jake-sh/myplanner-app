@@ -1044,6 +1044,9 @@ function backToFriendList() {
   showFriendList();
 }
 
+var _lastHandledReqId = null;
+var _lastHandledStatus = null;
+
 function listenRoomSettings() {
   if (!chatRoomId) return;
   roomListener = db.collection('rooms').doc(chatRoomId).onSnapshot(snap => {
@@ -1051,6 +1054,11 @@ function listenRoomSettings() {
     const data = snap.data();
     const req = data.deleteRequest;
     if (!req) return;
+
+    var reqKey = req.id + '_' + req.status;
+    if (reqKey === _lastHandledReqId) return; // 이미 처리한 상태 무시
+    _lastHandledReqId = reqKey;
+
     if (req.from !== myCode && req.status === 'pending') {
       showDeleteTimeRequest(req.from, req.minutes, req.id);
     }
@@ -1637,12 +1645,16 @@ function hideUploadStatus() {
 function showInAppNotif(text) {
   let el = document.getElementById('inAppNotif');
   if (!el) { el = document.createElement('div'); el.id = 'inAppNotif'; el.className = 'in-app-notif'; document.body.appendChild(el); }
-  el.textContent = text;
+  var isEn = localStorage.getItem('lang') === 'en';
+  el.innerHTML = '<span>' + text + '</span><button class="in-app-notif-ok" onclick="hideInAppNotif()">' + (isEn ? 'OK' : '확인') + '</button>';
   el.classList.add('show');
   clearTimeout(el._hideTimer);
-  el._hideTimer = setTimeout(() => {
-    el.classList.remove('show');
-  }, 3000);
+  el._hideTimer = setTimeout(() => { hideInAppNotif(); }, 5000);
+}
+
+function hideInAppNotif() {
+  var el = document.getElementById('inAppNotif');
+  if (el) { el.classList.remove('show'); clearTimeout(el._hideTimer); }
 }
 
 
