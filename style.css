@@ -45,6 +45,7 @@ html,body{height:100%;font-family:'Open Sans',sans-serif;font-weight:400;backgro
   border-bottom:1px solid #F0F1F8;
 }
 .fake-title{font-size:28px;font-family:'Wilzten',cursive;color:var(--primary);letter-spacing:0;font-weight:normal;}
+body:not(.dark-mode) .fake-title{color:var(--primary) !important;}
 .icon-btn{
   width:40px;height:40px;
   background:var(--primary-light);
@@ -646,3 +647,8 @@ body.dark-mode .cal-palette .pal-btn { border-color:#333; }
 /* 그레이 테마 다크모드 타이틀 */
 body.dark-mode[style*="6b7280"] .fake-title,
 body.dark-mode .fake-title.gray-title { color:#FFFFFF !important; }
+
+/* 다크모드 타이틀: JS에서만 처리 */
+body.dark-mode .fake-title,
+body.dark-mode #titleMy,
+body.dark-mode #titlePlanner { color:inherit; }
