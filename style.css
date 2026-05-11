@@ -526,6 +526,7 @@ input:checked+.slider:before{transform:translateX(20px);}
   padding:10px 0 4px;
   display:flex;flex-direction:column;
   min-height:0;
+  justify-content:flex-start;
 }
 
 /* ══ 다크 모드 ══ */
@@ -652,3 +653,16 @@ body.dark-mode .fake-title.gray-title { color:#FFFFFF !important; }
 body.dark-mode .fake-title,
 body.dark-mode #titleMy,
 body.dark-mode #titlePlanner { color:inherit; }
+
+/* 채팅창 키패드 대응 */
+#chatApp {
+  height: 100dvh !important;
+  overflow: hidden !important;
+}
+#activeChatView {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
