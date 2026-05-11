@@ -743,6 +743,22 @@ async function confirmChangeCode() {
 }
 
 // ── CHAT ────────────────────────────────────────────
+// 키패드 올라올때 채팅 스크롤 유지
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', function() {
+    var chatView = document.getElementById('activeChatView');
+    var list = document.getElementById('messageList');
+    if (chatView && list) {
+      // 키패드 높이만큼 채팅뷰 높이 조정
+      var viewportHeight = window.visualViewport.height;
+      chatView.style.height = viewportHeight + 'px';
+      setTimeout(function() {
+        list.scrollTop = list.scrollHeight;
+      }, 50);
+    }
+  });
+}
+
 function openChat(friendCode) {
   activeFriendCode = friendCode;
   chatRoomId = [myCode, friendCode].sort().join('_');
