@@ -284,12 +284,32 @@ function applyDarkMode() {
   }
   var toggle = document.getElementById('darkModeToggle');
   if (toggle) toggle.checked = enabled;
+  // 그레이 테마 + 다크모드시 타이틀 흰색
+  var titleEl = document.getElementById('appTitle');
+  var themeColor = localStorage.getItem('themeColor') || '#6C63FF';
+  if (titleEl) {
+    if (enabled && themeColor === '#6b7280') {
+      titleEl.style.color = '#FFFFFF';
+    } else {
+      titleEl.style.color = '';
+    }
+  }
 }
 
 function setTheme(c) {
   document.documentElement.style.setProperty('--primary', c);
   localStorage.setItem('themeColor', c);
   applyMenuTheme(c);
+  // 그레이 테마 + 다크모드시 타이틀 흰색
+  var titleEl = document.getElementById('appTitle');
+  if (titleEl) {
+    var isDark = localStorage.getItem('darkMode') === 'true';
+    if (isDark && c === '#6b7280') {
+      titleEl.style.color = '#FFFFFF';
+    } else {
+      titleEl.style.color = '';
+    }
+  }
 }
 
 function applyMenuTheme(c) {
