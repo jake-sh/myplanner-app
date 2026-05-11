@@ -268,6 +268,29 @@ function saveAppName() {
   document.title = n;
   alert('저장되었습니다');
 }
+
+// ── 다크모드 ──────────────────────────────────────────
+var PASTEL_DEFAULT = ['#E8F8F5','#E8F4FF','#FFE8EE','#FFF8E8','#FFF0E8','#EDFBF0','#EEE8FF','#F5E8FF','#E8EEFF'];
+
+function setDarkMode(enabled) {
+  localStorage.setItem('darkMode', enabled ? 'true' : 'false');
+  applyDarkMode();
+}
+
+function applyDarkMode() {
+  var enabled = localStorage.getItem('darkMode') === 'true';
+  if (enabled) {
+    document.body.classList.add('dark-mode');
+  } else {
+    document.body.classList.remove('dark-mode');
+  }
+  var toggle = document.getElementById('darkModeToggle');
+  if (toggle) toggle.checked = enabled;
+  // 메뉴 색상 재적용
+  var themeColor = localStorage.getItem('themeColor') || '#6C63FF';
+  applyMenuTheme(themeColor);
+}
+
 function setTheme(c) {
   document.documentElement.style.setProperty('--primary', c);
   localStorage.setItem('themeColor', c);
@@ -276,25 +299,27 @@ function setTheme(c) {
 
 function applyMenuTheme(c) {
   var items = document.querySelectorAll('.menu-item');
+  var isDark = localStorage.getItem('darkMode') === 'true';
 
-  // 테마별 색상 팔레트
-  // 순서: 할일, 일정표, 알림, 메모, 목표, 통계, 프로젝트, 태그, 달력
-  var palettes = {
-    '#4A90D9': ['#4A90D9','#4A90D9','#4A90D9','#4A90D9','#4A90D9','#4A90D9','#4A90D9','#4A90D9','#4A90D9'],
-    '#22c55e': ['#22c55e','#22c55e','#22c55e','#22c55e','#22c55e','#22c55e','#22c55e','#22c55e','#22c55e'],
-    '#8b5cf6': ['#8b5cf6','#8b5cf6','#8b5cf6','#8b5cf6','#8b5cf6','#8b5cf6','#8b5cf6','#8b5cf6','#8b5cf6'],
-    '#f59e0b': ['#f59e0b','#f59e0b','#f59e0b','#f59e0b','#f59e0b','#f59e0b','#f59e0b','#f59e0b','#f59e0b'],
-    '#6b7280': ['#6b7280','#6b7280','#6b7280','#6b7280','#6b7280','#6b7280','#6b7280','#6b7280','#6b7280'],
-  };
+  var solidPalettes = ['#4A90D9','#22c55e','#8b5cf6','#f59e0b','#6b7280'];
+  var isSolid = solidPalettes.indexOf(c) !== -1;
 
-  var defaultColors = ['#E8F8F5','#E8F4FF','#FFE8EE','#FFF8E8','#FFF0E8','#EDFBF0','#EEE8FF','#F5E8FF','#E8EEFF'];
-  var colors = palettes[c] || defaultColors;
-
-  var isDefault = !palettes[c];
   items.forEach(function(item, i) {
-    item.style.background = colors[i] || '#fff';
     var label = item.querySelector('.menu-label');
-    if (label) label.style.color = isDefault ? '' : 'rgba(255,255,255,0.9)';
+    if (isDark) {
+      // 다크모드: 테마 색상으로 통일
+      item.style.background = isSolid ? c : '#2A2A2A';
+      if (label) label.style.color = 'rgba(255,255,255,0.9)';
+    } else {
+      // 라이트모드: 테마 색상이면 solid, 아니면 파스텔
+      if (isSolid) {
+        item.style.background = c;
+        if (label) label.style.color = 'rgba(255,255,255,0.9)';
+      } else {
+        item.style.background = PASTEL_DEFAULT[i] || '#fff';
+        if (label) label.style.color = '';
+      }
+    }
   });
 }
 
@@ -1909,6 +1934,10 @@ function applyLang() {
   _setText('closeSecretBtn', en ? 'Close' : '닫기');
   _setText('closeAddFriendBtn', en ? 'Close' : '닫기');
   _setText('closeTimerBtn', en ? 'Close' : '닫기');
+
+  // 다크모드
+  _setText('darkModeText', en ? 'Dark Mode' : '다크 모드');
+  _setText('darkModeLabel', en ? 'Dark Mode' : '다크 모드');
 
   // 달력 통계
   _setText('calAchievedLabel', en ? 'Achieved' : '달성일');
