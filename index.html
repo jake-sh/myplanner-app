@@ -83,6 +83,14 @@
   <div class="settings-content">
 
     <div class="settings-section">
+      <div id="appTitleLabel" class="settings-label">앱 타이틀</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input id="titleMyInput" class="settings-input" type="text" maxlength="10" placeholder="my" style="flex:1;font-size:20px;font-weight:700;" oninput="previewTitle()"/>
+        <input id="titlePlannerInput" class="settings-input" type="text" maxlength="10" placeholder="planner" style="flex:1.5;" oninput="previewTitle()"/>
+        <button onclick="applyTitleChange()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;" id="titleApplyBtn">적용</button>
+      </div>
+    </div>
+    <div class="settings-section">
       <div id="displayModeLabel" class="settings-label">화면 모드</div>
       <div class="settings-row">
         <span id="darkModeText">다크 모드</span>

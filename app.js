@@ -264,6 +264,7 @@ function openSettings() {
   document.getElementById('notifCal').checked = localStorage.getItem('notifCal') === 'true';
   document.getElementById('notifTodo').checked = localStorage.getItem('notifTodo') === 'true';
   showScreen('settingsScreen');
+  initTitleInputs();
   var t2 = localStorage.getItem('themeColor') || '#6C63FF';
   setTimeout(function(){ applyThemeBtnBorder(t2); updateIconStyleBtns(); updateSvgColorBtns(); }, 200);
 }
@@ -352,11 +353,49 @@ function applyIconStyle() {
   });
 }
 
+
+// ── 앱 타이틀 ──────────────────────────────────────────
+function previewTitle() {
+  var myVal = document.getElementById('titleMyInput').value;
+  var plannerVal = document.getElementById('titlePlannerInput').value;
+  var myEl = document.getElementById('titleMy');
+  var plannerEl = document.getElementById('titlePlanner');
+  if (myEl && myVal) myEl.textContent = myVal;
+  if (plannerEl && plannerVal) plannerEl.textContent = plannerVal;
+}
+
+function applyTitleChange() {
+  var myVal = document.getElementById('titleMyInput').value.trim();
+  var plannerVal = document.getElementById('titlePlannerInput').value.trim();
+  if (myVal) localStorage.setItem('titleMy', myVal);
+  if (plannerVal) localStorage.setItem('titlePlanner', plannerVal);
+  applyTitle();
+}
+
+function applyTitle() {
+  var myEl = document.getElementById('titleMy');
+  var plannerEl = document.getElementById('titlePlanner');
+  var myVal = localStorage.getItem('titleMy') || 'my';
+  var plannerVal = localStorage.getItem('titlePlanner') || 'planner';
+  if (myEl) myEl.textContent = myVal;
+  if (plannerEl) plannerEl.textContent = plannerVal;
+}
+
+function initTitleInputs() {
+  var myVal = localStorage.getItem('titleMy') || 'my';
+  var plannerVal = localStorage.getItem('titlePlanner') || 'planner';
+  var myInput = document.getElementById('titleMyInput');
+  var plannerInput = document.getElementById('titlePlannerInput');
+  if (myInput) myInput.value = myVal;
+  if (plannerInput) plannerInput.value = plannerVal;
+}
+
 // ── 다크 모드 ──────────────────────────────────────────
 function setDarkMode(enabled) {
   localStorage.setItem('darkMode', enabled ? 'true' : 'false');
   applyDarkMode();
   applyIconStyle();
+  applyTitle();
 }
 
 function applyDarkMode() {
@@ -1803,7 +1842,7 @@ async function loadWeather() {
       document.getElementById('widgetTemp').textContent = temp + '°';
       document.getElementById('widgetDesc').textContent = desc;
       document.getElementById('widgetWeatherIcon').textContent = icon;
-      document.getElementById('widgetLocation').textContent = '📍 ' + city;
+      document.getElementById('widgetLocation').textContent = city;
 
       // 오늘 최저/최고 - forecast API 사용
       var fRes = await fetch('https://api.openweathermap.org/data/2.5/forecast?lat='+lat+'&lon='+lon+'&appid='+OWM_KEY+'&units=metric&cnt=8');
@@ -1994,6 +2033,8 @@ function applyLang() {
   _setText('appNameLabel', en ? 'App Name' : '앱 이름');
   _setText('iconStyleLabel', en ? 'Icon Style' : '아이콘 스타일');
   _setText('svgColorLabel', en ? 'SVG Line Color' : 'SVG 라인 색상');
+  _setText('appTitleLabel', en ? 'App Title' : '앱 타이틀');
+  _setText('titleApplyBtn', en ? 'Apply' : '적용');
   _setText('displayModeLabel', en ? 'Display Mode' : '화면 모드');
   _setText('darkModeText', en ? 'Dark Mode' : '다크 모드');
   _setText('themeColorLabel', en ? 'Theme Color' : '테마 색상');
