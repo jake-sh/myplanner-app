@@ -725,10 +725,22 @@ body.dark-mode .style-select-btn.active {
   background:var(--primary);color:#fff;border-color:var(--primary);
 }
 
-/* SVG 아이콘 pointer-events 차단 - 깜박임 방지 */
-.menu-icon, .menu-icon svg, .menu-icon svg * {
-  pointer-events: none !important;
+/* 메뉴카드 렌더링 격리 - 리페인트 시 깨짐 방지 */
+#menuGrid .menu-item {
+  contain: paint;
+  isolation: isolate;
+  transform: translate3d(0,0,0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-transform-style: preserve-3d;
+  transform-style: preserve-3d;
 }
-.menu-icon { 
-  -webkit-tap-highlight-color: transparent;
+#menuGrid .menu-icon {
+  contain: layout style paint;
+  transform: translate3d(0,0,0);
+}
+#menuGrid .menu-icon svg {
+  shape-rendering: geometricPrecision;
+  transform: translate3d(0,0,0);
+  -webkit-transform: translate3d(0,0,0);
 }
