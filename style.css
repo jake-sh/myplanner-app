@@ -725,22 +725,13 @@ body.dark-mode .style-select-btn.active {
   background:var(--primary);color:#fff;border-color:var(--primary);
 }
 
-/* 메뉴카드 렌더링 격리 - 리페인트 시 깨짐 방지 */
-#menuGrid .menu-item {
-  contain: paint;
-  isolation: isolate;
-  transform: translate3d(0,0,0);
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  -webkit-transform-style: preserve-3d;
-  transform-style: preserve-3d;
+/* 시계 영역 렌더링 격리 - 1초마다 리페인트 격리 */
+#widgetClock {
+  contain: strict;
+  will-change: contents;
+  transform: translateZ(0);
 }
-#menuGrid .menu-icon {
+.fake-date-banner {
   contain: layout style paint;
-  transform: translate3d(0,0,0);
-}
-#menuGrid .menu-icon svg {
-  shape-rendering: geometricPrecision;
-  transform: translate3d(0,0,0);
-  -webkit-transform: translate3d(0,0,0);
+  transform: translateZ(0);
 }

@@ -1744,10 +1744,16 @@ function startClock() {
     } else {
       dateStr = (now.getMonth()+1) + '월 ' + now.getDate() + '일 (' + days[now.getDay()] + ')';
     }
-    var el = document.getElementById('widgetClock');
+    var ampmEl = document.getElementById('clockAmpm');
+    var hmEl = document.getElementById('clockHM');
+    var secEl = document.getElementById('clockSec');
     var del = document.getElementById('widgetDate');
-    if (el) el.innerHTML = '<span style="font-size:13px;opacity:0.6;font-weight:600;margin-right:4px;">' + ampm + '</span>' + h + ' : ' + m + '<span style="font-size:18px;opacity:0.7;"> : ' + s + '</span>';
-    if (del) del.textContent = dateStr;
+    if (ampmEl && ampmEl.textContent !== ampm) ampmEl.textContent = ampm;
+    var hmText = h + ' : ' + m;
+    if (hmEl && hmEl.textContent !== hmText) hmEl.textContent = hmText;
+    var secText = ' : ' + s;
+    if (secEl && secEl.textContent !== secText) secEl.textContent = secText;
+    if (del && del.textContent !== dateStr) del.textContent = dateStr;
   }
   tick();
   setInterval(tick, 1000);
