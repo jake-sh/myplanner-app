@@ -748,14 +748,25 @@ if (window.visualViewport) {
   window.visualViewport.addEventListener('resize', function() {
     var chatView = document.getElementById('activeChatView');
     var list = document.getElementById('messageList');
-    if (chatView && list) {
-      // 키패드 높이만큼 채팅뷰 높이 조정
-      var viewportHeight = window.visualViewport.height;
-      chatView.style.height = viewportHeight + 'px';
-      setTimeout(function() {
-        list.scrollTop = list.scrollHeight;
-      }, 50);
-    }
+    if (!chatView || !list) return;
+
+    var viewportHeight = window.visualViewport.height;
+    // 채팅뷰 높이를 실제 뷰포트에 맞게 조정
+    chatView.style.height = viewportHeight + 'px';
+
+    setTimeout(function() {
+      // 콘텐츠 높이 vs 컨테이너 높이
+      var contentH = list.scrollHeight;
+      var containerH = list.clientHeight;
+
+      if (contentH <= containerH) {
+        // 메시지가 적음: 상단 고정 (스크롤 없음)
+        list.scrollTop = 0;
+      } else {
+        // 메시지가 많음: 하단 고정
+        list.scrollTop = contentH - containerH;
+      }
+    }, 80);
   });
 }
 
