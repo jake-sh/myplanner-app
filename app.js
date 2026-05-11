@@ -1654,22 +1654,13 @@ function showInAppNotif(text) {
 
 
 function openNaverMap() {
-  var loc = document.getElementById('widgetLocation').textContent.trim();
-  if (!loc || loc === '--') return;
-  // 네이버 지도 앱 스킴 (앱 우선) → 실패 시 웹으로
-  var appUrl = 'nmap://search?query=' + encodeURIComponent(loc) + '&appname=com.naver.map';
-  var webUrl = 'https://map.naver.com/v5/search/' + encodeURIComponent(loc);
-  // iframe trick으로 앱 시도, 300ms 후 웹으로 fallback
-  var iframe = document.createElement('iframe');
-  iframe.style.display = 'none';
-  iframe.src = appUrl;
-  document.body.appendChild(iframe);
+  var appUrl = 'nmap://';
+  var webUrl = 'https://map.naver.com';
+  var a = document.createElement('a');
+  a.href = appUrl;
+  a.click();
   setTimeout(function() {
-    document.body.removeChild(iframe);
-    // 앱이 열렸으면 페이지가 blur되므로 hidden 상태면 열린 것
-    if (!document.hidden) {
-      window.open(webUrl, '_blank');
-    }
+    window.open(webUrl, '_blank');
   }, 1000);
 }
 
