@@ -724,3 +724,11 @@ body.dark-mode .style-select-btn {
 body.dark-mode .style-select-btn.active {
   background:var(--primary);color:#fff;border-color:var(--primary);
 }
+
+/* SVG 아이콘 pointer-events 차단 - 깜박임 방지 */
+.menu-icon, .menu-icon svg, .menu-icon svg * {
+  pointer-events: none !important;
+}
+.menu-icon { 
+  -webkit-tap-highlight-color: transparent;
+}
