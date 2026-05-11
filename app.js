@@ -332,22 +332,22 @@ function applyIconStyle() {
     var iconEl = item.querySelector('.menu-icon');
     if (!iconEl) return;
     if (style === 'emoji') {
-      iconEl.innerHTML = EMOJI_ICONS[i] || '';
+      var existSvg = iconEl.querySelector('svg');
+      if (existSvg || !iconEl.textContent.trim()) {
+        iconEl.innerHTML = EMOJI_ICONS[i] || '';
+      }
       iconEl.style.fontSize = '30px';
       iconEl.style.color = '';
     } else {
-      var svgHtml = SVG_ICONS[i] || '';
-      if (!iconEl.querySelector('svg')) iconEl.innerHTML = svgHtml;
       iconEl.style.fontSize = '';
       var svgEl = iconEl.querySelector('svg');
+      // SVG 없을 때만 innerHTML 설정
+      if (!svgEl) {
+        iconEl.innerHTML = SVG_ICONS[i] || '';
+        svgEl = iconEl.querySelector('svg');
+      }
       if (svgEl) {
-        if (colorMode === 'on') {
-          // 개별 색상
-          svgEl.style.color = SVG_COLORS[i] || '#6C63FF';
-        } else {
-          // 테마 색상 (다크+그레이면 흰색)
-          svgEl.style.color = themeIconColor;
-        }
+        svgEl.style.color = colorMode === 'on' ? (SVG_COLORS[i] || '#6C63FF') : themeIconColor;
       }
     }
   });
