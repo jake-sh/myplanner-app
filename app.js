@@ -233,6 +233,7 @@ function openFeature(i) {
   if (i === 0) openTodo();
   else if (i === 3) openMemo();
   else if (i === 5) openStats();
+  else if (i === 7) openTag();
   else if (i === 8) openCalendar();
   else openFakeFeature(i);
 }
@@ -258,13 +259,104 @@ function openFakeFeature(i) {
   showScreen('fakeFeature');
 }
 
+
+// ── TAG ──────────────────────────────────────────────
+function addTagNow() {
+  var now = new Date();
+  var tags = getTagList();
+  var isEn = localStorage.getItem('lang') === 'en';
+  var entry = {
+    id: Date.now(),
+    date: isEn
+      ? now.toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric',weekday:'short'})
+      : now.toLocaleDateString('ko-KR', {year:'numeric',month:'2-digit',day:'2-digit',weekday:'short'}),
+    time: isEn
+      ? now.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit'})
+      : now.toLocaleTimeString('ko-KR', {hour:'2-digit',minute:'2-digit',second:'2-digit'}),
+    ts: now.getTime()
+  };
+  tags.unshift(entry);
+  saveTags(tags);
+  // 저장 피드백
+  var el = document.getElementById('widgetClock');
+  if (el) {
+    el.style.opacity = '0.4';
+    setTimeout(function(){ el.style.opacity = '1'; }, 200);
+  }
+}
+
+function getTagList() {
+  try { return JSON.parse(localStorage.getItem('tagList') || '[]'); } catch(e){ return []; }
+}
+
+function saveTags(tags) {
+  localStorage.setItem('tagList', JSON.stringify(tags));
+}
+
+function setTagAutoDelete(val) {
+  localStorage.setItem('tagAutoDelete', val);
+}
+
+function autoDeleteTags(tags) {
+  var days = parseInt(localStorage.getItem('tagAutoDelete') || '0');
+  if (!days) return tags;
+  var cutoff = Date.now() - days * 86400000;
+  return tags.filter(function(t){ return t.ts > cutoff; });
+}
+
+function openTag() {
+  var tags = autoDeleteTags(getTagList());
+  saveTags(tags);
+  renderTagList(tags);
+  // 자동삭제 설정 복원
+  var autoVal = localStorage.getItem('tagAutoDelete') || '0';
+  var sel = document.getElementById('tagAutoDelete');
+  if (sel) sel.value = autoVal;
+  showScreen('tagScreen');
+}
+
+function renderTagList(tags) {
+  var list = document.getElementById('tagList');
+  if (!list) return;
+  var isEn = localStorage.getItem('lang') === 'en';
+  if (!tags.length) {
+    list.innerHTML = '<div style="text-align:center;color:#aaa;margin-top:40px;font-size:13px;">' + (isEn ? 'No tags yet. Tap the clock to add.' : '시계를 탭해서 시간을 기록하세요.') + '</div>';
+    return;
+  }
+  list.innerHTML = tags.map(function(t, idx) {
+    return '<div style="display:flex;align-items:center;background:var(--card,#fff);border-radius:14px;padding:12px 16px;box-shadow:0 1px 6px rgba(0,0,0,0.06);border:1px solid var(--border,#ECEEF8);">' +
+      '<div style="width:28px;height:28px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;margin-right:12px;flex-shrink:0;">' +
+        '<span style="font-size:11px;font-weight:700;color:#fff;">' + (tags.length - idx) + '</span>' +
+      '</div>' +
+      '<div style="flex:1;min-width:0;">' +
+        '<div style="font-size:15px;font-weight:700;color:var(--text,#1A1A2E);letter-spacing:0.5px;">' + t.time + '</div>' +
+        '<div style="font-size:11px;color:#8B8FA8;margin-top:2px;">' + t.date + '</div>' +
+      '</div>' +
+      '<button onclick="deleteTag(' + t.id + ')" style="background:none;border:none;color:#ccc;font-size:20px;cursor:pointer;padding:4px 8px;line-height:1;">×</button>' +
+    '</div>';
+  }).join('');
+}
+
+function deleteTag(id) {
+  var tags = getTagList().filter(function(t){ return t.id !== id; });
+  saveTags(tags);
+  renderTagList(tags);
+}
+
+function deleteAllTags() {
+  var isEn = localStorage.getItem('lang') === 'en';
+  var msg = isEn ? 'Delete all tags?' : '모든 태그를 삭제할까요?';
+  if (!confirm(msg)) return;
+  saveTags([]);
+  renderTagList([]);
+}
+
 // ── SETTINGS ───────────────────────────────────────
 function openSettings() {
   document.getElementById('notifApp').checked = localStorage.getItem('notifApp') === 'true';
   document.getElementById('notifCal').checked = localStorage.getItem('notifCal') === 'true';
   document.getElementById('notifTodo').checked = localStorage.getItem('notifTodo') === 'true';
   showScreen('settingsScreen');
-  initTitleInputs();
   var t2 = localStorage.getItem('themeColor') || '#6C63FF';
   setTimeout(function(){ applyThemeBtnBorder(t2); updateIconStyleBtns(); updateSvgColorBtns(); }, 200);
 }
@@ -1349,6 +1441,7 @@ function toggleAutoLock(enabled) {
 }
 
 function openSecretSettings() {
+  initTitleInputs();
   document.getElementById('myCodeDisplaySettings').textContent = myCode;
   updateNotifBtn();
   updateFontSizeBtns();

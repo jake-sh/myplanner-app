@@ -1,4 +1,4 @@
-const CACHE = 'myplanner-v189';
+const CACHE = 'myplanner-v191';
 
 self.addEventListener('install', e => { self.skipWaiting(); });
 
