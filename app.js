@@ -280,18 +280,21 @@ function applyMenuTheme(c) {
   // 테마별 색상 팔레트
   // 순서: 할일, 일정표, 알림, 메모, 목표, 통계, 프로젝트, 태그, 달력
   var palettes = {
-    '#4A90D9': ['#E8F4FF','#EEF4FF','#E0F0FF','#DDEEFF','#E8F4FF','#EEF4FF','#E0F0FF','#DDEEFF','#E8F4FF'], // 블루 - 달력색 계열
-    '#22c55e': ['#EDFBF0','#E8FBF0','#E0F9EC','#DAFAEC','#EDFBF0','#E8FBF0','#E0F9EC','#DAFAEC','#EDFBF0'], // 그린 - 할일색 계열
-    '#8b5cf6': ['#F5E8FF','#F0E8FF','#EDE0FF','#EBE0FF','#F5E8FF','#F0E8FF','#EDE0FF','#EBE0FF','#F5E8FF'], // 퍼플 - 프로젝트색 계열
-    '#f59e0b': ['#FFF8E8','#FFF5E0','#FFF3D8','#FFF0D0','#FFF8E8','#FFF5E0','#FFF3D8','#FFF0D0','#FFF8E8'], // 노랑 - 메모색 계열
-    '#6b7280': ['#F0F1F4','#F0F1F4','#F0F1F4','#F0F1F4','#F0F1F4','#F0F1F4','#F0F1F4','#F0F1F4','#F0F1F4'], // 그레이
+    '#4A90D9': ['#4A90D9','#4A90D9','#4A90D9','#4A90D9','#4A90D9','#4A90D9','#4A90D9','#4A90D9','#4A90D9'],
+    '#22c55e': ['#22c55e','#22c55e','#22c55e','#22c55e','#22c55e','#22c55e','#22c55e','#22c55e','#22c55e'],
+    '#8b5cf6': ['#8b5cf6','#8b5cf6','#8b5cf6','#8b5cf6','#8b5cf6','#8b5cf6','#8b5cf6','#8b5cf6','#8b5cf6'],
+    '#f59e0b': ['#f59e0b','#f59e0b','#f59e0b','#f59e0b','#f59e0b','#f59e0b','#f59e0b','#f59e0b','#f59e0b'],
+    '#6b7280': ['#6b7280','#6b7280','#6b7280','#6b7280','#6b7280','#6b7280','#6b7280','#6b7280','#6b7280'],
   };
 
   var defaultColors = ['#E8F8F5','#E8F4FF','#FFE8EE','#FFF8E8','#FFF0E8','#EDFBF0','#EEE8FF','#F5E8FF','#E8EEFF'];
   var colors = palettes[c] || defaultColors;
 
+  var isDefault = !palettes[c];
   items.forEach(function(item, i) {
     item.style.background = colors[i] || '#fff';
+    var label = item.querySelector('.menu-label');
+    if (label) label.style.color = isDefault ? '' : 'rgba(255,255,255,0.9)';
   });
 }
 
