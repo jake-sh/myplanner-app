@@ -92,7 +92,7 @@ body:not(.dark-mode) .fake-title{color:var(--primary) !important;}
 .menu-item:nth-child(8){background:var(--pastel-purple);}
 .menu-item:nth-child(9){background:var(--pastel-blue);}
 .menu-item:nth-child(n){border:none;}
-.menu-item.active{transform:scale(.94);box-shadow:none;}
+.menu-item.active{opacity:0.7;box-shadow:none;}
 .menu-icon{font-size:30px;}
 .menu-label{font-size:12px;font-weight:700;color:var(--text);opacity:0.75;}
 
@@ -725,13 +725,14 @@ body.dark-mode .style-select-btn.active {
   background:var(--primary);color:#fff;border-color:var(--primary);
 }
 
-/* 시계 영역 렌더링 격리 - 1초마다 리페인트 격리 */
-#widgetClock {
-  contain: strict;
-  will-change: contents;
+/* 메뉴카드 독립 레이어 - repaint 전파 차단 */
+#menuGrid {
   transform: translateZ(0);
+  isolation: isolate;
 }
-.fake-date-banner {
-  contain: layout style paint;
+#menuGrid .menu-item {
+  will-change: opacity;
   transform: translateZ(0);
+  isolation: isolate;
+  contain: layout style paint;
 }
