@@ -1960,7 +1960,7 @@ const I18N = {
     noData: '데이터가 없어요.\n+ 입력으로 추가해보세요!',
     chatList: '목록', noFriend: '친구를 추가하면 채팅이 시작됩니다',
     msgPlaceholder: '메시지 입력...',
-    dust: '미세먼지', clothes: '👕 옷차림 추천',
+    dust: '미세먼지', clothes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="vertical-align:middle;margin-right:3px;color:var(--primary);"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>옷차림 추천',
     loading: '로딩 중...', locationNeeded: '위치 권한 필요',
     cancel: '취소', save2: '저장', delete: '삭제',
   },
@@ -1981,7 +1981,7 @@ const I18N = {
     noData: 'No data yet.\nTap + to add!',
     chatList: 'Chats', noFriend: 'Add a friend to start chatting',
     msgPlaceholder: 'Type a message...',
-    dust: 'Air Quality', clothes: '👕 Outfit Tip',
+    dust: 'Air Quality', clothes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="vertical-align:middle;margin-right:3px;color:var(--primary);"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>Outfit Tip',
     loading: 'Loading...', locationNeeded: 'Location permission needed',
     cancel: 'Cancel', save2: 'Save', delete: 'Delete',
   }
@@ -2091,7 +2091,7 @@ function applyLang() {
 
   // 날씨
   _setText('dustLabel', en ? 'Air Quality' : '미세먼지');
-  _setText('clothesLabel', en ? '👕 Outfit' : '👕 옷차림 추천');
+  document.getElementById('clothesLabel').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" style="vertical-align:middle;margin-right:3px;color:var(--primary);"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>' + (en ? 'Outfit' : '옷차림 추천');
 
   // placeholder
   var todoEl = document.getElementById('todoInputEl') || document.getElementById('todoInput');
