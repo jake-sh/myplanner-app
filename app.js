@@ -281,56 +281,34 @@ function openFakeFeature(i) {
 
 
 
-// ── 프라이버시 화면 (태스크뷰 블랙처리) ──────────────
-document.addEventListener('visibilitychange', function() {
-  var el = document.getElementById('privacyScreen');
-  if (!el) return;
-  if (document.hidden) {
-    el.style.display = 'block';
-  } else {
-    // 블랙 유지한 채 화면 전환 후 충분한 딜레이
-    showScreen('fakeApp');
-    setTimeout(function() { el.style.display = 'none'; }, 600);
-  }
-});
-// iOS standalone 대응
-window.addEventListener('pagehide', function() {
-  var el = document.getElementById('privacyScreen');
-  if (el) el.style.display = 'block';
-});
-window.addEventListener('pageshow', function(e) {
-  var el = document.getElementById('privacyScreen');
-  if (el) el.style.display = 'none';
-  // iOS 복귀 시 메인 화면으로 이동 (패턴이 자연스럽게 가림)
-  if (e.persisted) {
-    showScreen('fakeApp');
-  }
-});
-var _appWasHidden = false;
+// ── 프라이버시 화면 (잠금 시 스냅샷 차단) ──────────────
 var _filePickerOpen = false;
 
-// 파일 선택창 열릴 때 플래그
 document.addEventListener('click', function(e) {
   if (e.target && e.target.id === 'fileInput') _filePickerOpen = true;
 });
 
-window.addEventListener('blur', function() {
+function _hideToMain() {
+  if (_filePickerOpen) return;
+  showScreen('fakeApp');
   var el = document.getElementById('privacyScreen');
   if (el) el.style.display = 'block';
-  if (!_filePickerOpen) _appWasHidden = true;
-});
-window.addEventListener('focus', function() {
+}
+
+function _showAfterReturn() {
+  if (_filePickerOpen) { _filePickerOpen = false; return; }
   var el = document.getElementById('privacyScreen');
-  if (el) setTimeout(function(){ el.style.display = 'none'; }, 200);
-  if (_filePickerOpen) {
-    _filePickerOpen = false;
-    return; // 파일 선택 후 복귀는 메인 이동 안 함
-  }
-  if (_appWasHidden) {
-    _appWasHidden = false;
-    showScreen('fakeApp');
-  }
+  if (el) el.style.display = 'none';
+}
+
+document.addEventListener('visibilitychange', function() {
+  if (document.hidden) _hideToMain();
+  else _showAfterReturn();
 });
+window.addEventListener('blur', _hideToMain);
+window.addEventListener('focus', _showAfterReturn);
+window.addEventListener('pagehide', _hideToMain);
+window.addEventListener('pageshow', _showAfterReturn);
 
 // ── TAG ──────────────────────────────────────────────
 function addTagNow() {
