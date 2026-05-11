@@ -288,9 +288,14 @@ document.addEventListener('visibilitychange', function() {
   if (document.hidden) {
     el.style.display = 'block';
   } else {
-    // 먼저 메인으로 이동 후 블랙 해제 → 채팅화면 노출 없음
+    // 블랙 유지한 채로 먼저 화면 전환
     showScreen('fakeApp');
-    setTimeout(function(){ el.style.display = 'none'; }, 50);
+    // requestAnimationFrame 2번으로 렌더링 완료 후 해제
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        el.style.display = 'none';
+      });
+    });
   }
 });
 // iOS standalone 대응
