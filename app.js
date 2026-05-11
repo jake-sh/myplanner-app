@@ -282,17 +282,28 @@ window.addEventListener('pagehide', function() {
   var el = document.getElementById('privacyScreen');
   if (el) el.style.display = 'block';
 });
-window.addEventListener('pageshow', function() {
+window.addEventListener('pageshow', function(e) {
   var el = document.getElementById('privacyScreen');
-  if (el) setTimeout(function(){ el.style.display = 'none'; }, 300);
+  if (el) el.style.display = 'none';
+  // iOS 복귀 시 메인 화면으로 이동 (패턴이 자연스럽게 가림)
+  if (e.persisted) {
+    showScreen('fakeApp');
+  }
 });
+var _appWasHidden = false;
 window.addEventListener('blur', function() {
   var el = document.getElementById('privacyScreen');
   if (el) el.style.display = 'block';
+  _appWasHidden = true;
 });
 window.addEventListener('focus', function() {
   var el = document.getElementById('privacyScreen');
-  if (el) setTimeout(function(){ el.style.display = 'none'; }, 300);
+  if (el) setTimeout(function(){ el.style.display = 'none'; }, 200);
+  // 앱이 숨겨졌다가 복귀한 경우만 메인으로
+  if (_appWasHidden) {
+    _appWasHidden = false;
+    showScreen('fakeApp');
+  }
 });
 
 // ── TAG ──────────────────────────────────────────────
@@ -917,11 +928,21 @@ function renderFriendList() {
 function listenFriendChanges() {
   if (!myCode) return;
   if (friendsListener) friendsListener();
+  // 로컬 캐시로 즉시 렌더링 (깜박임 방지)
+  var cached = localStorage.getItem('friends');
+  if (cached) { try { friends = JSON.parse(cached); renderFriendList(); } catch(e){} }
+
   friendsListener = db.collection('users').doc(myCode).onSnapshot(snap => {
     if (!snap.exists) return;
-    friends = snap.data().friends || [];
+    var newFriends = snap.data().friends || [];
+    // 서버에서 빈 배열이 오더라도 캐시가 있으면 무시 (일시적 오류 방어)
+    if (newFriends.length === 0 && friends.length > 0 && snap.metadata.fromCache) return;
+    friends = newFriends;
     localStorage.setItem('friends', JSON.stringify(friends));
     renderFriendList();
+  }, function(err) {
+    console.warn('friendsListener error:', err);
+    // 에러 시 캐시 유지
   });
 }
 
@@ -2136,7 +2157,7 @@ const I18N = {
     statsTitle: 'Health Stats', statInput: 'Enter Data',
     recentRecord: 'Recent Records',
     noData: 'No data yet.\nTap + to add!',
-    chatList: 'Chats', noFriend: 'Add a friend to start chatting',
+    chatList: 'List', noFriend: 'Add a friend to start chatting',
     msgPlaceholder: 'Type a message...',
     dust: 'Air Quality', clothes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="vertical-align:middle;margin-right:3px;color:var(--primary);"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>Outfit Tip',
     loading: 'Loading...', locationNeeded: 'Location permission needed',
