@@ -32,6 +32,20 @@ let editingMemoIndex = null;
 
 // ── INIT ───────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
+  // ── 최초 실행 시 디폴트값 설정 ──
+  if (!localStorage.getItem('_defaultsSet')) {
+    localStorage.setItem('darkMode', 'true');
+    localStorage.setItem('themeColor', '#6b7280');
+    localStorage.setItem('iconStyle', 'svg');
+    localStorage.setItem('svgColorMode', 'off'); // 테마 색상
+    localStorage.setItem('lang', 'en');
+    localStorage.setItem('notifApp', 'true');
+    localStorage.setItem('notifCal', 'true');
+    localStorage.setItem('notifTodo', 'true');
+    localStorage.setItem('autoLock', 'true');
+    localStorage.setItem('_defaultsSet', '1');
+  }
+
   // 1. 테마/다크/타이틀 즉시 적용
   var t = localStorage.getItem('themeColor');
   if (t) document.documentElement.style.setProperty('--primary', t);
