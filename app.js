@@ -314,17 +314,25 @@ document.addEventListener('click', function(e) {
   if (e.target && e.target.id === 'fileInput') _filePickerOpen = true;
 });
 
+var _blurTime = 0;
 window.addEventListener('blur', function() {
   var el = document.getElementById('privacyScreen');
   if (el) el.style.display = 'block';
+  _blurTime = Date.now();
   if (!_filePickerOpen) _appWasHidden = true;
 });
 window.addEventListener('focus', function() {
   var el = document.getElementById('privacyScreen');
   if (el) setTimeout(function(){ el.style.display = 'none'; }, 200);
+  var elapsed = Date.now() - _blurTime;
   if (_filePickerOpen) {
     _filePickerOpen = false;
-    return; // 파일 선택 후 복귀는 메인 이동 안 함
+    return;
+  }
+  // 짧은 blur (시스템 다이얼로그 등) 는 메인 이동 안 함
+  if (elapsed < 800) {
+    _appWasHidden = false;
+    return;
   }
   if (_appWasHidden) {
     _appWasHidden = false;
@@ -1688,10 +1696,15 @@ function toggleNotification() {
   if (typeof Notification === 'undefined') { alert('이 브라우저는 알림을 지원하지 않습니다'); return; }
   if (Notification.permission === 'denied') { alert('알림이 차단되어 있습니다.\n브라우저 설정에서 직접 허용해주세요.'); return; }
   if (Notification.permission === 'default') {
-    _filePickerOpen = true; // 권한 다이얼로그 = 시스템 다이얼로그로 취급
+    _filePickerOpen = true;
+    _appWasHidden = false; // 강제 리셋
     Notification.requestPermission().then(p => {
-      _filePickerOpen = false;
       if (p === 'granted') { notifEnabled = true; localStorage.setItem('notifEnabled', 'true'); updateNotifBtn(); }
+      // 권한 결과 후 충분히 대기 (blur/focus 이벤트 모두 흘려보낸 후 해제)
+      setTimeout(function() {
+        _filePickerOpen = false;
+        _appWasHidden = false;
+      }, 1500);
     });
     return;
   }
