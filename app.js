@@ -265,7 +265,7 @@ function openSettings() {
   document.getElementById('notifTodo').checked = localStorage.getItem('notifTodo') === 'true';
   showScreen('settingsScreen');
   var t2 = localStorage.getItem('themeColor') || '#6C63FF';
-  setTimeout(function(){ applyThemeBtnBorder(t2); }, 200);
+  setTimeout(function(){ applyThemeBtnBorder(t2); updateIconStyleBtns(); updateSvgColorBtns(); }, 200);
 }
 function saveAppName() {
   const n = document.getElementById('appNameInput').value.trim() || 'MyPlanner';
@@ -275,10 +275,88 @@ function saveAppName() {
   alert('저장되었습니다');
 }
 
+
+// ── 아이콘 스타일 ──────────────────────────────────────
+var SVG_ICONS = {
+  0: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="36" height="36"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
+  1: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="36" height="36"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="15" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="15" r="1" fill="currentColor" stroke="none"/><circle cx="16" cy="15" r="1" fill="currentColor" stroke="none"/></svg>',
+  2: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="36" height="36"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
+  3: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="36" height="36"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+  4: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="36" height="36"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/></svg>',
+  5: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="36" height="36"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg>',
+  6: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="36" height="36"><path d="M2 7a2 2 0 0 1 2-2h4l2 2h10a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7z"/></svg>',
+  7: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="36" height="36"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7" stroke-width="2.5"/></svg>',
+  8: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="36" height="36"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="7" y1="15" x2="17" y2="15"/><line x1="7" y1="18" x2="13" y2="18"/></svg>',
+};
+var EMOJI_ICONS = ['📋','📅','⏰','📝','🎯','📊','🗂️','🏷️','📆'];
+var SVG_COLORS = ['#10B981','#3B82F6','#F43F5E','#F59E0B','#F97316','#22C55E','#8B5CF6','#A855F7','#38BDF8'];
+
+function setIconStyle(style) {
+  localStorage.setItem('iconStyle', style);
+  applyIconStyle();
+  updateIconStyleBtns();
+}
+
+function setSvgColor(mode) {
+  localStorage.setItem('svgColorMode', mode);
+  applyIconStyle();
+  updateSvgColorBtns();
+}
+
+function updateIconStyleBtns() {
+  var style = localStorage.getItem('iconStyle') || 'svg';
+  document.getElementById('iconStyleEmoji')?.classList.toggle('active', style === 'emoji');
+  document.getElementById('iconStyleSvg')?.classList.toggle('active', style === 'svg');
+  var svgOpt = document.getElementById('svgColorOption');
+  if (svgOpt) svgOpt.style.display = style === 'svg' ? 'block' : 'none';
+}
+
+function updateSvgColorBtns() {
+  var mode = localStorage.getItem('svgColorMode') || 'on';
+  document.getElementById('svgColorOn')?.classList.toggle('active', mode === 'on');
+  document.getElementById('svgColorOff')?.classList.toggle('active', mode === 'off');
+}
+
+function applyIconStyle() {
+  var style = localStorage.getItem('iconStyle') || 'svg';
+  var colorMode = localStorage.getItem('svgColorMode') || 'on';
+  var isDark = localStorage.getItem('darkMode') === 'true';
+  var themeColor = localStorage.getItem('themeColor') || '#6C63FF';
+  var isGray = themeColor === '#6b7280';
+
+  // 테마색 미적용시 적용할 색상
+  var themeIconColor = (isDark && isGray) ? '#FFFFFF' : themeColor;
+
+  document.querySelectorAll('.menu-item').forEach(function(item, i) {
+    var iconEl = item.querySelector('.menu-icon');
+    if (!iconEl) return;
+    if (style === 'emoji') {
+      iconEl.innerHTML = EMOJI_ICONS[i] || '';
+      iconEl.style.fontSize = '30px';
+      iconEl.style.color = '';
+    } else {
+      var svgHtml = SVG_ICONS[i] || '';
+      iconEl.innerHTML = svgHtml;
+      iconEl.style.fontSize = '';
+      var svgEl = iconEl.querySelector('svg');
+      if (svgEl) {
+        if (colorMode === 'on') {
+          // 개별 색상
+          svgEl.style.color = SVG_COLORS[i] || '#6C63FF';
+        } else {
+          // 테마 색상 (다크+그레이면 흰색)
+          svgEl.style.color = themeIconColor;
+        }
+      }
+    }
+  });
+}
+
 // ── 다크 모드 ──────────────────────────────────────────
 function setDarkMode(enabled) {
   localStorage.setItem('darkMode', enabled ? 'true' : 'false');
   applyDarkMode();
+  applyIconStyle();
 }
 
 function applyDarkMode() {
@@ -290,6 +368,7 @@ function applyDarkMode() {
   }
   var toggle = document.getElementById('darkModeToggle');
   if (toggle) toggle.checked = enabled;
+  applyIconStyle();
   // 타이틀 색상 처리
   var themeColor = localStorage.getItem('themeColor') || '#6C63FF';
   var titleColor;
@@ -1913,6 +1992,8 @@ function applyLang() {
 
   // 설정 라벨
   _setText('appNameLabel', en ? 'App Name' : '앱 이름');
+  _setText('iconStyleLabel', en ? 'Icon Style' : '아이콘 스타일');
+  _setText('svgColorLabel', en ? 'SVG Line Color' : 'SVG 라인 색상');
   _setText('displayModeLabel', en ? 'Display Mode' : '화면 모드');
   _setText('darkModeText', en ? 'Dark Mode' : '다크 모드');
   _setText('themeColorLabel', en ? 'Theme Color' : '테마 색상');

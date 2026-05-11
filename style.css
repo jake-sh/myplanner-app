@@ -705,3 +705,22 @@ body.dark-mode .theme-btn.selected {
 .menu-item:nth-child(9) .menu-icon svg { color: #38BDF8; opacity:1; }
 /* 다크모드 */
 body.dark-mode .menu-icon svg { opacity: 0.9; }
+
+/* 스타일 선택 버튼 */
+.style-select-btn {
+  flex:1;padding:9px 0;border-radius:12px;
+  border:1.5px solid #ECEEF8;
+  background:#F8F9FF;color:#1A1A2E;
+  font-size:13px;font-weight:700;
+  cursor:pointer;font-family:inherit;
+  transition:all .15s;
+}
+.style-select-btn.active {
+  background:var(--primary);color:#fff;border-color:var(--primary);
+}
+body.dark-mode .style-select-btn {
+  background:#2A2A2A;border-color:#3A3A3A;color:#F1F1F1;
+}
+body.dark-mode .style-select-btn.active {
+  background:var(--primary);color:#fff;border-color:var(--primary);
+}
