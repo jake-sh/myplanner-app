@@ -2048,14 +2048,26 @@ function getWeatherIcon(id) {
 }
 
 function getDustLevel(pm10) {
-  if (pm10 <= 30) return { text: '좋음', color: '#4ade80' };
-  if (pm10 <= 80) return { text: '보통', color: '#facc15' };
-  if (pm10 <= 150) return { text: '나쁨', color: '#fb923c' };
-  return { text: '매우나쁨', color: '#f87171' };
+  var en = localStorage.getItem('lang') === 'en';
+  if (pm10 <= 30) return { text: en ? 'Good' : '좋음', color: '#4ade80' };
+  if (pm10 <= 80) return { text: en ? 'Moderate' : '보통', color: '#facc15' };
+  if (pm10 <= 150) return { text: en ? 'Bad' : '나쁨', color: '#fb923c' };
+  return { text: en ? 'V.Bad' : '매우나쁨', color: '#f87171' };
 }
 
 function getClothes(temp, pm10) {
-  var dust = pm10 > 80 ? ' 마스크 착용 권장' : '';
+  var en = localStorage.getItem('lang') === 'en';
+  var dust = pm10 > 80 ? (en ? ' · Mask recommended' : ' 마스크 착용 권장') : '';
+  if (en) {
+    if (temp >= 28) return 'Sleeveless·T-shirt·Shorts·Dress' + dust;
+    if (temp >= 23) return 'T-shirt·Light shirt·Shorts' + dust;
+    if (temp >= 20) return 'Blouse·Long sleeve·Pants·Jeans' + dust;
+    if (temp >= 17) return 'Light cardigan·Long pants' + dust;
+    if (temp >= 12) return 'Jacket·Cardigan·Jeans' + dust;
+    if (temp >= 9) return 'Trench coat·Knit·Jeans' + dust;
+    if (temp >= 5) return 'Wool coat·Heattech·Layered' + dust;
+    return 'Padding·Thick coat·Scarf' + dust;
+  }
   if (temp >= 28) return '민소매·반팔·반바지·원피스' + dust;
   if (temp >= 23) return '반팔·얇은 셔츠·반바지' + dust;
   if (temp >= 20) return '블라우스·긴팔·면바지·청바지' + dust;
@@ -2112,10 +2124,12 @@ async function loadWeather() {
       document.getElementById('widgetClothesVal').textContent = getClothes(temp, pm10);
 
     } catch(e) {
-      document.getElementById('widgetClothesVal').textContent = '날씨 정보 없음';
+      var en = localStorage.getItem('lang') === 'en';
+      document.getElementById('widgetClothesVal').textContent = en ? 'No weather info' : '날씨 정보 없음';
     }
   }, function() {
-    document.getElementById('widgetClothesVal').textContent = '위치 권한 필요';
+    var en = localStorage.getItem('lang') === 'en';
+    document.getElementById('widgetClothesVal').textContent = en ? 'Location permission needed' : '위치 권한 필요';
   });
 }
 
