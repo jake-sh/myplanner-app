@@ -286,13 +286,20 @@ function openFakeFeature(i) {
 // ── 프라이버시 화면 (태스크뷰 블랙처리) ──────────────
 document.addEventListener('visibilitychange', function() {
   var el = document.getElementById('privacyScreen');
-  if (!el) return;
   if (document.hidden) {
-    el.style.display = 'block';
+    // 숨겨질 때: 블랙 + autoLock
+    if (el) el.style.display = 'block';
+    if (localStorage.getItem('autoLock') === 'true') {
+      var activeScreen = document.querySelector('.screen.active');
+      if (activeScreen && activeScreen.id === 'chatApp') exitChat();
+    }
   } else {
-    // 블랙 유지한 채 화면 전환 후 충분한 딜레이
+    // 복귀 시: 알림 클리어 + 블랙 해제
+    clearAllNotifications();
+    setBadge(0);
+    unreadCount = 0;
     showScreen('fakeApp');
-    setTimeout(function() { el.style.display = 'none'; }, 600);
+    setTimeout(function() { if (el) el.style.display = 'none'; }, 600);
   }
 });
 // iOS standalone 대응
@@ -1588,34 +1595,9 @@ async function clearAllNotifications() {
   }
 }
 
-document.addEventListener('visibilitychange', function() {
-  if (document.visibilityState === 'visible') {
-    clearAllNotifications();
-    setBadge(0);
-    unreadCount = 0;
-    // 강화 보안 - 채팅창 이탈 후 복귀 시 자동 잠금
-    if (localStorage.getItem('autoLock') === 'true') {
-      var activeScreen = document.querySelector('.screen.active');
-      if (activeScreen && (activeScreen.id === 'chatApp')) {
-        exitChat();
-      }
-    }
-  } else {
-    // 화면 숨겨질 때 강화 보안 적용
-    if (localStorage.getItem('autoLock') === 'true') {
-      var activeScreen = document.querySelector('.screen.active');
-      if (activeScreen && activeScreen.id === 'chatApp') {
-        exitChat();
-      }
-    }
-  }
-});
+// visibilitychange 통합 (상단으로 이동됨)
 
-window.addEventListener('focus', function() {
-  clearAllNotifications();
-  setBadge(0);
-  unreadCount = 0;
-});
+// focus 통합 (상단으로 이동됨)
 
 // 앱 처음 로드 시에도 클리어
 clearAllNotifications();
