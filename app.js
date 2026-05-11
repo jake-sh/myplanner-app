@@ -288,14 +288,9 @@ document.addEventListener('visibilitychange', function() {
   if (document.hidden) {
     el.style.display = 'block';
   } else {
-    // 블랙 유지한 채로 먼저 화면 전환
+    // 블랙 유지한 채 화면 전환 후 충분한 딜레이
     showScreen('fakeApp');
-    // requestAnimationFrame 2번으로 렌더링 완료 후 해제
-    requestAnimationFrame(function() {
-      requestAnimationFrame(function() {
-        el.style.display = 'none';
-      });
-    });
+    setTimeout(function() { el.style.display = 'none'; }, 600);
   }
 });
 // iOS standalone 대응
