@@ -215,7 +215,7 @@
   <!-- 자동삭제 설정 바 -->
   <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border,#ECEEF8);">
     <span style="font-size:12px;font-weight:600;color:#8B8FA8;flex:1;" id="tagAutoDeleteLabel">자동삭제</span>
-    <select id="tagAutoDelete" onchange="setTagAutoDelete(this.value)" style="border:1.5px solid #ECEEF8;border-radius:10px;padding:5px 10px;font-size:12px;font-weight:600;background:var(--bg,#F8F9FF);color:var(--text,#1A1A2E);font-family:inherit;cursor:pointer;">
+    <select id="tagAutoDelete" onchange="setTagAutoDelete(this.value)" style="border:none;outline:none;border-radius:10px;padding:5px 10px;font-size:12px;font-weight:600;background:transparent;color:var(--text,#1A1A2E);font-family:inherit;cursor:pointer;-webkit-appearance:none;appearance:none;">
       <option value="0" id="tagAuto0">끄기</option>
       <option value="1" id="tagAuto1">1일</option>
       <option value="7" id="tagAuto7">7일</option>

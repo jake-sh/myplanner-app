@@ -270,11 +270,13 @@ const fakeData = [
   null
 ];
 const fakeTitles = ['할 일','일정표','알림','메모','목표','통계','프로젝트','태그','달력'];
+const fakeTitlesEn = ['To-Do','Schedule','Alarm','Memo','Goals','Stats','Projects','Tags','Calendar'];
 
 function openFakeFeature(i) {
-  document.getElementById('featureTitle').textContent = fakeTitles[i];
+  var _ft = localStorage.getItem('lang')==='en' ? fakeTitlesEn[i] : fakeTitles[i];
+  document.getElementById('featureTitle').textContent = _ft;
   document.getElementById('featureContent').innerHTML =
-    `<div class="feature-placeholder"><h3>${fakeTitles[i]}</h3>` +
+    `<div class="feature-placeholder"><h3>${_ft}</h3>` +
     (fakeData[i]||[]).map(t=>`<div class="fake-item"><div class="fake-check"></div>${t}</div>`).join('') + '</div>';
   showScreen('fakeFeature');
 }
@@ -1837,17 +1839,17 @@ function renderStatsUI() {
   var cat = STAT_CATS[curSC];
   var entries = (data[curSC]||[]).slice().sort(function(a,b){return a.date>b.date?1:-1;});
 
-  var tabHtml = '<div style="display:flex;gap:6px;overflow-x:auto;padding:4px 0 12px;scrollbar-width:none;">';
+  var tabHtml = '<div style="display:flex;flex-wrap:wrap;gap:8px;padding:4px 0 16px;">';
   Object.keys(STAT_CATS).forEach(function(k) {
     var c = STAT_CATS[k];
     var active = (k === curSC);
     var hasDot = data[k] && data[k].length > 0;
-    var bg = active ? "var(--primary)" : "#f1f5f9";
-    var col = active ? "#fff" : "#64748b";
+    var bg = active ? "var(--primary)" : "var(--card,#f1f5f9)";
+    var col = active ? "#fff" : "var(--text,#64748b)";
     var btn = document.createElement("button");
-    btn.textContent = c.emoji + " " + c.label + (hasDot ? "●" : "");
+    btn.textContent = c.emoji + " " + statLabel(k) + (hasDot ? " ●" : "");
     btn.setAttribute("data-scat", k);
-    btn.style.cssText = "flex-shrink:0;padding:6px 12px;border-radius:20px;border:none;cursor:pointer;font-size:15px;font-weight:600;background:" + bg + ";color:" + col + ";";
+    btn.style.cssText = "padding:6px 14px;border-radius:20px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:" + bg + ";color:" + col + ";";
     tabHtml += btn.outerHTML;
   });
   tabHtml += "</div>";
@@ -1873,7 +1875,7 @@ function renderStatsUI() {
     listHtml += row;
   });
 
-  fc.innerHTML = '<div style="padding:16px;">' + tabHtml + addHtml + chartHtml + listHtml + '</div>';
+  fc.innerHTML = '<div style="padding:16px;">' + addHtml + chartHtml + tabHtml + listHtml + '</div>';
 
   // 이벤트 바인딩
   fc.querySelectorAll("[data-scat]").forEach(function(btn) {

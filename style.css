@@ -179,7 +179,7 @@ input:checked+.slider:before{transform:translateX(20px);}
   padding:12px 20px;border-radius:0 14px 14px 0;
   font-size:22px;cursor:pointer;line-height:1;
 }
-.todo-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 16px;}
+.todo-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 16px;display:flex;flex-direction:column;}
 .todo-item{
   display:flex;align-items:center;gap:14px;
   padding:14px 16px;margin-bottom:8px;
