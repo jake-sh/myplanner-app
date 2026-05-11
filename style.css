@@ -633,6 +633,7 @@ body.dark-mode #widgetClothesVal { color:#F1F1F1 !important; }
 body.dark-mode #dustLabel,
 body.dark-mode #clothesLabel { color:#888 !important; }
 body.dark-mode .fake-date { color:#F1F1F1; }
+body.dark-mode .fake-title { color:#CCCCCC !important; }
 body.dark-mode .fake-subtitle { color:#888; }
 body.dark-mode #widgetClock { color:#F1F1F1 !important; }
 body.dark-mode .empty-state { color:#444; }
