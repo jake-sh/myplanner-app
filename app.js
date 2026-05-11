@@ -264,6 +264,7 @@ function openSettings() {
   document.getElementById('notifCal').checked = localStorage.getItem('notifCal') === 'true';
   document.getElementById('notifTodo').checked = localStorage.getItem('notifTodo') === 'true';
   showScreen('settingsScreen');
+  initTitleInputs();
   var t2 = localStorage.getItem('themeColor') || '#6C63FF';
   setTimeout(function(){ applyThemeBtnBorder(t2); updateIconStyleBtns(); updateSvgColorBtns(); }, 200);
 }
@@ -307,6 +308,7 @@ function applyClothesIcon(en) {
 function setIconStyle(style) {
   localStorage.setItem('iconStyle', style);
   applyIconStyle();
+  applyClothesIcon();
   updateIconStyleBtns();
 }
 
@@ -1347,7 +1349,6 @@ function toggleAutoLock(enabled) {
 }
 
 function openSecretSettings() {
-  initTitleInputs();
   document.getElementById('myCodeDisplaySettings').textContent = myCode;
   updateNotifBtn();
   updateFontSizeBtns();
