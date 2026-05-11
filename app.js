@@ -264,7 +264,6 @@ function openSettings() {
   document.getElementById('notifCal').checked = localStorage.getItem('notifCal') === 'true';
   document.getElementById('notifTodo').checked = localStorage.getItem('notifTodo') === 'true';
   showScreen('settingsScreen');
-  initTitleInputs();
   var t2 = localStorage.getItem('themeColor') || '#6C63FF';
   setTimeout(function(){ applyThemeBtnBorder(t2); updateIconStyleBtns(); updateSvgColorBtns(); }, 200);
 }
@@ -291,6 +290,19 @@ var SVG_ICONS = {
 };
 var EMOJI_ICONS = ['📋','📅','⏰','📝','🎯','📊','🗂️','🏷️','📆'];
 var SVG_COLORS = ['#10B981','#3B82F6','#F43F5E','#F59E0B','#F97316','#22C55E','#8B5CF6','#A855F7','#38BDF8'];
+
+function applyClothesIcon(en) {
+  var isEn = (en !== undefined) ? en : (localStorage.getItem('lang') === 'en');
+  var style = localStorage.getItem('iconStyle') || 'svg';
+  var label = document.getElementById('clothesLabel');
+  if (!label) return;
+  var text = isEn ? 'Outfit' : '옷차림 추천';
+  if (style === 'emoji') {
+    label.innerHTML = '👕 ' + text;
+  } else {
+    label.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" style="vertical-align:middle;margin-right:3px;color:var(--primary);"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>' + text;
+  }
+}
 
 function setIconStyle(style) {
   localStorage.setItem('iconStyle', style);
@@ -1335,6 +1347,7 @@ function toggleAutoLock(enabled) {
 }
 
 function openSecretSettings() {
+  initTitleInputs();
   document.getElementById('myCodeDisplaySettings').textContent = myCode;
   updateNotifBtn();
   updateFontSizeBtns();
@@ -2091,7 +2104,7 @@ function applyLang() {
 
   // 날씨
   _setText('dustLabel', en ? 'Air Quality' : '미세먼지');
-  document.getElementById('clothesLabel').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" style="vertical-align:middle;margin-right:3px;color:var(--primary);"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>' + (en ? 'Outfit' : '옷차림 추천');
+  applyClothesIcon(en);
 
   // placeholder
   var todoEl = document.getElementById('todoInputEl') || document.getElementById('todoInput');
