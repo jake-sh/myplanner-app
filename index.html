@@ -304,7 +304,7 @@
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
         </svg>
       </button>
-      <input type="file" id="fileInput" accept="image/*,video/*" multiple style="display:none" onchange="handleFileSelect(event)"/>
+      <input type="file" id="fileInput" accept="image/*,video/*" multiple style="display:none" onchange="handleFileSelect(event)" onclick="_filePickerOpen=true"/>
       <input id="msgInput" class="msg-input" type="text" placeholder="메시지 입력..." id="msgInputEl" onkeydown="if(event.key==='Enter')sendMessage()"/>
       <button class="send-btn" onmousedown="event.preventDefault()" onclick="sendMessage()">➤</button>
     </div>

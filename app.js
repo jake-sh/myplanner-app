@@ -291,15 +291,25 @@ window.addEventListener('pageshow', function(e) {
   }
 });
 var _appWasHidden = false;
+var _filePickerOpen = false;
+
+// 파일 선택창 열릴 때 플래그
+document.addEventListener('click', function(e) {
+  if (e.target && e.target.id === 'fileInput') _filePickerOpen = true;
+});
+
 window.addEventListener('blur', function() {
   var el = document.getElementById('privacyScreen');
   if (el) el.style.display = 'block';
-  _appWasHidden = true;
+  if (!_filePickerOpen) _appWasHidden = true;
 });
 window.addEventListener('focus', function() {
   var el = document.getElementById('privacyScreen');
   if (el) setTimeout(function(){ el.style.display = 'none'; }, 200);
-  // 앱이 숨겨졌다가 복귀한 경우만 메인으로
+  if (_filePickerOpen) {
+    _filePickerOpen = false;
+    return; // 파일 선택 후 복귀는 메인 이동 안 함
+  }
   if (_appWasHidden) {
     _appWasHidden = false;
     showScreen('fakeApp');
