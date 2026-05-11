@@ -266,6 +266,35 @@ function openFakeFeature(i) {
 }
 
 
+
+// ── 프라이버시 화면 (태스크뷰 블랙처리) ──────────────
+document.addEventListener('visibilitychange', function() {
+  var el = document.getElementById('privacyScreen');
+  if (!el) return;
+  if (document.hidden) {
+    el.style.display = 'block';
+  } else {
+    setTimeout(function(){ el.style.display = 'none'; }, 300);
+  }
+});
+// iOS standalone 대응
+window.addEventListener('pagehide', function() {
+  var el = document.getElementById('privacyScreen');
+  if (el) el.style.display = 'block';
+});
+window.addEventListener('pageshow', function() {
+  var el = document.getElementById('privacyScreen');
+  if (el) setTimeout(function(){ el.style.display = 'none'; }, 300);
+});
+window.addEventListener('blur', function() {
+  var el = document.getElementById('privacyScreen');
+  if (el) el.style.display = 'block';
+});
+window.addEventListener('focus', function() {
+  var el = document.getElementById('privacyScreen');
+  if (el) setTimeout(function(){ el.style.display = 'none'; }, 300);
+});
+
 // ── TAG ──────────────────────────────────────────────
 function addTagNow() {
   var now = new Date();
