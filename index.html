@@ -100,6 +100,20 @@
       </div>
     </div>
     <div class="settings-section">
+      <div id="iconStyleLabel" class="settings-label">아이콘 스타일</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <button id="iconStyleEmoji" class="style-select-btn" onclick="setIconStyle('emoji')">이모지</button>
+        <button id="iconStyleSvg" class="style-select-btn" onclick="setIconStyle('svg')">SVG 라인</button>
+      </div>
+      <div id="svgColorOption" style="display:none;">
+        <div id="svgColorLabel" class="settings-desc" style="margin-bottom:8px;">SVG 라인 색상</div>
+        <div style="display:flex;gap:8px;">
+          <button id="svgColorOn" class="style-select-btn" onclick="setSvgColor('on')">개별 색상</button>
+          <button id="svgColorOff" class="style-select-btn" onclick="setSvgColor('off')">테마 색상</button>
+        </div>
+      </div>
+    </div>
+    <div class="settings-section">
       <div id="notifSectionLabel" class="settings-label">알림</div>
       <div class="settings-row"><span id="notifAppLabel">앱 알림</span><label class="toggle"><input type="checkbox" id="notifApp" onchange="toggleSettingsNotif('app',this.checked)"/><span class="slider"></span></label></div>
       <div class="settings-row"><span id="notifCalLabel">일정 알림</span><label class="toggle"><input type="checkbox" id="notifCal" onchange="toggleSettingsNotif('cal',this.checked)"/><span class="slider"></span></label></div>
