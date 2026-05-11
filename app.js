@@ -269,9 +269,7 @@ function saveAppName() {
   alert('저장되었습니다');
 }
 
-// ── 다크모드 ──────────────────────────────────────────
-var PASTEL_DEFAULT = ['#E8F8F5','#E8F4FF','#FFE8EE','#FFF8E8','#FFF0E8','#EDFBF0','#EEE8FF','#F5E8FF','#E8EEFF'];
-
+// ── 다크 모드 ──────────────────────────────────────────
 function setDarkMode(enabled) {
   localStorage.setItem('darkMode', enabled ? 'true' : 'false');
   applyDarkMode();
@@ -286,9 +284,6 @@ function applyDarkMode() {
   }
   var toggle = document.getElementById('darkModeToggle');
   if (toggle) toggle.checked = enabled;
-  // 메뉴 색상 재적용
-  var themeColor = localStorage.getItem('themeColor') || '#6C63FF';
-  applyMenuTheme(themeColor);
 }
 
 function setTheme(c) {
@@ -298,27 +293,17 @@ function setTheme(c) {
 }
 
 function applyMenuTheme(c) {
+  var isGray = (c === '#6b7280');
   var items = document.querySelectorAll('.menu-item');
-  var isDark = localStorage.getItem('darkMode') === 'true';
-
-  var solidPalettes = ['#4A90D9','#22c55e','#8b5cf6','#f59e0b','#6b7280'];
-  var isSolid = solidPalettes.indexOf(c) !== -1;
-
+  var pastelColors = [
+    '#E8F8F5','#E8F4FF','#FFE8EE','#FFF8E8',
+    '#FFF0E8','#EDFBF0','#EEE8FF','#F5E8FF','#E8EEFF'
+  ];
   items.forEach(function(item, i) {
-    var label = item.querySelector('.menu-label');
-    if (isDark) {
-      // 다크모드: 테마 색상으로 통일
-      item.style.background = isSolid ? c : '#2A2A2A';
-      if (label) label.style.color = 'rgba(255,255,255,0.9)';
+    if (isGray) {
+      item.style.background = '#F0F1F4';
     } else {
-      // 라이트모드: 테마 색상이면 solid, 아니면 파스텔
-      if (isSolid) {
-        item.style.background = c;
-        if (label) label.style.color = 'rgba(255,255,255,0.9)';
-      } else {
-        item.style.background = PASTEL_DEFAULT[i] || '#fff';
-        if (label) label.style.color = '';
-      }
+      item.style.background = pastelColors[i] || '#fff';
     }
   });
 }
@@ -1859,6 +1844,8 @@ function applyLang() {
 
   // 설정 라벨
   _setText('appNameLabel', en ? 'App Name' : '앱 이름');
+  _setText('displayModeLabel', en ? 'Display Mode' : '화면 모드');
+  _setText('darkModeText', en ? 'Dark Mode' : '다크 모드');
   _setText('themeColorLabel', en ? 'Theme Color' : '테마 색상');
   _setText('notifSectionLabel', en ? 'Notifications' : '알림');
   _setText('langLabel', en ? 'Language' : '언어');
@@ -1934,10 +1921,6 @@ function applyLang() {
   _setText('closeSecretBtn', en ? 'Close' : '닫기');
   _setText('closeAddFriendBtn', en ? 'Close' : '닫기');
   _setText('closeTimerBtn', en ? 'Close' : '닫기');
-
-  // 다크모드
-  _setText('darkModeText', en ? 'Dark Mode' : '다크 모드');
-  _setText('darkModeLabel', en ? 'Dark Mode' : '다크 모드');
 
   // 달력 통계
   _setText('calAchievedLabel', en ? 'Achieved' : '달성일');

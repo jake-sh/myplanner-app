@@ -529,57 +529,115 @@ input:checked+.slider:before{transform:translateX(20px);}
 
 /* ══ 다크 모드 ══ */
 body.dark-mode {
-  --bg:#121212;
-  --card:#1E1E1E;
+  --bg:#000000;
+  --card:#1A1A1A;
   --text:#F1F1F1;
-  --subtext:#9E9E9E;
-  --shadow:0 2px 16px rgba(0,0,0,0.4);
-  --shadow-sm:0 1px 6px rgba(0,0,0,0.3);
+  --subtext:#888888;
+  --shadow:0 2px 16px rgba(0,0,0,0.6);
+  --shadow-sm:0 1px 6px rgba(0,0,0,0.4);
+  --primary-light:#1A1A1A;
 }
 body.dark-mode .fake-header,
-body.dark-mode .fake-date-banner,
-body.dark-mode .sub-header,
-body.dark-mode .settings-section,
-body.dark-mode .todo-add-bar,
-body.dark-mode .todo-item,
-body.dark-mode .memo-card,
-body.dark-mode .cal-nav-bar,
-body.dark-mode .cal-stat-box,
-body.dark-mode .feature-placeholder {
-  border-color:#2E2E2E;
+body.dark-mode .fake-date-banner {
+  background:#000000;
+  border-color:#2A2A2A;
 }
-body.dark-mode .fake-header,
-body.dark-mode .fake-date-banner,
 body.dark-mode .sub-header {
+  background:#000000;
+  border-color:#2A2A2A;
+}
+body.dark-mode .screen {
+  background:#000000;
+}
+body.dark-mode .menu-item {
+  background:#1E1E1E !important;
+  border-color:#2A2A2A;
+}
+body.dark-mode .menu-label {
+  color:#AAAAAA !important;
+}
+body.dark-mode .settings-section {
   background:#1A1A1A;
+  border-color:#2A2A2A;
+}
+body.dark-mode .settings-label,
+body.dark-mode .settings-row {
+  color:#F1F1F1;
 }
 body.dark-mode .settings-input,
-body.dark-mode .settings-select,
-body.dark-mode .todo-add-input,
-body.dark-mode .memo-title-input,
-body.dark-mode .memo-content-input {
+body.dark-mode .settings-select {
   background:#2A2A2A;
   border-color:#3A3A3A;
   color:#F1F1F1;
 }
-body.dark-mode .settings-input::placeholder,
-body.dark-mode .todo-add-input::placeholder {
-  color:#666;
+body.dark-mode .todo-add-bar {
+  background:#000000;
+  border-color:#2A2A2A;
 }
+body.dark-mode .todo-add-input {
+  background:#1A1A1A;
+  border-color:#2A2A2A;
+  color:#F1F1F1;
+}
+body.dark-mode .todo-add-input::placeholder { color:#555; }
+body.dark-mode .todo-item {
+  background:#1A1A1A;
+  border-color:#2A2A2A;
+}
+body.dark-mode .todo-text { color:#F1F1F1; }
+body.dark-mode .todo-del { color:#444; }
+body.dark-mode .memo-list,
+body.dark-mode .todo-list,
+body.dark-mode .calendar-wrap,
+body.dark-mode .feature-content {
+  background:#000000;
+}
+body.dark-mode .memo-card {
+  background:#1A1A1A;
+  border-color:#2A2A2A;
+}
+body.dark-mode .memo-card-title { color:#F1F1F1; }
+body.dark-mode .memo-card-preview { color:#888; }
+body.dark-mode .memo-editor-wrap { background:#000000; }
+body.dark-mode .memo-title-input,
+body.dark-mode .memo-content-input {
+  background:#1A1A1A;
+  border-color:#2A2A2A;
+  color:#F1F1F1;
+}
+body.dark-mode .cal-nav-bar {
+  background:#1A1A1A;
+  border-color:#2A2A2A;
+}
+body.dark-mode .cal-stat-box {
+  background:#1A1A1A;
+  border-color:#2A2A2A;
+}
+body.dark-mode .cal-stat-label { color:#888; }
+body.dark-mode .cal-title,
+body.dark-mode .cal-day { color:#F1F1F1; }
+body.dark-mode .cal-wd { color:#555; }
+body.dark-mode .cal-wd.sun { color:#FF6B8A; }
+body.dark-mode .cal-wd.sat { color:var(--primary); }
 body.dark-mode #weatherWidget {
-  background:#1E1E1E;
-  border-color:#2E2E2E;
+  background:#1A1A1A !important;
+  border-color:#2A2A2A !important;
 }
-body.dark-mode #widgetTemp,
-body.dark-mode #widgetDesc,
-body.dark-mode #widgetLocation { color:#F1F1F1 !important; }
+body.dark-mode #widgetTemp { color:#F1F1F1 !important; }
+body.dark-mode #widgetDesc { color:#888 !important; }
+body.dark-mode #widgetLocation { color:#888 !important; }
 body.dark-mode #widgetDust { background:#2A2A2A !important; }
 body.dark-mode #widgetDustVal { color:#F1F1F1 !important; }
 body.dark-mode #widgetClothes { background:#2A2A2A !important; }
 body.dark-mode #widgetClothesVal { color:#F1F1F1 !important; }
-body.dark-mode #dustLabel, body.dark-mode #clothesLabel { color:#9E9E9E !important; }
+body.dark-mode #dustLabel,
+body.dark-mode #clothesLabel { color:#888 !important; }
 body.dark-mode .fake-date { color:#F1F1F1; }
-body.dark-mode .menu-label { color:rgba(255,255,255,0.9) !important; }
-body.dark-mode .calendar-wrap { background:#121212; }
-body.dark-mode .memo-list { background:#121212; }
-body.dark-mode .todo-list { background:#121212; }
+body.dark-mode .fake-subtitle { color:#888; }
+body.dark-mode #widgetClock { color:#F1F1F1 !important; }
+body.dark-mode .empty-state { color:#444; }
+body.dark-mode .feature-placeholder {
+  background:#1A1A1A;
+  border-color:#2A2A2A;
+}
+body.dark-mode .cal-palette .pal-btn { border-color:#333; }
