@@ -1624,7 +1624,14 @@ async function initFCM() {
     if (typeof firebase !== 'undefined' && firebase.messaging && firebase.messaging.isSupported && firebase.messaging.isSupported()) {
       messaging = firebase.messaging();
       const sw = await navigator.serviceWorker.ready;
+      // getToken이 내부적으로 권한 요청 다이얼로그를 띄울 수 있음 → 메인 튕김 방지 플래그
+      _filePickerOpen = true;
+      _appWasHidden = false;
       const token = await messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: sw });
+      setTimeout(function() {
+        _filePickerOpen = false;
+        _appWasHidden = false;
+      }, 1500);
       if (token) {
         fcmToken = token;
         localStorage.setItem('fcmToken', token);
@@ -1632,10 +1639,10 @@ async function initFCM() {
         console.log('FCM token saved');
       }
     } else {
-      // FCM 미지원 (iOS 등) - fcmToken 없이 SW postMessage 방식만 사용
       console.log('FCM not supported, using SW notifications only');
     }
   } catch(e) {
+    _filePickerOpen = false;
     console.log('FCM init error:', e.message);
   }
 }
