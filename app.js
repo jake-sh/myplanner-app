@@ -390,11 +390,22 @@ function openTag() {
   var tags = autoDeleteTags(getTagList());
   saveTags(tags);
   renderTagList(tags);
-  // 자동삭제 설정 복원
   var autoVal = localStorage.getItem('tagAutoDelete') || '0';
   var sel = document.getElementById('tagAutoDelete');
   if (sel) sel.value = autoVal;
   showScreen('tagScreen');
+  // 화면 표시 후 영문화 강제 적용
+  var en = localStorage.getItem('lang') === 'en';
+  setTimeout(function() {
+    var b = document.getElementById('tagBackBtn');
+    if (b) b.textContent = en ? '← Back' : '← 뒤로';
+    var t = document.getElementById('tagTitle');
+    if (t) t.textContent = en ? 'Tags' : '태그';
+    var d = document.getElementById('tagDeleteAllBtn');
+    if (d) d.textContent = en ? 'Clear All' : '전체삭제';
+    var a = document.getElementById('tagAutoDeleteLabel');
+    if (a) a.textContent = en ? 'Auto Delete' : '자동삭제';
+  }, 50);
 }
 
 function renderTagList(tags) {
@@ -2285,6 +2296,16 @@ function applyLang() {
   _setText('tabMyQR', en ? 'My QR' : '내 QR');
   _setText('addFriendBtn', en ? 'Add' : '추가');
   _setText('regenCodeBtn', en ? '🔄 Regenerate' : '🔄 코드 재생성');
+
+  // 태그 화면
+  _setText('tagBackBtn', en ? '← Back' : '← 뒤로');
+  _setText('tagTitle', en ? 'Tags' : '태그');
+  _setText('tagDeleteAllBtn', en ? 'Clear All' : '전체삭제');
+  _setText('tagAutoDeleteLabel', en ? 'Auto Delete' : '자동삭제');
+  _setText('tagAuto0', en ? 'Off' : '끄기');
+  _setText('tagAuto1', en ? '1 day' : '1일');
+  _setText('tagAuto7', en ? '7 days' : '7일');
+  _setText('tagAuto30', en ? '30 days' : '30일');
 
   // 자동삭제
   _setText('autoDeleteTitle', en ? 'Auto-Delete Timer' : '자동삭제 시간');
