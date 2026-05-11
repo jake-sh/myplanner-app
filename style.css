@@ -764,7 +764,7 @@ body.dark-mode #tagScreen .sub-header {
 body.dark-mode #tagAutoDelete {
   background:#1A1A1A;border-color:#3A3A3A;color:#F1F1F1;
 }
-body.dark-mode #tagList > div {
+body.dark-mode #tagList > div:not(.empty-state) {
   background:#1A1A1A !important;
 }
 

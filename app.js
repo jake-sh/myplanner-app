@@ -400,11 +400,11 @@ function renderTagList(tags) {
   if (!list) return;
   var isEn = localStorage.getItem('lang') === 'en';
   if (!tags.length) {
-    list.innerHTML = '<div style="text-align:center;color:#aaa;margin-top:40px;font-size:13px;">' + (isEn ? 'No tags yet. Tap the clock to add.' : '시계를 탭해서 시간을 기록하세요.') + '</div>';
+    list.innerHTML = '<div class="empty-state">' + (isEn ? 'No tags yet. Tap the clock to add.' : '시계를 탭해서 시간을 기록하세요.') + '</div>';
     return;
   }
   list.innerHTML = tags.map(function(t, idx) {
-    return '<div style="display:flex;align-items:center;background:var(--card,#fff);border-radius:14px;padding:12px 16px;box-shadow:0 1px 6px rgba(0,0,0,0.06);border:1px solid var(--border,#ECEEF8);">' +
+    return '<div style="display:flex;align-items:center;background:var(--card,#fff);border-radius:14px;padding:12px 16px;box-shadow:0 1px 6px rgba(0,0,0,0.06);">' +
       '<div style="width:28px;height:28px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;margin-right:12px;flex-shrink:0;">' +
         '<span style="font-size:11px;font-weight:700;color:#fff;">' + (tags.length - idx) + '</span>' +
       '</div>' +
@@ -702,7 +702,7 @@ function renderTodoList() {
   const todos = JSON.parse(localStorage.getItem('todos') || '[]');
   document.getElementById('todoCount').textContent = `${todos.filter(t=>t.done).length}/${todos.length}`;
   const el = document.getElementById('todoList');
-  if (!todos.length) { el.innerHTML = '<div class="empty-state">📋<br/>' + (localStorage.getItem("lang")==="en" ? 'No tasks yet' : '할 일이 없습니다') + '</div>'; return; }
+  if (!todos.length) { el.innerHTML = '<div class="empty-state">' + (localStorage.getItem("lang")==="en" ? 'No tasks yet' : '할 일이 없습니다') + '</div>'; return; }
   el.innerHTML = todos.map((t,i) => `
     <div class="todo-item ${t.done?'todo-done':''}">
       <div class="todo-check ${t.done?'checked':''}" onclick="toggleTodo(${i})">${t.done?'✓':''}</div>
@@ -733,7 +733,8 @@ function openMemo() { renderMemoList(); showScreen('memoScreen'); }
 function renderMemoList() {
   const memos = JSON.parse(localStorage.getItem('memos') || '[]');
   const el = document.getElementById('memoList');
-  if (!memos.length) { el.innerHTML = `<div class="empty-state">📝<br/>메모가 없습니다</div>`; return; }
+  var isEn = localStorage.getItem('lang') === 'en';
+  if (!memos.length) { el.innerHTML = '<div class="empty-state">' + (isEn ? 'No memos yet' : '메모가 없습니다') + '</div>'; return; }
   el.innerHTML = memos.map((m,i) => `
     <div class="memo-card" onclick="openEditMemo(${i})">
       <div class="memo-card-title">${esc(m.title||'제목 없음')}</div>
@@ -2351,7 +2352,7 @@ function applyLang() {
 
   // 할일 빈 목록 갱신
   var emptyState = document.querySelector('.empty-state');
-  if (emptyState) emptyState.innerHTML = '📋<br/>' + (en ? 'No tasks yet' : '할 일이 없습니다');
+  if (emptyState) emptyState.innerHTML = (en ? 'No tasks yet' : '할 일이 없습니다');
 
   // 달력 갱신 (요일 헤더)
   var calScreen = document.getElementById('calendarScreen');
