@@ -34,7 +34,6 @@ let editingMemoIndex = null;
 window.addEventListener('DOMContentLoaded', () => {
   // ── 최초 실행 시 디폴트값 설정 ──
   if (!localStorage.getItem('_defaultsSet')) {
-    localStorage.setItem('darkMode', 'true');
     localStorage.setItem('themeColor', '#6b7280');
     localStorage.setItem('iconStyle', 'svg');
     localStorage.setItem('svgColorMode', 'off'); // 테마 색상
