@@ -998,15 +998,23 @@ function listenFriendChanges() {
 }
 
 async function deleteChat(friendCode) {
-  showConfirm(friendCode + '와의 채팅 내용을 삭제할까요?\n친구는 유지됩니다.', function() { _doDeleteChat(friendCode); }); return;
+  showConfirm(friendCode + '와의 대화 및 친구를 삭제할까요?', function() { _doDeleteChat(friendCode); }); return;
 }
 async function _doDeleteChat(friendCode) {
+  // 1. 대화내용 삭제
   const roomId = [myCode, friendCode].sort().join('_');
   const snap = await db.collection('rooms').doc(roomId).collection('messages').get();
   const batch = db.batch();
   snap.docs.forEach(d => batch.delete(d.ref));
   await batch.commit();
-  showAlert('채팅 내용이 삭제되었습니다');
+  // 2. 내 친구목록에서 상대 제거 (로컬 + Firestore)
+  friends = friends.filter(f => f !== friendCode);
+  localStorage.setItem('friends', JSON.stringify(friends));
+  await db.collection('users').doc(myCode).update({ friends: firebase.firestore.FieldValue.arrayRemove(friendCode) }).catch(() => {});
+  // 3. 상대 친구목록에서 나 제거 (Firestore)
+  await db.collection('users').doc(friendCode).update({ friends: firebase.firestore.FieldValue.arrayRemove(myCode) }).catch(() => {});
+  renderFriendList();
+  showAlert('대화 및 친구가 삭제되었습니다');
 }
 
 // ── ADD FRIEND ──────────────────────────────────────
