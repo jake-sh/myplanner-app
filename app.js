@@ -37,7 +37,6 @@ window.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('themeColor', '#6b7280');
     localStorage.setItem('iconStyle', 'svg');
     localStorage.setItem('svgColorMode', 'off'); // 테마 색상
-    localStorage.setItem('lang', 'en');
     localStorage.setItem('notifApp', 'true');
     localStorage.setItem('notifCal', 'true');
     localStorage.setItem('notifTodo', 'true');
