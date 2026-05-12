@@ -1168,9 +1168,11 @@ function backToFriendList() {
 
 var _lastHandledReqId = null;
 var _lastHandledStatus = null;
+var _roomListenStartTime = 0;
 
 function listenRoomSettings() {
   if (!chatRoomId) return;
+  _roomListenStartTime = Date.now();
   roomListener = db.collection('rooms').doc(chatRoomId).onSnapshot(snap => {
     if (!snap.exists) return;
     const data = snap.data();
@@ -1186,7 +1188,8 @@ function listenRoomSettings() {
     }
     if (req.status === 'rejected') {
       document.getElementById('deleteRequestBanner')?.remove();
-      if (req.from === myCode) showAlert('상대방이 변경을 거부했습니다');
+      // 진입 이후 발생한 rejected만 알림
+      if (req.from === myCode && (req.updatedAt || 0) > _roomListenStartTime) showAlert('상대방이 변경을 거부했습니다');
     }
     if (req.status === 'approved') {
       document.getElementById('deleteRequestBanner')?.remove();
@@ -1217,7 +1220,7 @@ async function respondDeleteRequest(accept, reqId, minutes) {
     updateAutoDeleteLabel();
     await db.collection('rooms').doc(chatRoomId).update({ 'deleteRequest.status': 'approved' });
   } else {
-    await db.collection('rooms').doc(chatRoomId).update({ 'deleteRequest.status': 'rejected' });
+    await db.collection('rooms').doc(chatRoomId).update({ 'deleteRequest.status': 'rejected', 'deleteRequest.updatedAt': Date.now() });
   }
 }
 
