@@ -995,28 +995,13 @@ function listenFriendChanges() {
 }
 
 async function deleteChat(friendCode) {
-  _filePickerOpen = true; // 다이얼로그/DB작업 중 blur 튕김 방지
-  _appWasHidden = false;
-  var en = localStorage.getItem('lang') === 'en';
-  if (!confirm(friendCode + (en ? ': Delete chat history?' : '와의 채팅 내용을 삭제할까요?'))) {
-    _filePickerOpen = false;
-    return;
-  }
-  try {
-    const roomId = [myCode, friendCode].sort().join('_');
-    const snap = await db.collection('rooms').doc(roomId).collection('messages').get();
-    const batch = db.batch();
-    snap.docs.forEach(d => batch.delete(d.ref));
-    await batch.commit();
-    alert(en ? 'Chat history deleted' : '채팅 내용이 삭제되었습니다');
-  } catch(e) {
-    alert(en ? 'Error: ' + e.message : '오류: ' + e.message);
-  } finally {
-    setTimeout(function() {
-      _filePickerOpen = false;
-      _appWasHidden = false;
-    }, 500);
-  }
+  if (!confirm(`${friendCode}와의 채팅 내용을 삭제할까요?\n친구는 유지됩니다.`)) return;
+  const roomId = [myCode, friendCode].sort().join('_');
+  const snap = await db.collection('rooms').doc(roomId).collection('messages').get();
+  const batch = db.batch();
+  snap.docs.forEach(d => batch.delete(d.ref));
+  await batch.commit();
+  alert('채팅 내용이 삭제되었습니다');
 }
 
 // ── ADD FRIEND ──────────────────────────────────────
@@ -1038,28 +1023,19 @@ function switchAddTab(tab) {
 }
 
 async function addFriendByCode() {
-  _filePickerOpen = true;
-  _appWasHidden = false;
-  var en = localStorage.getItem('lang') === 'en';
   const code = document.getElementById('friendCodeInput').value.trim().toUpperCase();
-  if (!code) { _filePickerOpen=false; alert(en ? 'Please enter a code' : '코드를 입력하세요'); return; }
-  if (code === myCode) { _filePickerOpen=false; alert(en ? 'You cannot add yourself' : '자신의 코드는 추가할 수 없습니다'); return; }
-  if (friends.includes(code)) { _filePickerOpen=false; alert(en ? 'Already added' : '이미 추가된 친구입니다'); return; }
-  try {
-    const snap = await db.collection('users').doc(code).get();
-    if (!snap.exists) { _filePickerOpen=false; alert(en ? '"'+code+'" is not registered' : '"'+code+'" 는 등록되지 않은 사용자예요'); return; }
-    friends.push(code);
-    localStorage.setItem('friends', JSON.stringify(friends));
-    await db.collection('users').doc(myCode).set({ friends: firebase.firestore.FieldValue.arrayUnion(code) }, { merge: true });
-    await db.collection('users').doc(code).set({ friends: firebase.firestore.FieldValue.arrayUnion(myCode) }, { merge: true });
-    renderFriendList();
-    closeAddFriend();
-    showInAppNotif(en ? code + ' has been added' : code + ' 추가되었습니다');
-  } catch(e) {
-    alert(en ? 'Error: ' + e.message : '오류: ' + e.message);
-  } finally {
-    setTimeout(function(){ _filePickerOpen=false; _appWasHidden=false; }, 800);
-  }
+  if (!code) { alert(localStorage.getItem('lang')==='en' ? 'Please enter a code' : '코드를 입력하세요'); return; }
+  if (code === myCode) { alert(localStorage.getItem('lang')==='en' ? 'You cannot add yourself' : '자신의 코드는 추가할 수 없습니다'); return; }
+  if (friends.includes(code)) { alert(localStorage.getItem('lang')==='en' ? 'Already added' : '이미 추가된 친구입니다'); return; }
+
+  // 존재하는 사용자인지 확인
+  const snap = await db.collection('users').doc(code).get();
+  if (!snap.exists) { alert(`"${code}" 는 등록되지 않은 사용자예요`); return; }
+
+  friends.push(code); localStorage.setItem('friends', JSON.stringify(friends));
+  await db.collection('users').doc(myCode).set({ friends: firebase.firestore.FieldValue.arrayUnion(code) }, { merge: true });
+  await db.collection('users').doc(code).set({ friends: firebase.firestore.FieldValue.arrayUnion(myCode) }, { merge: true });
+  renderFriendList(); closeAddFriend(); alert(localStorage.getItem('lang')==='en' ? code + ' has been added' : code + ' 추가되었습니다');
 }
 
 function renderMyQr() {
@@ -1079,7 +1055,7 @@ function startQrScanner() {
       friends.push(code); localStorage.setItem('friends', JSON.stringify(friends));
       db.collection('users').doc(myCode).set({ friends: firebase.firestore.FieldValue.arrayUnion(code) }, { merge: true });
       db.collection('users').doc(code).set({ friends: firebase.firestore.FieldValue.arrayUnion(myCode) }, { merge: true });
-      renderFriendList(); closeAddFriend(); setTimeout(function(){ _filePickerOpen=false; _appWasHidden=false; }, 500); showInAppNotif(localStorage.getItem('lang')==='en' ? code + ' has been added' : code + ' 추가되었습니다');
+      renderFriendList(); closeAddFriend(); alert(localStorage.getItem('lang')==='en' ? code + ' has been added' : code + ' 추가되었습니다');
     }
   }, () => {}).catch(() => { wrap.innerHTML = '<p style="color:#64748b;font-size:13px;text-align:center;">카메라 권한이 필요합니다</p>'; });
 }
@@ -2102,52 +2078,51 @@ function getClothes(temp, pm10) {
   return '패딩·두꺼운 코트·목도리' + dust;
 }
 
-var _weatherCache = null;
-
-function renderWeatherUI(data) {
-  if (!data) return;
-  var en = localStorage.getItem('lang') === 'en';
-  document.getElementById('widgetTemp').textContent = data.temp + '°';
-  document.getElementById('widgetDesc').textContent = data.desc;
-  document.getElementById('widgetWeatherIcon').textContent = data.icon;
-  document.getElementById('widgetLocation').textContent = data.city;
-  document.getElementById('widgetTempMin').textContent = data.tMin + '°';
-  document.getElementById('widgetTempMax').textContent = data.tMax + '°';
-  var level = getDustLevel(data.pm10);
-  var level25 = getDustLevel(data.pm25);
-  document.getElementById('widgetDustVal').innerHTML =
-    (en ? 'Fine dust ' : '미세 ') + '<b style="color:' + level.color + '">' + level.text + '</b><br>' +
-    (en ? 'Ultra-fine ' : '초미세 ') + '<b style="color:' + level25.color + '">' + level25.text + '</b>';
-  document.getElementById('widgetDustLevel').textContent = '';
-  document.getElementById('widgetClothesVal').textContent = getClothes(data.temp, data.pm10);
-}
-
 async function loadWeather() {
   if (!navigator.geolocation) return;
   navigator.geolocation.getCurrentPosition(async function(pos) {
     var lat = pos.coords.latitude;
     var lon = pos.coords.longitude;
     try {
-      var en = localStorage.getItem('lang') === 'en';
-      var wLang = en ? 'en' : 'kr';
+      // 날씨
+      var wLang = localStorage.getItem('lang')==='en' ? 'en' : 'kr';
       var wRes = await fetch('https://api.openweathermap.org/data/2.5/weather?lat='+lat+'&lon='+lon+'&appid='+OWM_KEY+'&units=metric&lang='+wLang);
       var wData = await wRes.json();
+      var temp = Math.round(wData.main.temp);
+      var desc = wData.weather[0].description;
+      var icon = getWeatherIcon(wData.weather[0].id);
+      var city = wData.name;
+
+      document.getElementById('widgetTemp').textContent = temp + '°';
+      document.getElementById('widgetDesc').textContent = desc;
+      document.getElementById('widgetWeatherIcon').textContent = icon;
+      document.getElementById('widgetLocation').textContent = city;
+
+      // 오늘 최저/최고 - forecast API 사용
       var fRes = await fetch('https://api.openweathermap.org/data/2.5/forecast?lat='+lat+'&lon='+lon+'&appid='+OWM_KEY+'&units=metric&cnt=8');
       var fData = await fRes.json();
       var todayTemps = fData.list.map(function(item){ return item.main.temp; });
+      var tMin = Math.round(Math.min.apply(null, todayTemps));
+      var tMax = Math.round(Math.max.apply(null, todayTemps));
+      document.getElementById('widgetTempMin').textContent = tMin + '°';
+      document.getElementById('widgetTempMax').textContent = tMax + '°';
+
+      // 미세먼지
       var aRes = await fetch('https://api.openweathermap.org/data/2.5/air_pollution?lat='+lat+'&lon='+lon+'&appid='+OWM_KEY);
       var aData = await aRes.json();
-      _weatherCache = {
-        temp: Math.round(wData.main.temp),
-        desc: wData.weather[0].description,
-        icon: getWeatherIcon(wData.weather[0].id),
-        city: wData.name,
-        tMin: Math.round(Math.min.apply(null, todayTemps)),
-        tMax: Math.round(Math.max.apply(null, todayTemps)),
-        pm10: Math.round(aData.list[0].components.pm10),
-        pm25: Math.round(aData.list[0].components.pm2_5),
-      };
-      renderWeatherUI(_weatherCache);
+      var pm10 = Math.round(aData.list[0].components.pm10);
+      var pm25 = Math.round(aData.list[0].components.pm2_5);
+      var level = getDustLevel(pm10);
+
+      var level25 = getDustLevel(pm25);
+      document.getElementById('widgetDustVal').innerHTML = 
+        (localStorage.getItem('lang')==='en' ? 'Fine dust ' : '미세 ') + '<b style="color:' + level.color + '">' + level.text + '</b><br>' +
+        (localStorage.getItem('lang')==='en' ? 'Ultra-fine ' : '초미세 ') + '<b style="color:' + level25.color + '">' + level25.text + '</b>';
+      document.getElementById('widgetDustLevel').textContent = '';
+
+      // 옷차림
+      document.getElementById('widgetClothesVal').textContent = getClothes(temp, pm10);
+
     } catch(e) {
       var en = localStorage.getItem('lang') === 'en';
       document.getElementById('widgetClothesVal').textContent = en ? 'No weather info' : '날씨 정보 없음';
@@ -2269,7 +2244,6 @@ function setLang(lang) {
   currentLang = lang;
   localStorage.setItem('lang', lang);
   applyLang();
-  renderWeatherUI(_weatherCache);
 }
 
 function applyLang() {
