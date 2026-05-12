@@ -927,13 +927,7 @@ function enterChatApp() {
     document.getElementById('friendListView').style.display = 'none';
     document.getElementById('activeChatView').style.display = 'none';
   } else {
-    var f = JSON.parse(localStorage.getItem('friends') || '[]');
-    if (f.length === 1) {
-      listenFriendChanges();
-      openChat(f[0]);
-    } else {
-      showFriendList();
-    }
+    showFriendList();
   }
 }
 
