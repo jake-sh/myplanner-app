@@ -276,7 +276,7 @@ input:checked+.slider:before{transform:translateX(20px);}
   background:var(--chat-surface);gap:8px;flex-shrink:0;
   position:relative;border-bottom:1px solid var(--chat-border);
 }
-.chat-header-center{flex:1;text-align:center;min-width:0;overflow:hidden;}
+.chat-header-center{position:absolute;left:0;right:0;text-align:center;pointer-events:none;}
 .chat-friend-name{font-size:16px;font-weight:800;color:var(--chat-text);}
 .auto-delete-label{font-size:11px;color:var(--chat-text2);}
 .chat-header-btn{
