@@ -256,6 +256,12 @@
       <div style="flex:1;"></div>
       <div class="chat-header-center"><div id="chatListTitle" class="chat-friend-name">목록</div></div>
       <div class="chat-header-actions">
+
+        <button class="chat-header-btn" onclick="openAddFriend()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/>
+          </svg>
+        </button>
         <button class="chat-header-btn" onclick="openAddFriend()">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/>
@@ -274,6 +280,11 @@
   <!-- Active chat -->
   <div id="activeChatView" style="display:none;flex-direction:column;flex:1;min-height:0;overflow:hidden;">
     <div class="chat-header">
+      <button class="chat-header-btn" onclick="exitChat()" style="opacity:0.6;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
       <button class="chat-header-btn" onclick="backToFriendList()">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="15 18 9 12 15 6"/>
@@ -524,5 +535,14 @@ try {
   </div>
 </div>
   <div id="privacyScreen" style="display:none;position:fixed;inset:0;background:#000;z-index:99999;"></div>
+<div id="confirmModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99998;align-items:center;justify-content:center;">
+  <div style="background:#1E1E1E;border-radius:20px;padding:24px 20px;margin:0 32px;max-width:320px;width:100%;">
+    <div id="confirmMsg" style="color:#F1F1F1;font-size:15px;font-weight:600;line-height:1.6;margin-bottom:24px;text-align:center;"></div>
+    <div style="display:flex;gap:10px;">
+      <button id="confirmCancelBtn" onclick="closeConfirmModal(false)" style="flex:1;padding:12px;border-radius:12px;border:none;background:#2A2A2A;color:#aaa;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">취소</button>
+      <button id="confirmOkBtn" onclick="closeConfirmModal(true)" style="flex:1;padding:12px;border-radius:12px;border:none;background:#F43F5E;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">삭제</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

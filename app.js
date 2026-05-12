@@ -349,6 +349,24 @@ window.addEventListener('focus', function() {
   }
 });
 
+
+// ── 커스텀 Confirm 모달 ──────────────────────────────
+var _confirmResolve = null;
+
+function showConfirm(msg, okText, cancelText) {
+  var en = localStorage.getItem('lang') === 'en';
+  document.getElementById('confirmMsg').textContent = msg;
+  document.getElementById('confirmOkBtn').textContent = okText || (en ? 'Delete' : '삭제');
+  document.getElementById('confirmCancelBtn').textContent = cancelText || (en ? 'Cancel' : '취소');
+  document.getElementById('confirmModal').style.display = 'flex';
+  return new Promise(function(resolve) { _confirmResolve = resolve; });
+}
+
+function closeConfirmModal(result) {
+  document.getElementById('confirmModal').style.display = 'none';
+  if (_confirmResolve) { _confirmResolve(result); _confirmResolve = null; }
+}
+
 // ── TAG ──────────────────────────────────────────────
 function addTagNow() {
   var now = new Date();
@@ -931,7 +949,16 @@ function enterChatApp() {
     document.getElementById('friendListView').style.display = 'none';
     document.getElementById('activeChatView').style.display = 'none';
   } else {
-    showFriendList();
+    var cachedFriends = [];
+    try { cachedFriends = JSON.parse(localStorage.getItem('friends') || '[]'); } catch(e) {}
+    if (cachedFriends.length === 1) {
+      // 친구 1명이면 바로 채팅창 진입
+      showFriendList();
+      openChat(cachedFriends[0]);
+    } else {
+      // 0명 또는 2명 이상이면 목록
+      showFriendList();
+    }
   }
 }
 
@@ -1002,13 +1029,36 @@ function listenFriendChanges() {
 }
 
 async function deleteChat(friendCode) {
-  if (!confirm(`${friendCode}와의 채팅 내용을 삭제할까요?\n친구는 유지됩니다.`)) return;
-  const roomId = [myCode, friendCode].sort().join('_');
-  const snap = await db.collection('rooms').doc(roomId).collection('messages').get();
-  const batch = db.batch();
-  snap.docs.forEach(d => batch.delete(d.ref));
-  await batch.commit();
-  alert('채팅 내용이 삭제되었습니다');
+  var en = localStorage.getItem('lang') === 'en';
+  var msg = en
+    ? 'Delete chat history and remove friend?\n(You will also be removed from their list)'
+    : '채팅 내용 삭제 및 친구를 삭제할까요?\n(상대방 목록에서도 삭제됩니다)';
+  var ok = await showConfirm(msg);
+  if (!ok) return;
+  try {
+    const roomId = [myCode, friendCode].sort().join('_');
+    // 1. 채팅 메시지 삭제
+    const snap = await db.collection('rooms').doc(roomId).collection('messages').get();
+    const batch = db.batch();
+    snap.docs.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+    // 2. 내 친구 목록에서 삭제
+    friends = friends.filter(function(f) { return f !== friendCode; });
+    localStorage.setItem('friends', JSON.stringify(friends));
+    await db.collection('users').doc(myCode).update({ friends: friends });
+    // 3. 상대방 친구 목록에서 나를 삭제
+    const theirSnap = await db.collection('users').doc(friendCode).get();
+    if (theirSnap.exists) {
+      var theirFriends = theirSnap.data().friends || [];
+      theirFriends = theirFriends.filter(function(f) { return f !== myCode; });
+      await db.collection('users').doc(friendCode).update({ friends: theirFriends });
+    }
+    renderFriendList();
+    alert(en ? 'Friend removed successfully' : '친구가 삭제되었습니다');
+  } catch(e) {
+    var en = localStorage.getItem('lang') === 'en';
+    alert(en ? 'Error: ' + e.message : '오류: ' + e.message);
+  }
 }
 
 // ── ADD FRIEND ──────────────────────────────────────
