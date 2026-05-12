@@ -1038,19 +1038,28 @@ function switchAddTab(tab) {
 }
 
 async function addFriendByCode() {
+  _filePickerOpen = true;
+  _appWasHidden = false;
+  var en = localStorage.getItem('lang') === 'en';
   const code = document.getElementById('friendCodeInput').value.trim().toUpperCase();
-  if (!code) { alert(localStorage.getItem('lang')==='en' ? 'Please enter a code' : '코드를 입력하세요'); return; }
-  if (code === myCode) { alert(localStorage.getItem('lang')==='en' ? 'You cannot add yourself' : '자신의 코드는 추가할 수 없습니다'); return; }
-  if (friends.includes(code)) { alert(localStorage.getItem('lang')==='en' ? 'Already added' : '이미 추가된 친구입니다'); return; }
-
-  // 존재하는 사용자인지 확인
-  const snap = await db.collection('users').doc(code).get();
-  if (!snap.exists) { alert(`"${code}" 는 등록되지 않은 사용자예요`); return; }
-
-  friends.push(code); localStorage.setItem('friends', JSON.stringify(friends));
-  await db.collection('users').doc(myCode).set({ friends: firebase.firestore.FieldValue.arrayUnion(code) }, { merge: true });
-  await db.collection('users').doc(code).set({ friends: firebase.firestore.FieldValue.arrayUnion(myCode) }, { merge: true });
-  renderFriendList(); closeAddFriend(); alert(localStorage.getItem('lang')==='en' ? code + ' has been added' : code + ' 추가되었습니다');
+  if (!code) { _filePickerOpen=false; alert(en ? 'Please enter a code' : '코드를 입력하세요'); return; }
+  if (code === myCode) { _filePickerOpen=false; alert(en ? 'You cannot add yourself' : '자신의 코드는 추가할 수 없습니다'); return; }
+  if (friends.includes(code)) { _filePickerOpen=false; alert(en ? 'Already added' : '이미 추가된 친구입니다'); return; }
+  try {
+    const snap = await db.collection('users').doc(code).get();
+    if (!snap.exists) { _filePickerOpen=false; alert(en ? '"'+code+'" is not registered' : '"'+code+'" 는 등록되지 않은 사용자예요'); return; }
+    friends.push(code);
+    localStorage.setItem('friends', JSON.stringify(friends));
+    await db.collection('users').doc(myCode).set({ friends: firebase.firestore.FieldValue.arrayUnion(code) }, { merge: true });
+    await db.collection('users').doc(code).set({ friends: firebase.firestore.FieldValue.arrayUnion(myCode) }, { merge: true });
+    renderFriendList();
+    closeAddFriend();
+    showInAppNotif(en ? code + ' has been added' : code + ' 추가되었습니다');
+  } catch(e) {
+    alert(en ? 'Error: ' + e.message : '오류: ' + e.message);
+  } finally {
+    setTimeout(function(){ _filePickerOpen=false; _appWasHidden=false; }, 800);
+  }
 }
 
 function renderMyQr() {
@@ -1070,7 +1079,7 @@ function startQrScanner() {
       friends.push(code); localStorage.setItem('friends', JSON.stringify(friends));
       db.collection('users').doc(myCode).set({ friends: firebase.firestore.FieldValue.arrayUnion(code) }, { merge: true });
       db.collection('users').doc(code).set({ friends: firebase.firestore.FieldValue.arrayUnion(myCode) }, { merge: true });
-      renderFriendList(); closeAddFriend(); alert(localStorage.getItem('lang')==='en' ? code + ' has been added' : code + ' 추가되었습니다');
+      renderFriendList(); closeAddFriend(); setTimeout(function(){ _filePickerOpen=false; _appWasHidden=false; }, 500); showInAppNotif(localStorage.getItem('lang')==='en' ? code + ' has been added' : code + ' 추가되었습니다');
     }
   }, () => {}).catch(() => { wrap.innerHTML = '<p style="color:#64748b;font-size:13px;text-align:center;">카메라 권한이 필요합니다</p>'; });
 }
