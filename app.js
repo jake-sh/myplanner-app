@@ -527,7 +527,7 @@ function applyIconStyle() {
   var isGray = themeColor === '#6b7280';
 
   // 테마색 미적용시 적용할 색상
-  var themeIconColor = (isDark && isGray) ? '#FFFFFF' : themeColor;
+  var themeIconColor = (isDark && isGray) ? '#9ca3af' : themeColor;
 
   document.querySelectorAll('#menuGrid .menu-item').forEach(function(item, i) {
     var iconEl = item.querySelector('.menu-icon');
