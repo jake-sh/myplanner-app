@@ -927,7 +927,15 @@ function enterChatApp() {
     document.getElementById('friendListView').style.display = 'none';
     document.getElementById('activeChatView').style.display = 'none';
   } else {
-    showFriendList();
+    var f = JSON.parse(localStorage.getItem('friends') || '[]');
+    if (f.length === 1) {
+      // 친구 1명이면 바로 채팅창
+      listenFriendChanges();
+      openChat(f[0]);
+    } else {
+      // 0명 또는 2명 이상이면 목록
+      showFriendList();
+    }
   }
 }
 
