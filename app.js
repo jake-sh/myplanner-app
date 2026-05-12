@@ -232,7 +232,7 @@ function savePattern() {
   if (setupPattern.length < 4) return;
   savedPattern = [...setupPattern];
   localStorage.setItem('secPattern', JSON.stringify(savedPattern));
-  alert('패턴이 저장되었습니다!');
+  showInAppNotif('패턴이 저장되었습니다!');
   showScreen('chatApp');
 }
 
@@ -439,7 +439,9 @@ function deleteTag(id) {
 function deleteAllTags() {
   var isEn = localStorage.getItem('lang') === 'en';
   var msg = isEn ? 'Delete all tags?' : '모든 태그를 삭제할까요?';
-  if (!confirm(msg)) return;
+  showConfirm(msg, function() { _doDeleteAllTags(); }); return;
+}
+function _doDeleteAllTags() {
   saveTags([]);
   renderTagList([]);
 }
@@ -458,7 +460,7 @@ function saveAppName() {
   localStorage.setItem('appName', n);
   document.getElementById('appTitle').textContent = n;
   document.title = n;
-  alert('저장되었습니다');
+  showInAppNotif('저장되었습니다');
 }
 
 
@@ -777,7 +779,7 @@ function closeMemoEditor() { renderMemoList(); showScreen('memoScreen'); }
 function saveMemo() {
   const title = document.getElementById('memoTitleInput').value.trim();
   const content = document.getElementById('memoContentInput').value.trim();
-  if (!title && !content) { alert('내용을 입력하세요'); return; }
+  if (!title && !content) { showInAppNotif('내용을 입력하세요'); return; }
   const memos = JSON.parse(localStorage.getItem('memos') || '[]');
   const date = new Date().toLocaleDateString('ko-KR');
   if (editingMemoIndex !== null) memos[editingMemoIndex] = { title, content, date };
@@ -785,9 +787,10 @@ function saveMemo() {
   localStorage.setItem('memos', JSON.stringify(memos)); closeMemoEditor();
 }
 function deleteMemo(i) {
-  if (!confirm('메모를 삭제할까요?')) return;
-  const memos = JSON.parse(localStorage.getItem('memos') || '[]'); memos.splice(i,1);
-  localStorage.setItem('memos', JSON.stringify(memos)); renderMemoList();
+  showConfirm('메모를 삭제할까요?', function() {
+    const memos = JSON.parse(localStorage.getItem('memos') || '[]'); memos.splice(i,1);
+    localStorage.setItem('memos', JSON.stringify(memos)); renderMemoList();
+  });
 }
 
 // ── 달력 ───────────────────────────────────────────
@@ -940,7 +943,7 @@ function exitChat() {
 
 function saveMyCode() {
   const code = document.getElementById('myCodeInput').value.trim().toUpperCase();
-  if (!code || code.length < 2) { alert('2자 이상 입력하세요'); return; }
+  if (!code || code.length < 2) { showInAppNotif('2자 이상 입력하세요'); return; }
   myCode = code; localStorage.setItem('myCode', myCode);
   db.collection('users').doc(myCode).set({ code: myCode, friends: [], ts: firebase.firestore.Timestamp.now() }, { merge: true });
   showFriendList();
@@ -995,13 +998,15 @@ function listenFriendChanges() {
 }
 
 async function deleteChat(friendCode) {
-  if (!confirm(`${friendCode}와의 채팅 내용을 삭제할까요?\n친구는 유지됩니다.`)) return;
+  showConfirm(friendCode + '와의 채팅 내용을 삭제할까요?\n친구는 유지됩니다.', function() { _doDeleteChat(friendCode); }); return;
+}
+async function _doDeleteChat(friendCode) {
   const roomId = [myCode, friendCode].sort().join('_');
   const snap = await db.collection('rooms').doc(roomId).collection('messages').get();
   const batch = db.batch();
   snap.docs.forEach(d => batch.delete(d.ref));
   await batch.commit();
-  alert('채팅 내용이 삭제되었습니다');
+  showInAppNotif('채팅 내용이 삭제되었습니다');
 }
 
 // ── ADD FRIEND ──────────────────────────────────────
@@ -1024,18 +1029,18 @@ function switchAddTab(tab) {
 
 async function addFriendByCode() {
   const code = document.getElementById('friendCodeInput').value.trim().toUpperCase();
-  if (!code) { alert(localStorage.getItem('lang')==='en' ? 'Please enter a code' : '코드를 입력하세요'); return; }
-  if (code === myCode) { alert(localStorage.getItem('lang')==='en' ? 'You cannot add yourself' : '자신의 코드는 추가할 수 없습니다'); return; }
-  if (friends.includes(code)) { alert(localStorage.getItem('lang')==='en' ? 'Already added' : '이미 추가된 친구입니다'); return; }
+  if (!code) { showInAppNotif(localStorage.getItem('lang')==='en' ? 'Please enter a code' : '코드를 입력하세요'); return; }
+  if (code === myCode) { showInAppNotif(localStorage.getItem('lang')==='en' ? 'You cannot add yourself' : '자신의 코드는 추가할 수 없습니다'); return; }
+  if (friends.includes(code)) { showInAppNotif(localStorage.getItem('lang')==='en' ? 'Already added' : '이미 추가된 친구입니다'); return; }
 
   // 존재하는 사용자인지 확인
   const snap = await db.collection('users').doc(code).get();
-  if (!snap.exists) { alert(`"${code}" 는 등록되지 않은 사용자예요`); return; }
+  if (!snap.exists) { showInAppNotif('"' + code + '" 는 등록되지 않은 사용자예요'); return; }
 
   friends.push(code); localStorage.setItem('friends', JSON.stringify(friends));
   await db.collection('users').doc(myCode).set({ friends: firebase.firestore.FieldValue.arrayUnion(code) }, { merge: true });
   await db.collection('users').doc(code).set({ friends: firebase.firestore.FieldValue.arrayUnion(myCode) }, { merge: true });
-  renderFriendList(); closeAddFriend(); alert(localStorage.getItem('lang')==='en' ? code + ' has been added' : code + ' 추가되었습니다');
+  renderFriendList(); closeAddFriend(); showInAppNotif(localStorage.getItem('lang')==='en' ? code + ' has been added' : code + ' 추가되었습니다');
 }
 
 function renderMyQr() {
@@ -1055,7 +1060,7 @@ function startQrScanner() {
       friends.push(code); localStorage.setItem('friends', JSON.stringify(friends));
       db.collection('users').doc(myCode).set({ friends: firebase.firestore.FieldValue.arrayUnion(code) }, { merge: true });
       db.collection('users').doc(code).set({ friends: firebase.firestore.FieldValue.arrayUnion(myCode) }, { merge: true });
-      renderFriendList(); closeAddFriend(); alert(localStorage.getItem('lang')==='en' ? code + ' has been added' : code + ' 추가되었습니다');
+      renderFriendList(); closeAddFriend(); showInAppNotif(localStorage.getItem('lang')==='en' ? code + ' has been added' : code + ' 추가되었습니다');
     }
   }, () => {}).catch(() => { wrap.innerHTML = '<p style="color:#64748b;font-size:13px;text-align:center;">카메라 권한이 필요합니다</p>'; });
 }
@@ -1063,13 +1068,15 @@ function startQrScanner() {
 function stopQrScanner() { if (qrScanner) { qrScanner.stop().catch(() => {}); qrScanner = null; } }
 
 async function regenerateCode() {
-  if (!confirm('코드를 재생성하면 모든 친구가 삭제됩니다. 계속할까요?')) return;
+  showConfirm('코드를 재생성하면 모든 친구가 삭제됩니다. 계속할까요?', function() { _doRegenerateCode(); }); return;
+}
+async function _doRegenerateCode() {
   for (const f of friends) { await db.collection('users').doc(f).update({ friends: firebase.firestore.FieldValue.arrayRemove(myCode) }).catch(() => {}); }
   await db.collection('users').doc(myCode).delete().catch(() => {});
   myCode = 'U' + Math.random().toString(36).substr(2,7).toUpperCase();
   friends = []; localStorage.setItem('myCode', myCode); localStorage.setItem('friends', '[]');
   await db.collection('users').doc(myCode).set({ code: myCode, friends: [], ts: firebase.firestore.Timestamp.now() });
-  renderMyQr(); renderFriendList(); alert('코드 재생성: ' + myCode);
+  renderMyQr(); renderFriendList(); showInAppNotif('코드 재생성: ' + myCode);
 }
 
 // ── CHANGE CODE ─────────────────────────────────────
@@ -1078,16 +1085,18 @@ function closeChangeCode() { document.getElementById('changeCodeModal').style.di
 
 async function confirmChangeCode() {
   const newCode = document.getElementById('newCodeInput').value.trim().toUpperCase();
-  if (!newCode || newCode.length < 2) { alert('2자 이상 입력하세요'); return; }
-  if (newCode === myCode) { alert('현재 코드와 같습니다'); return; }
-  if (!confirm(`코드를 "${newCode}"로 변경하면 모든 친구가 양측에서 삭제됩니다. 계속할까요?`)) return;
+  if (!newCode || newCode.length < 2) { showInAppNotif('2자 이상 입력하세요'); return; }
+  if (newCode === myCode) { showInAppNotif('현재 코드와 같습니다'); return; }
+  showConfirm('코드를 "' + newCode + '"로 변경하면 모든 친구가 양측에서 삭제됩니다. 계속할까요?', function() { _doConfirmChangeCode(newCode); }); return;
+}
+async function _doConfirmChangeCode(newCode) {
   for (const f of friends) { await db.collection('users').doc(f).update({ friends: firebase.firestore.FieldValue.arrayRemove(myCode) }).catch(() => {}); }
   await db.collection('users').doc(myCode).delete().catch(() => {});
   myCode = newCode; friends = [];
   localStorage.setItem('myCode', myCode); localStorage.setItem('friends', '[]');
   await db.collection('users').doc(myCode).set({ code: myCode, friends: [], ts: firebase.firestore.Timestamp.now() });
   closeChangeCode(); closeSecretSettings();
-  renderFriendList(); alert('코드가 변경되었습니다: ' + myCode);
+  renderFriendList(); showInAppNotif('코드가 변경되었습니다: ' + myCode);
 }
 
 // ── CHAT ────────────────────────────────────────────
@@ -1381,14 +1390,14 @@ async function handleFileSelect(e) {
       setTimeout(() => { clearInterval(check); resolve(); }, 5000);
     });
   }
-  if (!currentUser) { alert('인증 실패 - 새로고침 후 다시 시도하세요'); return; }
+  if (!currentUser) { showInAppNotif('인증 실패 - 새로고침 후 다시 시도하세요'); return; }
 
   // 단일 파일
   if (files.length === 1) {
     const file = files[0];
     const isVideo = file.type.startsWith('video');
     const isImage = file.type.startsWith('image');
-    if (!isVideo && !isImage) { alert('이미지 또는 영상만 전송 가능합니다'); return; }
+    if (!isVideo && !isImage) { showInAppNotif('이미지 또는 영상만 전송 가능합니다'); return; }
     showUploadStatus('업로드 중...');
     try {
       const path = `media/${chatRoomId}/${Date.now()}`;
@@ -1403,14 +1412,14 @@ async function handleFileSelect(e) {
       hideUploadStatus();
       const friendSnap = await db.collection('users').doc(activeFriendCode).get();
       if (friendSnap.exists && friendSnap.data().fcmToken) sendFCMPush(friendSnap.data().fcmToken);
-    } catch(err) { hideUploadStatus(); alert('전송 실패: ' + err.message); }
+    } catch(err) { hideUploadStatus(); showInAppNotif('전송 실패: ' + err.message); }
     return;
   }
 
   // 다중 파일 - 앨범으로 묶어서 전송
   const imageFiles = files.filter(f => f.type.startsWith('image'));
-  if (!imageFiles.length) { alert('이미지만 묶음 전송 가능합니다'); return; }
-  if (imageFiles.length > 10) { alert('최대 10장까지 선택 가능합니다'); return; }
+  if (!imageFiles.length) { showInAppNotif('이미지만 묶음 전송 가능합니다'); return; }
+  if (imageFiles.length > 10) { showInAppNotif('최대 10장까지 선택 가능합니다'); return; }
 
   showUploadStatus(`업로드 중... (0/${imageFiles.length})`);
   try {
@@ -1431,7 +1440,7 @@ async function handleFileSelect(e) {
     hideUploadStatus();
     const friendSnap = await db.collection('users').doc(activeFriendCode).get();
     if (friendSnap.exists && friendSnap.data().fcmToken) sendFCMPush(friendSnap.data().fcmToken);
-  } catch(err) { hideUploadStatus(); alert('전송 실패: ' + err.message); }
+  } catch(err) { hideUploadStatus(); showInAppNotif('전송 실패: ' + err.message); }
 }
 
 async function sendMessage() {
@@ -1455,7 +1464,9 @@ async function sendMessage() {
 
 async function deleteAllNow() {
   if (!chatRoomId) return;
-  if (!confirm('모든 채팅을 즉시 삭제합니다. 복구 불가입니다.')) return;
+  showConfirm('모든 채팅을 즉시 삭제합니다. 복구 불가입니다.', function() { _doDeleteAllNow(); }); return;
+}
+async function _doDeleteAllNow() {
   const snap = await db.collection('rooms').doc(chatRoomId).collection('messages').get();
   const batch = db.batch();
   snap.docs.forEach(d => {
@@ -1714,8 +1725,8 @@ function toggleSettingsNotif(type, enabled) {
 }
 
 function toggleNotification() {
-  if (typeof Notification === 'undefined') { alert('이 브라우저는 알림을 지원하지 않습니다'); return; }
-  if (Notification.permission === 'denied') { alert('알림이 차단되어 있습니다.\n브라우저 설정에서 직접 허용해주세요.'); return; }
+  if (typeof Notification === 'undefined') { showInAppNotif('이 브라우저는 알림을 지원하지 않습니다'); return; }
+  if (Notification.permission === 'denied') { showInAppNotif('알림이 차단됨. 브라우저 설정에서 허용해주세요'); return; }
   if (Notification.permission === 'default') {
     _filePickerOpen = true;
     _appWasHidden = false; // 강제 리셋
@@ -1752,6 +1763,20 @@ function showUploadStatus(text) {
 function hideUploadStatus() {
   const el = document.getElementById('uploadStatus');
   if (el) el.style.display = 'none';
+}
+
+function showConfirm(msg, onOk, onCancel) {
+  var overlay = document.getElementById('customConfirmOverlay');
+  var isEn = localStorage.getItem('lang') === 'en';
+  document.getElementById('customConfirmMsg').textContent = msg;
+  document.getElementById('customConfirmOk').textContent = isEn ? 'OK' : '확인';
+  document.getElementById('customConfirmCancel').textContent = isEn ? 'Cancel' : '취소';
+  overlay.style.display = 'flex';
+  var okBtn = document.getElementById('customConfirmOk');
+  var cancelBtn = document.getElementById('customConfirmCancel');
+  function cleanup() { overlay.style.display = 'none'; okBtn.onclick = null; cancelBtn.onclick = null; }
+  okBtn.onclick = function() { cleanup(); if (onOk) onOk(); };
+  cancelBtn.onclick = function() { cleanup(); if (onCancel) onCancel(); };
 }
 
 function showInAppNotif(text) {
@@ -1983,7 +2008,7 @@ function saveSE() {
   var cat = document.getElementById("smCat").value;
   var val = document.getElementById("smVal").value.trim();
   var date = document.getElementById("smDate").value;
-  if(!val||!date){alert("수치와 날짜를 입력해주세요");return;}
+  if(!val||!date){showInAppNotif("수치와 날짜를 입력해주세요");return;}
   var data = getSD();
   if(!data[cat]) data[cat]=[];
   data[cat].push({value:parseFloat(val),date:date});
