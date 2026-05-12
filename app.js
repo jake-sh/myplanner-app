@@ -270,13 +270,11 @@ const fakeData = [
   null
 ];
 const fakeTitles = ['할 일','일정표','알림','메모','목표','통계','프로젝트','태그','달력'];
-const fakeTitlesEn = ['To-Do','Schedule','Alarm','Memo','Goals','Stats','Projects','Tags','Calendar'];
 
 function openFakeFeature(i) {
-  var _ft = localStorage.getItem('lang')==='en' ? fakeTitlesEn[i] : fakeTitles[i];
-  document.getElementById('featureTitle').textContent = _ft;
+  document.getElementById('featureTitle').textContent = fakeTitles[i];
   document.getElementById('featureContent').innerHTML =
-    `<div class="feature-placeholder"><h3>${_ft}</h3>` +
+    `<div class="feature-placeholder"><h3>${fakeTitles[i]}</h3>` +
     (fakeData[i]||[]).map(t=>`<div class="fake-item"><div class="fake-check"></div>${t}</div>`).join('') + '</div>';
   showScreen('fakeFeature');
 }
@@ -390,22 +388,11 @@ function openTag() {
   var tags = autoDeleteTags(getTagList());
   saveTags(tags);
   renderTagList(tags);
+  // 자동삭제 설정 복원
   var autoVal = localStorage.getItem('tagAutoDelete') || '0';
   var sel = document.getElementById('tagAutoDelete');
   if (sel) sel.value = autoVal;
   showScreen('tagScreen');
-  // 화면 표시 후 영문화 강제 적용
-  var en = localStorage.getItem('lang') === 'en';
-  setTimeout(function() {
-    var b = document.getElementById('tagBackBtn');
-    if (b) b.textContent = en ? '← Back' : '← 뒤로';
-    var t = document.getElementById('tagTitle');
-    if (t) t.textContent = en ? 'Tags' : '태그';
-    var d = document.getElementById('tagDeleteAllBtn');
-    if (d) d.textContent = en ? 'Clear All' : '전체삭제';
-    var a = document.getElementById('tagAutoDeleteLabel');
-    if (a) a.textContent = en ? 'Auto Delete' : '자동삭제';
-  }, 50);
 }
 
 function renderTagList(tags) {
@@ -413,11 +400,11 @@ function renderTagList(tags) {
   if (!list) return;
   var isEn = localStorage.getItem('lang') === 'en';
   if (!tags.length) {
-    list.innerHTML = '<div class="empty-state">' + (isEn ? 'No tags yet. Tap the clock to add.' : '시계를 탭해서 시간을 기록하세요.') + '</div>';
+    list.innerHTML = '<div style="text-align:center;color:#aaa;margin-top:40px;font-size:13px;">' + (isEn ? 'No tags yet. Tap the clock to add.' : '시계를 탭해서 시간을 기록하세요.') + '</div>';
     return;
   }
   list.innerHTML = tags.map(function(t, idx) {
-    return '<div style="display:flex;align-items:center;background:var(--card,#fff);border-radius:14px;padding:12px 16px;box-shadow:0 1px 6px rgba(0,0,0,0.06);">' +
+    return '<div style="display:flex;align-items:center;background:var(--card,#fff);border-radius:14px;padding:12px 16px;box-shadow:0 1px 6px rgba(0,0,0,0.06);border:1px solid var(--border,#ECEEF8);">' +
       '<div style="width:28px;height:28px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;margin-right:12px;flex-shrink:0;">' +
         '<span style="font-size:11px;font-weight:700;color:#fff;">' + (tags.length - idx) + '</span>' +
       '</div>' +
@@ -715,7 +702,7 @@ function renderTodoList() {
   const todos = JSON.parse(localStorage.getItem('todos') || '[]');
   document.getElementById('todoCount').textContent = `${todos.filter(t=>t.done).length}/${todos.length}`;
   const el = document.getElementById('todoList');
-  if (!todos.length) { el.innerHTML = '<div class="empty-state">' + (localStorage.getItem("lang")==="en" ? 'No tasks yet' : '할 일이 없습니다') + '</div>'; return; }
+  if (!todos.length) { el.innerHTML = '<div class="empty-state">📋<br/>' + (localStorage.getItem("lang")==="en" ? 'No tasks yet' : '할 일이 없습니다') + '</div>'; return; }
   el.innerHTML = todos.map((t,i) => `
     <div class="todo-item ${t.done?'todo-done':''}">
       <div class="todo-check ${t.done?'checked':''}" onclick="toggleTodo(${i})">${t.done?'✓':''}</div>
@@ -746,8 +733,7 @@ function openMemo() { renderMemoList(); showScreen('memoScreen'); }
 function renderMemoList() {
   const memos = JSON.parse(localStorage.getItem('memos') || '[]');
   const el = document.getElementById('memoList');
-  var isEn = localStorage.getItem('lang') === 'en';
-  if (!memos.length) { el.innerHTML = '<div class="empty-state">' + (isEn ? 'No memos yet' : '메모가 없습니다') + '</div>'; return; }
+  if (!memos.length) { el.innerHTML = `<div class="empty-state">📝<br/>메모가 없습니다</div>`; return; }
   el.innerHTML = memos.map((m,i) => `
     <div class="memo-card" onclick="openEditMemo(${i})">
       <div class="memo-card-title">${esc(m.title||'제목 없음')}</div>
@@ -1850,17 +1836,17 @@ function renderStatsUI() {
   var cat = STAT_CATS[curSC];
   var entries = (data[curSC]||[]).slice().sort(function(a,b){return a.date>b.date?1:-1;});
 
-  var tabHtml = '<div style="display:flex;flex-wrap:wrap;gap:8px;padding:4px 0 16px;">';
+  var tabHtml = '<div style="display:flex;gap:6px;overflow-x:auto;padding:4px 0 12px;scrollbar-width:none;">';
   Object.keys(STAT_CATS).forEach(function(k) {
     var c = STAT_CATS[k];
     var active = (k === curSC);
     var hasDot = data[k] && data[k].length > 0;
-    var bg = active ? "var(--primary)" : "var(--card,#f1f5f9)";
-    var col = active ? "#fff" : "var(--text,#64748b)";
+    var bg = active ? "var(--primary)" : "#f1f5f9";
+    var col = active ? "#fff" : "#64748b";
     var btn = document.createElement("button");
-    btn.textContent = c.emoji + " " + statLabel(k) + (hasDot ? " ●" : "");
+    btn.textContent = c.emoji + " " + c.label + (hasDot ? "●" : "");
     btn.setAttribute("data-scat", k);
-    btn.style.cssText = "padding:6px 14px;border-radius:20px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:" + bg + ";color:" + col + ";";
+    btn.style.cssText = "flex-shrink:0;padding:6px 12px;border-radius:20px;border:none;cursor:pointer;font-size:15px;font-weight:600;background:" + bg + ";color:" + col + ";";
     tabHtml += btn.outerHTML;
   });
   tabHtml += "</div>";
@@ -1886,7 +1872,7 @@ function renderStatsUI() {
     listHtml += row;
   });
 
-  fc.innerHTML = '<div style="padding:16px;">' + addHtml + chartHtml + tabHtml + listHtml + '</div>';
+  fc.innerHTML = '<div style="padding:16px;">' + tabHtml + addHtml + chartHtml + listHtml + '</div>';
 
   // 이벤트 바인딩
   fc.querySelectorAll("[data-scat]").forEach(function(btn) {
@@ -2048,26 +2034,14 @@ function getWeatherIcon(id) {
 }
 
 function getDustLevel(pm10) {
-  var en = localStorage.getItem('lang') === 'en';
-  if (pm10 <= 30) return { text: en ? 'Good' : '좋음', color: '#4ade80' };
-  if (pm10 <= 80) return { text: en ? 'Moderate' : '보통', color: '#facc15' };
-  if (pm10 <= 150) return { text: en ? 'Bad' : '나쁨', color: '#fb923c' };
-  return { text: en ? 'V.Bad' : '매우나쁨', color: '#f87171' };
+  if (pm10 <= 30) return { text: '좋음', color: '#4ade80' };
+  if (pm10 <= 80) return { text: '보통', color: '#facc15' };
+  if (pm10 <= 150) return { text: '나쁨', color: '#fb923c' };
+  return { text: '매우나쁨', color: '#f87171' };
 }
 
 function getClothes(temp, pm10) {
-  var en = localStorage.getItem('lang') === 'en';
-  var dust = pm10 > 80 ? (en ? ' · Mask recommended' : ' 마스크 착용 권장') : '';
-  if (en) {
-    if (temp >= 28) return 'Sleeveless·T-shirt·Shorts·Dress' + dust;
-    if (temp >= 23) return 'T-shirt·Light shirt·Shorts' + dust;
-    if (temp >= 20) return 'Blouse·Long sleeve·Pants·Jeans' + dust;
-    if (temp >= 17) return 'Light cardigan·Long pants' + dust;
-    if (temp >= 12) return 'Jacket·Cardigan·Jeans' + dust;
-    if (temp >= 9) return 'Trench coat·Knit·Jeans' + dust;
-    if (temp >= 5) return 'Wool coat·Heattech·Layered' + dust;
-    return 'Padding·Thick coat·Scarf' + dust;
-  }
+  var dust = pm10 > 80 ? ' 마스크 착용 권장' : '';
   if (temp >= 28) return '민소매·반팔·반바지·원피스' + dust;
   if (temp >= 23) return '반팔·얇은 셔츠·반바지' + dust;
   if (temp >= 20) return '블라우스·긴팔·면바지·청바지' + dust;
@@ -2124,12 +2098,10 @@ async function loadWeather() {
       document.getElementById('widgetClothesVal').textContent = getClothes(temp, pm10);
 
     } catch(e) {
-      var en = localStorage.getItem('lang') === 'en';
-      document.getElementById('widgetClothesVal').textContent = en ? 'No weather info' : '날씨 정보 없음';
+      document.getElementById('widgetClothesVal').textContent = '날씨 정보 없음';
     }
   }, function() {
-    var en = localStorage.getItem('lang') === 'en';
-    document.getElementById('widgetClothesVal').textContent = en ? 'Location permission needed' : '위치 권한 필요';
+    document.getElementById('widgetClothesVal').textContent = '위치 권한 필요';
   });
 }
 
@@ -2268,7 +2240,7 @@ function applyLang() {
   _setText('memoTitle', en ? 'Memo' : '메모');
   _setText('calendarTitle', en ? 'Calendar' : '달력');
   _setText('statsTitle', en ? 'Health Stats' : '건강 통계');
-  _setText('chatListTitle', en ? 'List' : '목록');
+  _setText('chatListTitle', en ? 'Chats' : '목록');
   _setText('newMemoTitle', en ? 'New Memo' : '새 메모');
   _setText('featureTitle', document.getElementById('featureTitle') ? document.getElementById('featureTitle').textContent : '');
 
@@ -2310,16 +2282,6 @@ function applyLang() {
   _setText('tabMyQR', en ? 'My QR' : '내 QR');
   _setText('addFriendBtn', en ? 'Add' : '추가');
   _setText('regenCodeBtn', en ? '🔄 Regenerate' : '🔄 코드 재생성');
-
-  // 태그 화면
-  _setText('tagBackBtn', en ? '← Back' : '← 뒤로');
-  _setText('tagTitle', en ? 'Tags' : '태그');
-  _setText('tagDeleteAllBtn', en ? 'Clear All' : '전체삭제');
-  _setText('tagAutoDeleteLabel', en ? 'Auto Delete' : '자동삭제');
-  _setText('tagAuto0', en ? 'Off' : '끄기');
-  _setText('tagAuto1', en ? '1 day' : '1일');
-  _setText('tagAuto7', en ? '7 days' : '7일');
-  _setText('tagAuto30', en ? '30 days' : '30일');
 
   // 자동삭제
   _setText('autoDeleteTitle', en ? 'Auto-Delete Timer' : '자동삭제 시간');
@@ -2389,7 +2351,7 @@ function applyLang() {
 
   // 할일 빈 목록 갱신
   var emptyState = document.querySelector('.empty-state');
-  if (emptyState) emptyState.innerHTML = (en ? 'No tasks yet' : '할 일이 없습니다');
+  if (emptyState) emptyState.innerHTML = '📋<br/>' + (en ? 'No tasks yet' : '할 일이 없습니다');
 
   // 달력 갱신 (요일 헤더)
   var calScreen = document.getElementById('calendarScreen');
