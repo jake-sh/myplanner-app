@@ -286,20 +286,13 @@ function openFakeFeature(i) {
 // ── 프라이버시 화면 (태스크뷰 블랙처리) ──────────────
 document.addEventListener('visibilitychange', function() {
   var el = document.getElementById('privacyScreen');
+  if (!el) return;
   if (document.hidden) {
-    // 숨겨질 때: 블랙 + autoLock
-    if (el) el.style.display = 'block';
-    if (localStorage.getItem('autoLock') === 'true') {
-      var activeScreen = document.querySelector('.screen.active');
-      if (activeScreen && activeScreen.id === 'chatApp') exitChat();
-    }
+    el.style.display = 'block';
   } else {
-    // 복귀 시: 알림 클리어 + 블랙 해제
-    clearAllNotifications();
-    setBadge(0);
-    unreadCount = 0;
+    // 블랙 유지한 채 화면 전환 후 충분한 딜레이
     showScreen('fakeApp');
-    setTimeout(function() { if (el) el.style.display = 'none'; }, 600);
+    setTimeout(function() { el.style.display = 'none'; }, 600);
   }
 });
 // iOS standalone 대응
@@ -348,24 +341,6 @@ window.addEventListener('focus', function() {
     showScreen('fakeApp');
   }
 });
-
-
-// ── 커스텀 Confirm 모달 ──────────────────────────────
-var _confirmResolve = null;
-
-function showConfirm(msg, okText, cancelText) {
-  var en = localStorage.getItem('lang') === 'en';
-  document.getElementById('confirmMsg').textContent = msg;
-  document.getElementById('confirmOkBtn').textContent = okText || (en ? 'Delete' : '삭제');
-  document.getElementById('confirmCancelBtn').textContent = cancelText || (en ? 'Cancel' : '취소');
-  document.getElementById('confirmModal').style.display = 'flex';
-  return new Promise(function(resolve) { _confirmResolve = resolve; });
-}
-
-function closeConfirmModal(result) {
-  document.getElementById('confirmModal').style.display = 'none';
-  if (_confirmResolve) { _confirmResolve(result); _confirmResolve = null; }
-}
 
 // ── TAG ──────────────────────────────────────────────
 function addTagNow() {
@@ -949,16 +924,7 @@ function enterChatApp() {
     document.getElementById('friendListView').style.display = 'none';
     document.getElementById('activeChatView').style.display = 'none';
   } else {
-    var cachedFriends = [];
-    try { cachedFriends = JSON.parse(localStorage.getItem('friends') || '[]'); } catch(e) {}
-    if (cachedFriends.length === 1) {
-      // 친구 1명이면 바로 채팅창 진입
-      showFriendList();
-      openChat(cachedFriends[0]);
-    } else {
-      // 0명 또는 2명 이상이면 목록
-      showFriendList();
-    }
+    showFriendList();
   }
 }
 
@@ -1029,36 +995,13 @@ function listenFriendChanges() {
 }
 
 async function deleteChat(friendCode) {
-  var en = localStorage.getItem('lang') === 'en';
-  var msg = en
-    ? 'Delete chat history and remove friend?\n(You will also be removed from their list)'
-    : '채팅 내용 삭제 및 친구를 삭제할까요?\n(상대방 목록에서도 삭제됩니다)';
-  var ok = await showConfirm(msg);
-  if (!ok) return;
-  try {
-    const roomId = [myCode, friendCode].sort().join('_');
-    // 1. 채팅 메시지 삭제
-    const snap = await db.collection('rooms').doc(roomId).collection('messages').get();
-    const batch = db.batch();
-    snap.docs.forEach(d => batch.delete(d.ref));
-    await batch.commit();
-    // 2. 내 친구 목록에서 삭제
-    friends = friends.filter(function(f) { return f !== friendCode; });
-    localStorage.setItem('friends', JSON.stringify(friends));
-    await db.collection('users').doc(myCode).update({ friends: friends });
-    // 3. 상대방 친구 목록에서 나를 삭제
-    const theirSnap = await db.collection('users').doc(friendCode).get();
-    if (theirSnap.exists) {
-      var theirFriends = theirSnap.data().friends || [];
-      theirFriends = theirFriends.filter(function(f) { return f !== myCode; });
-      await db.collection('users').doc(friendCode).update({ friends: theirFriends });
-    }
-    renderFriendList();
-    alert(en ? 'Friend removed successfully' : '친구가 삭제되었습니다');
-  } catch(e) {
-    var en = localStorage.getItem('lang') === 'en';
-    alert(en ? 'Error: ' + e.message : '오류: ' + e.message);
-  }
+  if (!confirm(`${friendCode}와의 채팅 내용을 삭제할까요?\n친구는 유지됩니다.`)) return;
+  const roomId = [myCode, friendCode].sort().join('_');
+  const snap = await db.collection('rooms').doc(roomId).collection('messages').get();
+  const batch = db.batch();
+  snap.docs.forEach(d => batch.delete(d.ref));
+  await batch.commit();
+  alert('채팅 내용이 삭제되었습니다');
 }
 
 // ── ADD FRIEND ──────────────────────────────────────
@@ -1645,9 +1588,34 @@ async function clearAllNotifications() {
   }
 }
 
-// visibilitychange 통합 (상단으로 이동됨)
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'visible') {
+    clearAllNotifications();
+    setBadge(0);
+    unreadCount = 0;
+    // 강화 보안 - 채팅창 이탈 후 복귀 시 자동 잠금
+    if (localStorage.getItem('autoLock') === 'true') {
+      var activeScreen = document.querySelector('.screen.active');
+      if (activeScreen && (activeScreen.id === 'chatApp')) {
+        exitChat();
+      }
+    }
+  } else {
+    // 화면 숨겨질 때 강화 보안 적용
+    if (localStorage.getItem('autoLock') === 'true') {
+      var activeScreen = document.querySelector('.screen.active');
+      if (activeScreen && activeScreen.id === 'chatApp') {
+        exitChat();
+      }
+    }
+  }
+});
 
-// focus 통합 (상단으로 이동됨)
+window.addEventListener('focus', function() {
+  clearAllNotifications();
+  setBadge(0);
+  unreadCount = 0;
+});
 
 // 앱 처음 로드 시에도 클리어
 clearAllNotifications();
