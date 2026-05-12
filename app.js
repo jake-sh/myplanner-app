@@ -927,6 +927,7 @@ function enterChatApp() {
     document.getElementById('friendListView').style.display = 'none';
     document.getElementById('activeChatView').style.display = 'none';
   } else {
+    document.getElementById('chatSetup').style.display = 'none';
     var f = JSON.parse(localStorage.getItem('friends') || '[]');
     if (f.length === 1) {
       listenFriendChanges();
