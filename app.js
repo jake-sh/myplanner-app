@@ -995,13 +995,28 @@ function listenFriendChanges() {
 }
 
 async function deleteChat(friendCode) {
-  if (!confirm(`${friendCode}와의 채팅 내용을 삭제할까요?\n친구는 유지됩니다.`)) return;
-  const roomId = [myCode, friendCode].sort().join('_');
-  const snap = await db.collection('rooms').doc(roomId).collection('messages').get();
-  const batch = db.batch();
-  snap.docs.forEach(d => batch.delete(d.ref));
-  await batch.commit();
-  alert('채팅 내용이 삭제되었습니다');
+  _filePickerOpen = true; // 다이얼로그/DB작업 중 blur 튕김 방지
+  _appWasHidden = false;
+  var en = localStorage.getItem('lang') === 'en';
+  if (!confirm(friendCode + (en ? ': Delete chat history?' : '와의 채팅 내용을 삭제할까요?'))) {
+    _filePickerOpen = false;
+    return;
+  }
+  try {
+    const roomId = [myCode, friendCode].sort().join('_');
+    const snap = await db.collection('rooms').doc(roomId).collection('messages').get();
+    const batch = db.batch();
+    snap.docs.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+    alert(en ? 'Chat history deleted' : '채팅 내용이 삭제되었습니다');
+  } catch(e) {
+    alert(en ? 'Error: ' + e.message : '오류: ' + e.message);
+  } finally {
+    setTimeout(function() {
+      _filePickerOpen = false;
+      _appWasHidden = false;
+    }, 500);
+  }
 }
 
 // ── ADD FRIEND ──────────────────────────────────────
