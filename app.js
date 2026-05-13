@@ -1893,10 +1893,14 @@ function hideInAppNotif() {
 
 // -- Health Stats --
 var STAT_CATS = {
-  weight:   { label: "체중",   labelEn: "Weight",   unit: "kg",    color: "#4A90D9", emoji: "⚖️" },
-  bp:       { label: "혈압",   labelEn: "BP",       unit: "mmHg",  color: "#ef4444", emoji: "🫀" },
-  steps:    { label: "걸음수", labelEn: "Steps",    unit: "steps", color: "#22c55e", emoji: "🚶" },
-  exercise: { label: "운동",   labelEn: "Exercise", unit: "min",   color: "#f59e0b", emoji: "🏃" }
+  weight:   { label: "체중",   labelEn: "Weight",   unit: "kg",    color: "#4A90D9", emoji: "⚖️",
+    svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v4l3 3"/></svg>' },
+  bp:       { label: "혈압",   labelEn: "BP",       unit: "mmHg",  color: "#ef4444", emoji: "🫀",
+    svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>' },
+  steps:    { label: "걸음수", labelEn: "Steps",    unit: "steps", color: "#22c55e", emoji: "🚶",
+    svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><path d="M12 7v6l3 4"/><path d="M9 17l-2 4"/><path d="M15 13l2 4"/></svg>' },
+  exercise: { label: "운동",   labelEn: "Exercise", unit: "min",   color: "#f59e0b", emoji: "🏃",
+    svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4" r="2"/><path d="M15 8l-3 3-3-3"/><path d="M9 11l-3 6"/><path d="M15 11l3 6"/><path d="M9 17l3-4 3 4"/></svg>' }
 };
 
 function statLabel(k) {
@@ -1974,16 +1978,16 @@ function renderStatsUI() {
     var bg = active ? "var(--primary)" : "var(--card,#f1f5f9)";
     var col = active ? "#fff" : "var(--text,#64748b)";
     var btn = document.createElement("button");
-    btn.textContent = c.emoji + " " + statLabel(k) + (hasDot ? " ●" : "");
+    btn.innerHTML = c.svg + ' ' + statLabel(k) + (hasDot ? " ●" : "");
     btn.setAttribute("data-scat", k);
-    btn.style.cssText = "padding:6px 14px;border-radius:20px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:" + bg + ";color:" + col + ";";
+    btn.style.cssText = "padding:6px 14px;border-radius:20px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:" + bg + ";color:" + col + ";display:inline-flex;align-items:center;gap:5px;";
     tabHtml += btn.outerHTML;
   });
   tabHtml += "</div>";
 
   var addHtml = '<div style="text-align:right;margin-bottom:12px;"><button id="openSmBtn" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;">' + (localStorage.getItem('lang')==='en' ? '+ Add' : '+ 입력') + '</button></div>';
 
-  var chartHtml = '<div style="background:' + boxBg + ';border:1.5px solid ' + boxBd + ';border-radius:16px;padding:16px;margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:' + titleCl + ';">' + cat.emoji + ' ' + statLabel(curSC) + '</div><div style="font-size:11px;color:#94a3b8;margin-bottom:12px;">' + (localStorage.getItem('lang')==='en' ? 'Unit: ' : '단위: ') + statUnit(curSC) + '</div>';
+  var chartHtml = '<div style="background:' + boxBg + ';border:1.5px solid ' + boxBd + ';border-radius:16px;padding:16px;margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:' + titleCl + ';">' + cat.svg + ' ' + statLabel(curSC) + '</div><div style="font-size:11px;color:#94a3b8;margin-bottom:12px;">' + (localStorage.getItem('lang')==='en' ? 'Unit: ' : '단위: ') + statUnit(curSC) + '</div>';
   if (entries.length === 0) {
     chartHtml += '<div style="text-align:center;color:#64748b;font-size:13px;padding:30px 0;">데이터가 없어요.<br>+ 입력으로 추가해보세요!</div>';
   } else {
@@ -2100,7 +2104,7 @@ function openSM() {
 
   var selOpts = "";
   Object.keys(STAT_CATS).forEach(function(k){
-    selOpts += '<option value="' + k + '"' + (k===curSC?" selected":"") + '>' + STAT_CATS[k].emoji + " " + statLabel(k) + " (" + statUnit(k) + ")</option>";
+    selOpts += '<option value="' + k + '"' + (k===curSC?" selected":"") + '>' + statLabel(k) + " (" + statUnit(k) + ")</option>";
   });
 
   overlay.innerHTML = '<div style="background:#fff;border-radius:20px;padding:24px;width:85%;max-width:320px;">'
