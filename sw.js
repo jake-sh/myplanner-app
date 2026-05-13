@@ -1,16 +1,34 @@
-const CACHE = 'myplanner-v234';
+const CACHE = 'myplanner-v236';
+const PRECACHE = ['./', './index.html', './app.js', './style.css', './manifest.json'];
 
-self.addEventListener('install', e => { self.skipWaiting(); });
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(PRECACHE).catch(() => {})));
+  self.skipWaiting();
+});
 
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
+    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
     .then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', e => {
-  e.respondWith(fetch(e.request).catch(() => new Response('offline')));
+  // navigation 요청은 네트워크 우선
+  if (e.request.mode === 'navigate') {
+    e.respondWith(fetch(e.request).catch(() => caches.match('/myplanner-app/index.html')));
+    return;
+  }
+  // 나머지는 cache-first
+  e.respondWith(
+    caches.match(e.request).then(cached => cached || fetch(e.request).then(resp => {
+      if (resp && resp.status === 200 && e.request.url.startsWith(self.location.origin)) {
+        const clone = resp.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone));
+      }
+      return resp;
+    })).catch(() => new Response('offline'))
+  );
 });
 
 self.addEventListener('push', e => {
