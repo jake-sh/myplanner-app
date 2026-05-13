@@ -63,9 +63,9 @@
     </div>
     <!-- 미세먼지 + 옷차림 -->
     <div style="display:flex;gap:8px;">
-      <div id="widgetDust" onclick="window.open('https://weather.naver.com/air/index.nhn','_blank')" style="flex:1;background:#EEF0FF;border-radius:14px;padding:10px 12px;min-height:58px;cursor:pointer;">
+      <div id="widgetDust" onclick="window.open('https://weather.naver.com/air/index.nhn','_blank')" style="flex-shrink:0;width:100px;background:#EEF0FF;border-radius:14px;padding:10px 12px;min-height:58px;cursor:pointer;">
         <div id="dustLabel" style="font-size:10px;color:#8B8FA8;font-weight:700;margin-bottom:4px;">미세먼지</div>
-        <div id="widgetDustVal" style="font-size:12px;font-weight:700;min-height:32px;color:#1A1A2E;">미세 --<br>초미세 --</div>
+        <div id="widgetDustVal" style="font-size:12px;font-weight:700;min-height:32px;color:#1A1A2E;white-space:nowrap;">미세 --<br>초미세 --</div>
         <div id="widgetDustLevel" style="font-size:10px;opacity:0.8;"></div>
       </div>
       <div id="widgetClothes" style="flex:2;background:#E8F8F5;border-radius:14px;padding:10px 12px;min-height:58px;user-select:none;-webkit-user-select:none;">
@@ -322,13 +322,13 @@
     <span id="statsTitle" class="sub-title">건강 통계</span>
     <button onclick="openAddStatModal()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;" id="statAddBtn">+ 입력</button>
   </div>
+  <div id="statCategoryTabs" style="display:flex;gap:8px;padding:12px 16px;overflow-x:auto;"></div>
   <div style="padding:0 16px 16px;">
-    <div style="background:#1a1a1a;border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.18);">
-      <div id="statCategoryTabs" style="display:flex;gap:8px;overflow-x:auto;margin-bottom:14px;padding-bottom:2px;"></div>
-      <div id="statChartTitle" style="font-size:14px;font-weight:700;color:#f1f5f9;margin-bottom:2px;"></div>
+    <div style="background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+      <div id="statChartTitle" style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:2px;"></div>
       <div id="statChartUnit" style="font-size:11px;color:#94a3b8;margin-bottom:12px;"></div>
       <canvas id="statCanvas"></canvas>
-      <div id="statEmpty" style="text-align:center;color:#64748b;font-size:13px;padding:40px 0;">데이터가 없어요.<br>+ 입력으로 추가해보세요!</div>
+      <div id="statEmpty" style="text-align:center;color:#94a3b8;font-size:13px;padding:40px 0;">데이터가 없어요.<br>+ 입력으로 추가해보세요!</div>
     </div>
     <div style="margin-top:16px;">
       <div style="font-size:13px;font-weight:700;color:#64748b;margin-bottom:8px;">최근 기록</div>
