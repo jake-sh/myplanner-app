@@ -2372,9 +2372,7 @@ function applyLang() {
   // sub-title bold: 영문 bold, 한글 normal
   document.querySelectorAll('.sub-title').forEach(function(el){ el.style.fontWeight = en ? '800' : '400'; });
 
-  // 뒤로가기 — 항상 ‹ 기호만 표시
-  document.querySelectorAll('[data-i18n-back]').forEach(function(el){ el.textContent = '‹'; });
-  _setText('memoListBack', '‹');
+  // back 버튼은 SVG 아이콘으로 고정 — 언어 전환 불필요
 
   // 설정 라벨
   _setText('appNameLabel', en ? 'App Name' : '앱 이름');
