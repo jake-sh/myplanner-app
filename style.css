@@ -341,7 +341,7 @@ input:checked+.slider:before{transform:translateX(20px);}
   color:var(--chat-text2);font-size:14px;font-weight:600;
   height:60vh;
 }
-.big-icon{font-size:56px;opacity:0.4;}
+.big-icon{opacity:0.35;color:var(--chat-text2);display:flex;justify-content:center;}
 
 /* 채팅 셋업 */
 .chat-setup{
