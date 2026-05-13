@@ -32,34 +32,6 @@ let editingMemoIndex = null;
 
 // ── INIT ───────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
-  // ── Web Share Target POST 처리 (SW → 앱 메시지) ──
-  navigator.serviceWorker && navigator.serviceWorker.addEventListener('message', function(e) {
-    if (e.data && e.data.type === 'SHARE_TARGET') {
-      _saveSharedMemo(e.data.text);
-    }
-  });
-  // ── SW pending 처리 (앱이 닫혀있다가 열린 경우) ──
-  (async function() {
-    if (!('caches' in window)) return;
-    try {
-      var cache = await caches.open('share-pending');
-      var res = await cache.match('pending');
-      if (res) {
-        var text = await res.text();
-        await cache.delete('pending');
-        if (text) {
-          _saveSharedMemo(text);
-          // 공유로 열린 경우 저장 후 즉시 닫기
-          setTimeout(function() {
-            window.close();
-            // window.close() 안 되는 경우 history.back()
-            setTimeout(function() { history.back(); }, 100);
-          }, 50);
-        }
-      }
-    } catch(e) {}
-  })();
-
   // ── 최초 실행 시 디폴트값 설정 ──
   if (!localStorage.getItem('_defaultsSet')) {
     localStorage.setItem('darkMode', 'true');
@@ -68,7 +40,8 @@ window.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('svgColorMode', 'off'); // 테마 색상
     localStorage.setItem('lang', 'en');
     localStorage.setItem('notifApp', 'true');
-    localStorage.setItem('notifChat', 'true');
+    localStorage.setItem('notifCal', 'true');
+    localStorage.setItem('notifTodo', 'true');
     localStorage.setItem('autoLock', 'true');
     localStorage.setItem('_defaultsSet', '1');
   }
@@ -346,11 +319,9 @@ document.addEventListener('click', function(e) {
 var _blurTime = 0;
 window.addEventListener('blur', function() {
   var el = document.getElementById('privacyScreen');
-  if (!_filePickerOpen) {
-    if (el) el.style.display = 'block';
-    _appWasHidden = true;
-  }
+  if (el) el.style.display = 'block';
   _blurTime = Date.now();
+  if (!_filePickerOpen) _appWasHidden = true;
 });
 window.addEventListener('focus', function() {
   var el = document.getElementById('privacyScreen');
@@ -427,7 +398,7 @@ function openTag() {
   var en = localStorage.getItem('lang') === 'en';
   setTimeout(function() {
     var b = document.getElementById('tagBackBtn');
-    if (b) b.innerHTML = '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>';
+    if (b) b.textContent = en ? '← Back' : '← 뒤로';
     var t = document.getElementById('tagTitle');
     if (t) t.textContent = en ? 'Tags' : '태그';
     var d = document.getElementById('tagDeleteAllBtn');
@@ -478,7 +449,8 @@ function _doDeleteAllTags() {
 // ── SETTINGS ───────────────────────────────────────
 function openSettings() {
   document.getElementById('notifApp').checked = localStorage.getItem('notifApp') === 'true';
-  var nc = document.getElementById('notifChat'); if(nc) nc.checked = localStorage.getItem('notifChat') !== 'false';
+  document.getElementById('notifCal').checked = localStorage.getItem('notifCal') === 'true';
+  document.getElementById('notifTodo').checked = localStorage.getItem('notifTodo') === 'true';
   showScreen('settingsScreen');
   var t2 = localStorage.getItem('themeColor') || '#6C63FF';
   setTimeout(function(){ applyThemeBtnBorder(t2); updateIconStyleBtns(); updateSvgColorBtns(); }, 200);
@@ -716,7 +688,7 @@ function openTodo() {
         const data = snap.data();
         localStorage.setItem('todos', JSON.stringify(data.todos || []));
         if (!firstLoad && data.updatedBy && data.updatedBy !== myCode) {
-          if (localStorage.getItem('notifApp') === 'true') sendNotification('할 일', '새로운 할 일이 있어요');
+          if (localStorage.getItem('notifTodo') === 'true') sendNotification('할 일', '새로운 할 일이 있어요');
         }
         firstLoad = false;
       }
@@ -772,56 +744,17 @@ function deleteTodo(i) {
 }
 
 // ── 메모 ───────────────────────────────────────────
-function getSharedMemoId() {
-  var f = JSON.parse(localStorage.getItem('friends') || '[]');
-  if (!myCode || !f.length) return null;
-  return [myCode, f[0]].sort().join('_memo_');
-}
-var _memoListener = null;
 function openMemo() {
+  renderMemoList();
+  var f = JSON.parse(localStorage.getItem('friends') || '[]');
+  if (myCode && f.length) listenSharedMemos(f[0]);
   showScreen('memoScreen');
-  if (_memoListener) { _memoListener(); _memoListener = null; }
-  var sid = getSharedMemoId();
-  if (sid) {
-    var firstLoad = true;
-    _memoListener = db.collection('memos').doc(sid).onSnapshot(function(snap) {
-      if (snap.exists) {
-        var data = snap.data();
-        if (data.updatedBy !== myCode || firstLoad) {
-          localStorage.setItem('memos', JSON.stringify(data.memos || []));
-        }
-        firstLoad = false;
-      }
-      renderMemoList();
-    });
-  } else {
-    renderMemoList();
-  }
-}
-async function saveMemosToFirestore() {
-  var sid = getSharedMemoId();
-  if (!sid) return;
-  var memos = JSON.parse(localStorage.getItem('memos') || '[]');
-  try { await db.collection('memos').doc(sid).set({ memos: memos, updatedBy: myCode, ts: firebase.firestore.Timestamp.now() }); } catch(e) {}
-}
-
-function _saveSharedMemo(combined) {
-  if (!combined) return;
-  var firstLine = combined.split('\n')[0];
-  var autoTitle = firstLine.trim().split(/\s+/).slice(0, 10).join(' ');
-  var memos = JSON.parse(localStorage.getItem('memos') || '[]');
-  var date = new Date().toLocaleDateString('ko-KR');
-  memos.unshift({ title: autoTitle, content: combined, date: date, ts: Date.now(), from: myCode });
-  localStorage.setItem('memos', JSON.stringify(memos));
-  saveMemosToFirestore();
-  var memoScreen = document.getElementById('memoScreen');
-  if (memoScreen && memoScreen.classList.contains('active')) renderMemoList();
 }
 function toggleMemoShare(i, ev) {
   ev.stopPropagation();
-  if (!myCode) return;
+  if (!myCode) { showAlert('채팅 코드를 먼저 설정하세요'); return; }
   var friends = JSON.parse(localStorage.getItem('friends') || '[]');
-  if (!friends.length) return;
+  if (!friends.length) { showAlert('연동할 친구가 없습니다'); return; }
   var memos = JSON.parse(localStorage.getItem('memos') || '[]');
   memos[i].shared = !memos[i].shared;
   localStorage.setItem('memos', JSON.stringify(memos));
@@ -870,37 +803,45 @@ function listenSharedMemos(friendCode) {
 }
 function renderSharedMemos(friendCode) {
   var el = document.getElementById('sharedMemoView');
+  var section = document.getElementById('sharedMemoSection');
   if (!el) return;
-  var shared = JSON.parse(localStorage.getItem('sharedMemosFrom_' + friendCode) || '[]');
-  if (!shared.length) { el.innerHTML = ''; return; }
-  el.innerHTML = '<div class="shared-memo-header"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> 공유된 메모</div>' +
+  var fCode = friendCode || (JSON.parse(localStorage.getItem('friends')||'[]')[0]);
+  if (!fCode) return;
+  var shared = JSON.parse(localStorage.getItem('sharedMemosFrom_' + fCode) || '[]');
+  if (!shared.length) {
+    el.innerHTML = '';
+    if (section) section.style.display = 'none';
+    return;
+  }
+  if (section) section.style.display = 'block';
+  var SVG_LINK = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+  el.innerHTML = '<div class="shared-memo-header" style="font-size:11px;font-weight:700;color:var(--subtext);padding:8px 16px 4px;display:flex;align-items:center;gap:5px;">' + SVG_LINK + ' 공유된 메모</div>' +
     shared.map(function(m) {
-      return '<div class="shared-memo-card"><div class="memo-card-title">' + esc(m.title||'제목 없음') + '</div>' +
-             '<div class="memo-card-preview">' + esc((m.content||'').substring(0,80)) + '</div>' +
-             '<div class="memo-card-date">' + esc(m.date||'') + '</div></div>';
+      return '<div class="memo-card" style="margin:0 12px 8px;" onclick="">' +
+        '<div class="memo-card-title">' + esc(m.title||'제목 없음') + '</div>' +
+        '<div class="memo-card-preview">' + esc((m.content||'').substring(0,80)) + '</div>' +
+        '<div class="memo-card-footer"><span class="memo-card-date">' + esc(m.date||'') + '</span></div>' +
+        '</div>';
     }).join('');
 }
 
 function renderMemoList() {
-  var rawMemos = JSON.parse(localStorage.getItem('memos') || '[]');
-  var el = document.getElementById('memoList');
+  const memos = JSON.parse(localStorage.getItem('memos') || '[]');
+  const el = document.getElementById('memoList');
   var isEn = localStorage.getItem('lang') === 'en';
-  var memos = rawMemos.map(function(m, i) { return Object.assign({}, m, {_idx: i}); });
-  memos.sort(function(a, b) { return (b.ts||0) - (a.ts||0); });
   if (!memos.length) { el.innerHTML = '<div class="empty-state">' + (isEn ? 'No memos yet' : '메모가 없습니다') + '</div>'; return; }
-  el.innerHTML = memos.map(function(m) {
-    var i = m._idx;
-    var isFromFriend = m.from && m.from !== myCode;
-    var shareIcon = isFromFriend ? '<div style="position:absolute;top:10px;right:10px;opacity:0.55;color:var(--subtext);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>' : '';
-    return '<div class="memo-card" onclick="openEditMemo(' + i + ')" style="position:relative;">' +
-      shareIcon +
-      '<div class="memo-card-title">' + esc(m.title||'제목 없음') + '</div>' +
-      '<div class="memo-card-preview">' + esc((m.content||'').substring(0,80)) + '</div>' +
-      '<div class="memo-card-footer">' +
-        '<span class="memo-card-date">' + (m.date||'') + '</span>' +
-        '<button class="memo-del" onclick="event.stopPropagation();deleteMemo(' + i + ')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>' +
-      '</div></div>';
-  }).join('');
+  el.innerHTML = memos.map((m,i) => `
+    <div class="memo-card" onclick="openEditMemo(${i})">
+      <div class="memo-card-title">${esc(m.title||'제목 없음')}</div>
+      <div class="memo-card-preview">${esc((m.content||'').substring(0,80))}</div>
+      <div class="memo-card-footer">
+        <span class="memo-card-date">${m.date||''}</span>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="memo-share-btn ${m.shared ? 'on' : ''}" onclick="toggleMemoShare(${i},event)" title="친구 공유">${m.shared ? '🔗' : '🔗'}<span class="memo-share-label">${m.shared ? 'ON' : 'OFF'}</span></button>
+          <button class="memo-del" onclick="event.stopPropagation();deleteMemo(${i})">🗑</button>
+        </div>
+      </div>
+    </div>`).join('');
 }
 function openNewMemo() {
   editingMemoIndex = null;
@@ -909,7 +850,6 @@ function openNewMemo() {
   document.getElementById('memoContentInput').value = '';
   showScreen('memoEditorScreen');
   _bindMemoAutoTitle();
-  setTimeout(function(){ var c = document.getElementById('memoContentInput'); if(c) c.focus(); }, 100);
 }
 function openEditMemo_bindAutoTitle() { _bindMemoAutoTitle(); }
 function _bindMemoAutoTitle() {
@@ -938,7 +878,6 @@ function openEditMemo(i) {
   document.getElementById('memoContentInput').value = memos[i].content || '';
   showScreen('memoEditorScreen');
   _bindMemoAutoTitle();
-  setTimeout(function(){ var c = document.getElementById('memoContentInput'); if(c) c.focus(); }, 100);
 }
 function closeMemoEditor() { renderMemoList(); showScreen('memoScreen'); }
 function saveMemo() {
@@ -947,23 +886,14 @@ function saveMemo() {
   if (!title && !content) { showAlert('내용을 입력하세요'); return; }
   const memos = JSON.parse(localStorage.getItem('memos') || '[]');
   const date = new Date().toLocaleDateString('ko-KR');
-  if (editingMemoIndex !== null) {
-    memos[editingMemoIndex] = { title, content, date, shared: memos[editingMemoIndex].shared || false };
-  } else {
-    var friends = JSON.parse(localStorage.getItem('friends') || '[]');
-    var defaultShared = friends.length > 0;
-    var newMemo = { title, content, date, shared: defaultShared };
-    memos.unshift(newMemo);
-    if (defaultShared) _pushMemoToFriends(newMemo, 0);
-  }
+  if (editingMemoIndex !== null) memos[editingMemoIndex] = { title, content, date };
+  else memos.unshift({ title, content, date });
   localStorage.setItem('memos', JSON.stringify(memos)); closeMemoEditor();
 }
 function deleteMemo(i) {
   showConfirm('메모를 삭제할까요?', function() {
     const memos = JSON.parse(localStorage.getItem('memos') || '[]'); memos.splice(i,1);
-    localStorage.setItem('memos', JSON.stringify(memos));
-    saveMemosToFirestore();
-    renderMemoList();
+    localStorage.setItem('memos', JSON.stringify(memos)); renderMemoList();
   });
 }
 
@@ -986,7 +916,7 @@ function openCalendar() {
         localStorage.setItem('habits', JSON.stringify(data.habits || {}));
         // 상대방이 업데이트한 경우만 알림
         if (!firstCalLoad && data.updatedBy && data.updatedBy !== myCode) {
-          if (localStorage.getItem('notifApp') === 'true') sendNotification('달력', '새 일정이 있어요');
+          if (localStorage.getItem('notifCal') === 'true') sendNotification('달력', '새 일정이 있어요');
         }
         firstCalLoad = false;
       }
@@ -1142,7 +1072,7 @@ function renderFriendList() {
   friends = JSON.parse(localStorage.getItem('friends') || '[]');
   const el = document.getElementById('friendList');
   if (!friends.length) {
-    el.innerHTML = '<div class="no-friend"><div class="big-icon"><div class="no-friend-circle"><svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4.5"/><path d="M4 22c0-4.5 3.6-8 8-8s8 3.5 8 8"/></svg></div></div><div>' + (localStorage.getItem('lang')==='en' ? 'Add a friend to start chatting' : '친구를 추가하면 채팅이 시작됩니다') + '</div></div>';
+    el.innerHTML = '<div class="no-friend"><div class="big-icon">👤</div><div>' + (localStorage.getItem('lang')==='en' ? 'Add a friend to start chatting' : '친구를 추가하면 채팅이 시작됩니다') + '</div></div>';
     return;
   }
   el.innerHTML = friends.map(f => `
@@ -1328,7 +1258,6 @@ function openChat(friendCode) {
   if (roomListener) { roomListener(); roomListener = null; }
   listenMessages();
   listenRoomSettings();
-  listenSharedMemos(friendCode);
   // 읽지 않은 메시지 삭제 타이머 시작
   markMessagesRead();
 }
@@ -1336,7 +1265,6 @@ function openChat(friendCode) {
 function backToFriendList() {
   if (messageListener) { messageListener(); messageListener = null; }
   if (roomListener) { roomListener(); roomListener = null; }
-  if (_sharedMemoListener) { _sharedMemoListener(); _sharedMemoListener = null; }
   Object.values(countdownTimers).forEach(t => clearInterval(t)); countdownTimers = {};
   activeFriendCode = null; chatRoomId = null;
   showFriendList();
@@ -1757,39 +1685,6 @@ function toggleAutoLock(enabled) {
   localStorage.setItem('autoLock', enabled ? 'true' : 'false');
 }
 
-
-function openShareTargetPicker() {
-  var friends = JSON.parse(localStorage.getItem('friends') || '[]');
-  var targets = JSON.parse(localStorage.getItem('shareTargets') || '[]');
-  var list = document.getElementById('shareTargetPickerList');
-  if (!friends.length) {
-    list.innerHTML = '<div style="color:var(--subtext,#888);font-size:13px;text-align:center;">등록된 친구가 없습니다</div>';
-  } else {
-    list.innerHTML = friends.map(function(f) {
-      var checked = targets.includes(f);
-      return '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">' +
-        '<input type="checkbox" value="' + f + '" ' + (checked ? 'checked' : '') +
-        ' style="width:18px;height:18px;accent-color:var(--primary,#6C63FF);cursor:pointer;"/>' +
-        '<span style="font-size:14px;font-weight:600;">' + f + '</span></label>';
-    }).join('');
-  }
-  document.getElementById('shareTargetModal').style.display = 'flex';
-}
-function closeShareTargetPicker() {
-  var boxes = document.querySelectorAll('#shareTargetPickerList input[type=checkbox]');
-  var targets = [];
-  boxes.forEach(function(b) { if (b.checked) targets.push(b.value); });
-  localStorage.setItem('shareTargets', JSON.stringify(targets));
-  document.getElementById('shareTargetModal').style.display = 'none';
-  renderShareTargetList();
-}
-function renderShareTargetList() {
-  var el = document.getElementById('shareTargetList');
-  if (!el) return;
-  var targets = JSON.parse(localStorage.getItem('shareTargets') || '[]');
-  el.textContent = targets.length ? targets.join(', ') : '없음';
-}
-
 function openSecretSettings() {
   initTitleInputs();
   document.getElementById('myCodeDisplaySettings').textContent = myCode;
@@ -1949,9 +1844,6 @@ function toggleSettingsNotif(type, enabled) {
     notifEnabled = enabled;
     localStorage.setItem('notifEnabled', enabled ? 'true' : 'false');
   }
-  if (type === 'chat') {
-    localStorage.setItem('notifChat', enabled ? 'true' : 'false');
-  }
 }
 
 function toggleNotification() {
@@ -2097,7 +1989,7 @@ function openStats() {
         var d = snap.data();
         localStorage.setItem("hStats", JSON.stringify(d.data || {}));
         if (!firstLoad && d.updatedBy && d.updatedBy !== myCode) {
-          if (localStorage.getItem('notifApp') === 'true') sendNotification('통계', '건강 기록이 업데이트됐어요');
+          if (localStorage.getItem('notifTodo') === 'true') sendNotification('통계', '건강 기록이 업데이트됐어요');
         }
         firstLoad = false;
         renderStatsUI();
@@ -2131,7 +2023,7 @@ function renderStatsUI() {
 
   var addHtml = '<div style="text-align:right;margin-bottom:12px;"><button id="openSmBtn" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;">' + (localStorage.getItem('lang')==='en' ? '+ Add' : '+ 입력') + '</button></div>';
 
-  var chartHtml = '<div style="background:var(--card);border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:var(--text);">' + cat.emoji + " " + statLabel(curSC) + '</div><div style="font-size:11px;color:#94a3b8;margin-bottom:12px;">' + (localStorage.getItem('lang')==='en' ? 'Unit: ' : '단위: ') + statUnit(curSC) + '</div>';
+  var chartHtml = '<div style="background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:#1e293b;">' + cat.emoji + " " + statLabel(curSC) + '</div><div style="font-size:11px;color:#94a3b8;margin-bottom:12px;">' + (localStorage.getItem('lang')==='en' ? 'Unit: ' : '단위: ') + statUnit(curSC) + '</div>';
   if (entries.length === 0) {
     chartHtml += '<div style="text-align:center;color:#94a3b8;font-size:13px;padding:30px 0;">데이터가 없어요.<br>+ 입력으로 추가해보세요!</div>';
   } else {
@@ -2142,7 +2034,7 @@ function renderStatsUI() {
   var listHtml = '<div style="font-size:13px;font-weight:700;color:#64748b;margin-bottom:8px;">' + (localStorage.getItem('lang')==='en' ? 'Recent Records' : '최근 기록') + '</div>';
   entries.slice().reverse().slice(0,10).forEach(function(e, i) {
     var origIdx = entries.length - 1 - i;
-    var row = '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--card);border-radius:12px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,.05);">'
+    var row = '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#fff;border-radius:12px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,.05);">'
       + '<span style="font-size:13px;color:#64748b;">' + e.date + '</span>'
       + '<span style="font-size:15px;font-weight:700;color:' + cat.color + ';">' + e.value + ' <small style="font-size:11px;color:#94a3b8;">' + cat.unit + '</small></span>'
       + '<button data-dcat="' + curSC + '" data-didx="' + origIdx + '" style="background:none;border:none;color:#cbd5e1;font-size:20px;cursor:pointer;">×</button>'
@@ -2321,25 +2213,25 @@ function getDustLevel(pm10) {
 
 function getClothes(temp, pm10) {
   var en = localStorage.getItem('lang') === 'en';
-  var dust = pm10 > 80 ? (en ? '<br>Mask recommended' : '<br>마스크 착용 권장') : '';
+  var dust = pm10 > 80 ? (en ? ' · Mask recommended' : ' 마스크 착용 권장') : '';
   if (en) {
-    if (temp >= 28) return 'Sleeveless<br>T-shirt<br>Shorts<br>Dress' + dust;
-    if (temp >= 23) return 'T-shirt<br>Light shirt<br>Shorts' + dust;
-    if (temp >= 20) return 'Blouse<br>Long sleeve<br>Pants<br>Jeans' + dust;
-    if (temp >= 17) return 'Light cardigan<br>Long pants' + dust;
-    if (temp >= 12) return 'Jacket<br>Cardigan<br>Jeans' + dust;
-    if (temp >= 9) return 'Trench coat<br>Knit<br>Jeans' + dust;
-    if (temp >= 5) return 'Wool coat<br>Heattech<br>Layered' + dust;
-    return 'Padding<br>Thick coat<br>Scarf' + dust;
+    if (temp >= 28) return 'Sleeveless·T-shirt·Shorts·Dress' + dust;
+    if (temp >= 23) return 'T-shirt·Light shirt·Shorts' + dust;
+    if (temp >= 20) return 'Blouse·Long sleeve·Pants·Jeans' + dust;
+    if (temp >= 17) return 'Light cardigan·Long pants' + dust;
+    if (temp >= 12) return 'Jacket·Cardigan·Jeans' + dust;
+    if (temp >= 9) return 'Trench coat·Knit·Jeans' + dust;
+    if (temp >= 5) return 'Wool coat·Heattech·Layered' + dust;
+    return 'Padding·Thick coat·Scarf' + dust;
   }
-  if (temp >= 28) return '민소매<br>반팔<br>반바지<br>원피스' + dust;
-  if (temp >= 23) return '반팔<br>얇은 셔츠<br>반바지' + dust;
-  if (temp >= 20) return '블라우스<br>긴팔<br>면바지<br>청바지' + dust;
-  if (temp >= 17) return '얇은 가디건<br>긴바지' + dust;
-  if (temp >= 12) return '자켓<br>가디건<br>청바지' + dust;
-  if (temp >= 9) return '트렌치코트<br>니트<br>청바지' + dust;
-  if (temp >= 5) return '울코트<br>히트텍<br>레이어드' + dust;
-  return '패딩<br>두꺼운 코트<br>목도리' + dust;
+  if (temp >= 28) return '민소매·반팔·반바지·원피스' + dust;
+  if (temp >= 23) return '반팔·얇은 셔츠·반바지' + dust;
+  if (temp >= 20) return '블라우스·긴팔·면바지·청바지' + dust;
+  if (temp >= 17) return '얇은 가디건·긴바지' + dust;
+  if (temp >= 12) return '자켓·가디건·청바지' + dust;
+  if (temp >= 9) return '트렌치코트·니트·청바지' + dust;
+  if (temp >= 5) return '울코트·히트텍·레이어드' + dust;
+  return '패딩·두꺼운 코트·목도리' + dust;
 }
 
 var _weatherCache = null;
@@ -2359,7 +2251,7 @@ function renderWeatherUI(data) {
     (en ? 'Fine dust ' : '미세 ') + '<b style="color:' + level.color + '">' + level.text + '</b><br>' +
     (en ? 'Ultra-fine ' : '초미세 ') + '<b style="color:' + level25.color + '">' + level25.text + '</b>';
   document.getElementById('widgetDustLevel').textContent = '';
-  document.getElementById('widgetClothesVal').innerHTML = getClothes(data.temp, data.pm10);
+  document.getElementById('widgetClothesVal').textContent = getClothes(data.temp, data.pm10);
 }
 
 async function loadWeather() {
@@ -2459,7 +2351,7 @@ const I18N = {
     todo: '할 일', schedule: '일정표', alarm: '알림',
     memo: '메모', goal: '목표', stats: '통계',
     project: '프로젝트', tag: '태그', calendar: '달력',
-    settings: '설정', back: '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>',
+    settings: '설정', back: '← 뒤로',
     settingsTitle: '설정', appNameLabel: '앱 이름',
     save: '저장', themeColor: '테마 색상',
     notifSection: '알림', notifApp: '앱 알림',
@@ -2480,7 +2372,7 @@ const I18N = {
     todo: 'To-Do', schedule: 'Schedule', alarm: 'Alarm',
     memo: 'Memo', goal: 'Goals', stats: 'Stats',
     project: 'Projects', tag: 'Tags', calendar: 'Calendar',
-    settings: 'Settings', back: '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>',
+    settings: 'Settings', back: '← Back',
     settingsTitle: 'Settings', appNameLabel: 'App Name',
     save: 'Save', themeColor: 'Theme Color',
     notifSection: 'Notifications', notifApp: 'App Alerts',
@@ -2539,8 +2431,8 @@ function applyLang() {
   _setText('featureTitle', document.getElementById('featureTitle') ? document.getElementById('featureTitle').textContent : '');
 
   // 뒤로가기
-  document.querySelectorAll('[data-i18n-back]').forEach(function(el){ el.innerHTML = '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>'; });
-  var mlb = document.getElementById('memoListBack'); if(mlb) mlb.innerHTML = '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>';
+  document.querySelectorAll('[data-i18n-back]').forEach(function(el){ el.textContent = en ? '← Back' : '← 뒤로'; });
+  _setText('memoListBack', en ? '← List' : '← 목록');
 
   // 설정 라벨
   _setText('appNameLabel', en ? 'App Name' : '앱 이름');
@@ -2554,11 +2446,12 @@ function applyLang() {
   _setText('notifSectionLabel', en ? 'Notifications' : '알림');
   _setText('langLabel', en ? 'Language' : '언어');
   _setText('infoLabel', en ? 'Info' : '정보');
-  _setText('notifAppLabel', 'App Alerts');
-  _setText('notifChatLabel', 'Event Alerts');
+  _setText('notifAppLabel', en ? 'App Alerts' : '앱 알림');
+  _setText('notifCalLabel', en ? 'Schedule Alerts' : '일정 알림');
+  _setText('notifTodoLabel', en ? 'To-Do Alerts' : '할 일 알림');
 
   // 메모
-  _setText('newMemoBtn', '+ New');
+  _setText('newMemoBtn', en ? '+ New Memo' : '+ 새 메모');
   _setText('memoSaveBtn', en ? 'Save' : '저장');
   var memoTP = document.getElementById('memoTitleInput');
   if(memoTP) memoTP.placeholder = en ? 'Title' : '제목';
@@ -2577,7 +2470,7 @@ function applyLang() {
   _setText('regenCodeBtn', en ? '🔄 Regenerate' : '🔄 코드 재생성');
 
   // 태그 화면
-  var _b_tagBackBtn = document.getElementById('tagBackBtn'); if(_b_tagBackBtn) _b_tagBackBtn.innerHTML = '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>';
+  _setText('tagBackBtn', en ? '← Back' : '← 뒤로');
   _setText('tagTitle', en ? 'Tags' : '태그');
   _setText('tagDeleteAllBtn', en ? 'Clear All' : '전체삭제');
   _setText('tagAutoDeleteLabel', en ? 'Auto Delete' : '자동삭제');
@@ -2622,7 +2515,7 @@ function applyLang() {
   if(msgEl) msgEl.placeholder = en ? 'Type a message...' : '메시지 입력...';
 
   // 이미지 다운로드
-  _setText('imgDownloadBtn', en ? '저장' : '저장');
+  _setText('imgDownloadBtn', en ? '⬇ Save' : '⬇ 저장');
 
   // 보안설정 내부 버튼
   var dBtn = document.getElementById('themeDarkBtn'); if(dBtn) dBtn.textContent = en ? 'Dark' : '다크';
@@ -2641,13 +2534,14 @@ function applyLang() {
   _setText('calStreakLabel', en ? 'Streak' : '연속 달성');
 
   // 알림 토글
-  _setText('notifAppLabel', 'App Alerts');
-  _setText('notifChatLabel', 'Event Alerts');
+  _setText('notifAppLabel', en ? 'App Alerts' : '앱 알림');
+  _setText('notifCalLabel', en ? 'Schedule Alerts' : '일정 알림');
+  _setText('notifTodoLabel', en ? 'To-Do Alerts' : '할 일 알림');
 
   // 닉네임 설정
   _setText('nicknameLabel', en ? 'Set your nickname' : '닉네임을 설정하세요');
   _setText('nicknameSetBtn', en ? 'Set' : '설정');
-  var _b_exitChatBtn = document.getElementById('exitChatBtn'); if(_b_exitChatBtn) _b_exitChatBtn.innerHTML = '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg> ' + (localStorage.getItem('lang')==='en' ? 'Exit' : '나가기');
+  _setText('exitChatBtn', en ? '← Exit' : '← 나가기');
   var nnInput = document.getElementById('nicknameInput');
   if (nnInput) nnInput.placeholder = en ? 'Enter nickname' : '닉네임 입력';
 

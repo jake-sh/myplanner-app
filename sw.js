@@ -1,4 +1,4 @@
-const CACHE = 'myplanner-v238';
+const CACHE = 'myplanner-v234';
 
 self.addEventListener('install', e => { self.skipWaiting(); });
 
@@ -10,43 +10,6 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // ── Share Target POST 처리 ──
-  if (e.request.url.includes('/share-target') && e.request.method === 'POST') {
-    e.respondWith((async () => {
-      try {
-        const fd = await e.request.formData();
-        const title   = fd.get('title') || '';
-        const text    = fd.get('text')  || '';
-        const url     = fd.get('url')   || '';
-        const combined = [title, text, url].filter(Boolean).join('\n').trim();
-
-        // 열린 클라이언트에 메시지 전달 (앱이 열려있으면 바로 처리)
-        const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-        if (clients.length > 0) {
-          clients[0].postMessage({ type: 'SHARE_TARGET', text: combined });
-        }
-        // 앱이 안 열려있으면 캐시에만 저장 (앱 열지 않음)
-        // IndexedDB 대신 캐시 API로 임시 저장
-        const cache = await caches.open('share-pending');
-        await cache.put('pending', new Response(combined));
-
-        // 알림 표시
-        await self.registration.showNotification('메모 저장됨', {
-          body: combined.length > 60 ? combined.substring(0, 60) + '…' : combined,
-          icon: '/myplanner-app/icons/icon-192.png',
-          tag: 'share-saved',
-          silent: false
-        });
-
-        // 기존 앱으로 복귀 (앱 창 열지 않음)
-        return Response.redirect('/myplanner-app/', 303);
-      } catch(err) {
-        return Response.redirect('/myplanner-app/', 303);
-      }
-    })());
-    return;
-  }
-
   e.respondWith(fetch(e.request).catch(() => new Response('offline')));
 });
 
