@@ -1955,8 +1955,13 @@ function renderStatsUI() {
   var data = getSD();
   var cat = STAT_CATS[curSC];
   var entries = (data[curSC]||[]).slice().sort(function(a,b){return a.date>b.date?1:-1;});
+  var isDark = document.body.classList.contains('dark-mode');
+  var boxBg   = isDark ? '#1A1A1A' : '#F8F9FF';
+  var boxBd   = isDark ? '#2A2A2A' : '#ECEEF8';
+  var titleCl = isDark ? '#F1F1F1' : '#1e293b';
+  var dateCl  = isDark ? '#94a3b8' : '#64748b';
 
-  var tabHtml = '<div style="display:flex;flex-wrap:wrap;gap:8px;padding:4px 0 16px;">';
+  var tabHtml = '<div style="display:flex;flex-wrap:nowrap;gap:8px;padding:4px 0 16px;overflow-x:auto;">';
   Object.keys(STAT_CATS).forEach(function(k) {
     var c = STAT_CATS[k];
     var active = (k === curSC);
@@ -1973,7 +1978,7 @@ function renderStatsUI() {
 
   var addHtml = '<div style="text-align:right;margin-bottom:12px;"><button id="openSmBtn" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;">' + (localStorage.getItem('lang')==='en' ? '+ Add' : '+ 입력') + '</button></div>';
 
-  var chartHtml = '<div style="background:#1A1A1A;border:1.5px solid #2A2A2A;border-radius:16px;padding:16px;margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:#f1f5f9;">' + cat.emoji + " " + statLabel(curSC) + '</div><div style="font-size:11px;color:#94a3b8;margin-bottom:12px;">' + (localStorage.getItem('lang')==='en' ? 'Unit: ' : '단위: ') + statUnit(curSC) + '</div>';
+  var chartHtml = '<div style="background:' + boxBg + ";border:1.5px solid " + boxBd + ";border-radius:16px;padding:16px;margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:" + titleCl + ";">' + cat.emoji + " " + statLabel(curSC) + '</div><div style="font-size:11px;color:#94a3b8;margin-bottom:12px;">' + (localStorage.getItem('lang')==='en' ? 'Unit: ' : '단위: ') + statUnit(curSC) + '</div>';
   if (entries.length === 0) {
     chartHtml += '<div style="text-align:center;color:#64748b;font-size:13px;padding:30px 0;">데이터가 없어요.<br>+ 입력으로 추가해보세요!</div>';
   } else {
@@ -1987,8 +1992,8 @@ function renderStatsUI() {
     var valDisplay = (curSC === 'bp' && e.dia != null)
       ? '<span style="font-size:15px;font-weight:700;color:' + cat.color + ';">' + e.value + '/' + e.dia + ' <small style="font-size:11px;color:#94a3b8;">mmHg</small></span>'
       : '<span style="font-size:15px;font-weight:700;color:' + cat.color + ';">' + e.value + ' <small style="font-size:11px;color:#94a3b8;">' + cat.unit + '</small></span>';
-    var row = '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#fff;border-radius:12px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,.05);">'
-      + '<span style="font-size:13px;color:#64748b;">' + e.date + '</span>'
+    var row = '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:" + boxBg + ";border:1.5px solid " + boxBd + ";border-radius:12px;margin-bottom:6px;">'
+      + '<span style="font-size:13px;color:' + dateCl + ';">' + e.date + '</span>'
       + valDisplay
       + '<button data-dcat="' + curSC + '" data-didx="' + origIdx + '" style="background:none;border:none;color:#cbd5e1;font-size:20px;cursor:pointer;">×</button>'
       + '</div>';
