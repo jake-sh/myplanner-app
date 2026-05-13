@@ -459,7 +459,10 @@
 
       <div class="secret-setting-item">
         <div class="settings-label" style="color:var(--chat-text);font-size:14px;" id="myCodeLabel">내 코드</div>
-        <div class="my-code-display" id="myCodeDisplaySettings" style="font-size:13px;padding:8px;"></div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="my-code-display" id="myCodeDisplaySettings" style="font-size:13px;padding:8px;"></div>
+          <button class="settings-btn" style="font-size:12px;padding:6px 12px;" onclick="closeSecretSettings();openChangeCode();" id="changeCodeBtn">변경</button>
+        </div>
       </div>
 
       <div class="secret-setting-item" style="flex-direction:column;align-items:flex-start;gap:8px;">
@@ -470,9 +473,7 @@
         <div id="shareTargetList" style="width:100%;font-size:12px;color:var(--chat-text2);min-height:18px;"></div>
       </div>
 
-      <button class="settings-btn" style="background:var(--primary);width:100%;font-size:13px;color:#fff;" onclick="closeSecretSettings();openChangeCode();" id="changeCodeBtn">식별 코드 변경</button>
-
-      <button class="modal-cancel" id="closeSecretBtn" style="color:var(--chat-text2);" onclick="closeSecretSettings()">닫기</button>
+      <button class="modal-cancel" id="closeSecretBtn" style="background:rgba(180,180,195,0.15);color:var(--chat-text);border-radius:12px;padding:12px;width:100%;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:inherit;" onclick="closeSecretSettings()">저장</button>
     </div>
   </div>
 
