@@ -772,15 +772,12 @@ function deleteTodo(i) {
 }
 
 // ── 메모 ───────────────────────────────────────────
-// ── 메모 공유 (할일 앱 방식: 단일 Firestore 문서 동기화) ──
-var _memoListener = null;
-
 function getSharedMemoId() {
   var f = JSON.parse(localStorage.getItem('friends') || '[]');
   if (!myCode || !f.length) return null;
   return [myCode, f[0]].sort().join('_memo_');
 }
-
+var _memoListener = null;
 function openMemo() {
   showScreen('memoScreen');
   if (_memoListener) { _memoListener(); _memoListener = null; }
@@ -790,11 +787,7 @@ function openMemo() {
     _memoListener = db.collection('memos').doc(sid).onSnapshot(function(snap) {
       if (snap.exists) {
         var data = snap.data();
-        // 상대방이 업데이트한 경우만 로컬 갱신
-        if (data.updatedBy && data.updatedBy !== myCode) {
-          localStorage.setItem('memos', JSON.stringify(data.memos || []));
-        } else if (firstLoad) {
-          // 최초 로드: Firestore 데이터 우선
+        if (data.updatedBy !== myCode || firstLoad) {
           localStorage.setItem('memos', JSON.stringify(data.memos || []));
         }
         firstLoad = false;
@@ -805,14 +798,11 @@ function openMemo() {
     renderMemoList();
   }
 }
-
 async function saveMemosToFirestore() {
   var sid = getSharedMemoId();
   if (!sid) return;
   var memos = JSON.parse(localStorage.getItem('memos') || '[]');
-  try {
-    await db.collection('memos').doc(sid).set({ memos: memos, updatedBy: myCode, ts: firebase.firestore.Timestamp.now() });
-  } catch(e) {}
+  try { await db.collection('memos').doc(sid).set({ memos: memos, updatedBy: myCode, ts: firebase.firestore.Timestamp.now() }); } catch(e) {}
 }
 
 function _saveSharedMemo(combined) {
@@ -821,38 +811,95 @@ function _saveSharedMemo(combined) {
   var autoTitle = firstLine.trim().split(/\s+/).slice(0, 10).join(' ');
   var memos = JSON.parse(localStorage.getItem('memos') || '[]');
   var date = new Date().toLocaleDateString('ko-KR');
-  memos.unshift({ title: autoTitle, content: combined, date: date, ts: Date.now() });
+  memos.unshift({ title: autoTitle, content: combined, date: date, ts: Date.now(), from: myCode });
   localStorage.setItem('memos', JSON.stringify(memos));
   saveMemosToFirestore();
   var memoScreen = document.getElementById('memoScreen');
   if (memoScreen && memoScreen.classList.contains('active')) renderMemoList();
+}
+function toggleMemoShare(i, ev) {
+  ev.stopPropagation();
+  if (!myCode) return;
+  var friends = JSON.parse(localStorage.getItem('friends') || '[]');
+  if (!friends.length) return;
+  var memos = JSON.parse(localStorage.getItem('memos') || '[]');
+  memos[i].shared = !memos[i].shared;
+  localStorage.setItem('memos', JSON.stringify(memos));
+  if (memos[i].shared) {
+    _pushMemoToFriends(memos[i], i);
+  } else {
+    _removeMemoFromFriends(i);
+  }
+  renderMemoList();
+}
+function _pushMemoToFriends(memo, idx) {
+  var friends = JSON.parse(localStorage.getItem('friends') || '[]');
+  friends.forEach(function(fCode) {
+    var roomId = [myCode, fCode].sort().join('_');
+    db.collection('rooms').doc(roomId).collection('sharedMemos').doc(myCode + '_' + idx).set({
+      title: memo.title || '',
+      content: memo.content || '',
+      date: memo.date || '',
+      from: myCode,
+      idx: idx,
+      updatedAt: Date.now()
+    }).catch(function(){});
+  });
+}
+function _removeMemoFromFriends(idx) {
+  var friends = JSON.parse(localStorage.getItem('friends') || '[]');
+  friends.forEach(function(fCode) {
+    var roomId = [myCode, fCode].sort().join('_');
+    db.collection('rooms').doc(roomId).collection('sharedMemos').doc(myCode + '_' + idx).delete().catch(function(){});
+  });
+}
+// 채팅방 진입 시 상대방 공유 메모 수신
+var _sharedMemoListener = null;
+function listenSharedMemos(friendCode) {
+  if (_sharedMemoListener) { _sharedMemoListener(); _sharedMemoListener = null; }
+  if (!myCode || !friendCode) return;
+  var roomId = [myCode, friendCode].sort().join('_');
+  _sharedMemoListener = db.collection('rooms').doc(roomId).collection('sharedMemos')
+    .where('from', '==', friendCode)
+    .onSnapshot(function(snap) {
+      var shared = [];
+      snap.forEach(function(d) { shared.push(d.data()); });
+      localStorage.setItem('sharedMemosFrom_' + friendCode, JSON.stringify(shared));
+      renderSharedMemos(friendCode);
+    });
+}
+function renderSharedMemos(friendCode) {
+  var el = document.getElementById('sharedMemoView');
+  if (!el) return;
+  var shared = JSON.parse(localStorage.getItem('sharedMemosFrom_' + friendCode) || '[]');
+  if (!shared.length) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="shared-memo-header"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> 공유된 메모</div>' +
+    shared.map(function(m) {
+      return '<div class="shared-memo-card"><div class="memo-card-title">' + esc(m.title||'제목 없음') + '</div>' +
+             '<div class="memo-card-preview">' + esc((m.content||'').substring(0,80)) + '</div>' +
+             '<div class="memo-card-date">' + esc(m.date||'') + '</div></div>';
+    }).join('');
 }
 
 function renderMemoList() {
   var rawMemos = JSON.parse(localStorage.getItem('memos') || '[]');
   var el = document.getElementById('memoList');
   var isEn = localStorage.getItem('lang') === 'en';
-  // 원본 인덱스 보존 후 ts 기준 내림차순 정렬
   var memos = rawMemos.map(function(m, i) { return Object.assign({}, m, {_idx: i}); });
   memos.sort(function(a, b) { return (b.ts||0) - (a.ts||0); });
   if (!memos.length) { el.innerHTML = '<div class="empty-state">' + (isEn ? 'No memos yet' : '메모가 없습니다') + '</div>'; return; }
-  var SVG_LINK = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
-  var SVG_TRASH = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>';
   el.innerHTML = memos.map(function(m) {
     var i = m._idx;
     var isFromFriend = m.from && m.from !== myCode;
-    var shareIcon = isFromFriend
-      ? '<div style="position:absolute;top:10px;right:10px;opacity:0.55;color:var(--subtext);">' + SVG_LINK + '</div>'
-      : '';
+    var shareIcon = isFromFriend ? '<div style="position:absolute;top:10px;right:10px;opacity:0.55;color:var(--subtext);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>' : '';
     return '<div class="memo-card" onclick="openEditMemo(' + i + ')" style="position:relative;">' +
       shareIcon +
       '<div class="memo-card-title">' + esc(m.title||'제목 없음') + '</div>' +
-      '<div class="memo-card-preview">' + esc((m.content||'').substring(0, 80)) + '</div>' +
+      '<div class="memo-card-preview">' + esc((m.content||'').substring(0,80)) + '</div>' +
       '<div class="memo-card-footer">' +
         '<span class="memo-card-date">' + (m.date||'') + '</span>' +
-        '<button class="memo-del" onclick="event.stopPropagation();deleteMemo(' + i + ')">' + SVG_TRASH + '</button>' +
-      '</div>' +
-    '</div>';
+        '<button class="memo-del" onclick="event.stopPropagation();deleteMemo(' + i + ')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>' +
+      '</div></div>';
   }).join('');
 }
 function openNewMemo() {
@@ -900,19 +947,20 @@ function saveMemo() {
   if (!title && !content) { showAlert('내용을 입력하세요'); return; }
   const memos = JSON.parse(localStorage.getItem('memos') || '[]');
   const date = new Date().toLocaleDateString('ko-KR');
-  const ts = Date.now();
   if (editingMemoIndex !== null) {
-    memos[editingMemoIndex] = Object.assign({}, memos[editingMemoIndex], { title, content, date, ts, from: myCode });
+    memos[editingMemoIndex] = { title, content, date, shared: memos[editingMemoIndex].shared || false };
   } else {
-    memos.unshift({ title, content, date, ts, from: myCode });
+    var friends = JSON.parse(localStorage.getItem('friends') || '[]');
+    var defaultShared = friends.length > 0;
+    var newMemo = { title, content, date, shared: defaultShared };
+    memos.unshift(newMemo);
+    if (defaultShared) _pushMemoToFriends(newMemo, 0);
   }
-  localStorage.setItem('memos', JSON.stringify(memos));
-  saveMemosToFirestore();
-  closeMemoEditor();
+  localStorage.setItem('memos', JSON.stringify(memos)); closeMemoEditor();
 }
 function deleteMemo(i) {
   showConfirm('메모를 삭제할까요?', function() {
-    const memos = JSON.parse(localStorage.getItem('memos') || '[]'); memos.splice(i, 1);
+    const memos = JSON.parse(localStorage.getItem('memos') || '[]'); memos.splice(i,1);
     localStorage.setItem('memos', JSON.stringify(memos));
     saveMemosToFirestore();
     renderMemoList();
@@ -1280,6 +1328,7 @@ function openChat(friendCode) {
   if (roomListener) { roomListener(); roomListener = null; }
   listenMessages();
   listenRoomSettings();
+  listenSharedMemos(friendCode);
   // 읽지 않은 메시지 삭제 타이머 시작
   markMessagesRead();
 }
@@ -2581,9 +2630,8 @@ function applyLang() {
   _setText('fontSmLabel', en ? 'S' : '소');
   _setText('fontMdLabel', en ? 'M' : '중');
   _setText('fontLgLabel', en ? 'L' : '대');
-  _setText('changeCodeBtn', en ? 'Change' : '변경');
-  _setText('closeSecretBtn', en ? 'Save' : '저장');
-  _setText('shareTargetEditBtn', en ? 'Select' : 'Select');
+  _setText('changeCodeBtn', en ? 'Change ID Code' : '식별 코드 변경');
+  _setText('closeSecretBtn', en ? 'Close' : '닫기');
   _setText('closeAddFriendBtn', en ? 'Close' : '닫기');
   _setText('closeTimerBtn', en ? 'Close' : '닫기');
 
