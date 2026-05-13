@@ -457,8 +457,6 @@
         <div class="my-code-display" id="myCodeDisplaySettings" style="font-size:13px;padding:8px;"></div>
       </div>
 
-      <button class="settings-btn" style="background:var(--primary);width:100%;font-size:13px;color:#fff;" onclick="closeSecretSettings();openChangeCode();" id="changeCodeBtn">식별 코드 변경</button>
-
       <div class="secret-setting-item" style="flex-direction:column;align-items:flex-start;gap:8px;">
         <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
           <div class="settings-label" style="color:var(--chat-text);font-size:14px;" id="shareTargetLabel">공유 대상</div>
@@ -466,6 +464,8 @@
         </div>
         <div id="shareTargetList" style="width:100%;font-size:12px;color:var(--chat-text2);min-height:18px;"></div>
       </div>
+
+      <button class="settings-btn" style="background:var(--primary);width:100%;font-size:13px;color:#fff;" onclick="closeSecretSettings();openChangeCode();" id="changeCodeBtn">식별 코드 변경</button>
 
       <button class="modal-cancel" id="closeSecretBtn" style="color:var(--chat-text2);" onclick="closeSecretSettings()">닫기</button>
     </div>
