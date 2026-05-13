@@ -40,8 +40,7 @@ window.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('svgColorMode', 'off'); // 테마 색상
     localStorage.setItem('lang', 'en');
     localStorage.setItem('notifApp', 'true');
-    localStorage.setItem('notifCal', 'true');
-    localStorage.setItem('notifTodo', 'true');
+    localStorage.setItem('notifChat', 'true');
     localStorage.setItem('autoLock', 'true');
     localStorage.setItem('_defaultsSet', '1');
   }
@@ -449,8 +448,7 @@ function _doDeleteAllTags() {
 // ── SETTINGS ───────────────────────────────────────
 function openSettings() {
   document.getElementById('notifApp').checked = localStorage.getItem('notifApp') === 'true';
-  document.getElementById('notifCal').checked = localStorage.getItem('notifCal') === 'true';
-  document.getElementById('notifTodo').checked = localStorage.getItem('notifTodo') === 'true';
+  var nc = document.getElementById('notifChat'); if(nc) nc.checked = localStorage.getItem('notifChat') !== 'false';
   showScreen('settingsScreen');
   var t2 = localStorage.getItem('themeColor') || '#6C63FF';
   setTimeout(function(){ applyThemeBtnBorder(t2); updateIconStyleBtns(); updateSvgColorBtns(); }, 200);
@@ -688,7 +686,7 @@ function openTodo() {
         const data = snap.data();
         localStorage.setItem('todos', JSON.stringify(data.todos || []));
         if (!firstLoad && data.updatedBy && data.updatedBy !== myCode) {
-          if (localStorage.getItem('notifTodo') === 'true') sendNotification('할 일', '새로운 할 일이 있어요');
+          if (localStorage.getItem('notifApp') === 'true') sendNotification('할 일', '새로운 할 일이 있어요');
         }
         firstLoad = false;
       }
@@ -902,7 +900,7 @@ function openCalendar() {
         localStorage.setItem('habits', JSON.stringify(data.habits || {}));
         // 상대방이 업데이트한 경우만 알림
         if (!firstCalLoad && data.updatedBy && data.updatedBy !== myCode) {
-          if (localStorage.getItem('notifCal') === 'true') sendNotification('달력', '새 일정이 있어요');
+          if (localStorage.getItem('notifApp') === 'true') sendNotification('달력', '새 일정이 있어요');
         }
         firstCalLoad = false;
       }
@@ -1673,6 +1671,39 @@ function toggleAutoLock(enabled) {
   localStorage.setItem('autoLock', enabled ? 'true' : 'false');
 }
 
+
+function openShareTargetPicker() {
+  var friends = JSON.parse(localStorage.getItem('friends') || '[]');
+  var targets = JSON.parse(localStorage.getItem('shareTargets') || '[]');
+  var list = document.getElementById('shareTargetPickerList');
+  if (!friends.length) {
+    list.innerHTML = '<div style="color:var(--subtext,#888);font-size:13px;text-align:center;">등록된 친구가 없습니다</div>';
+  } else {
+    list.innerHTML = friends.map(function(f) {
+      var checked = targets.includes(f);
+      return '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">' +
+        '<input type="checkbox" value="' + f + '" ' + (checked ? 'checked' : '') +
+        ' style="width:18px;height:18px;accent-color:var(--primary,#6C63FF);cursor:pointer;"/>' +
+        '<span style="font-size:14px;font-weight:600;">' + f + '</span></label>';
+    }).join('');
+  }
+  document.getElementById('shareTargetModal').style.display = 'flex';
+}
+function closeShareTargetPicker() {
+  var boxes = document.querySelectorAll('#shareTargetPickerList input[type=checkbox]');
+  var targets = [];
+  boxes.forEach(function(b) { if (b.checked) targets.push(b.value); });
+  localStorage.setItem('shareTargets', JSON.stringify(targets));
+  document.getElementById('shareTargetModal').style.display = 'none';
+  renderShareTargetList();
+}
+function renderShareTargetList() {
+  var el = document.getElementById('shareTargetList');
+  if (!el) return;
+  var targets = JSON.parse(localStorage.getItem('shareTargets') || '[]');
+  el.textContent = targets.length ? targets.join(', ') : '없음';
+}
+
 function openSecretSettings() {
   initTitleInputs();
   document.getElementById('myCodeDisplaySettings').textContent = myCode;
@@ -1832,6 +1863,9 @@ function toggleSettingsNotif(type, enabled) {
     notifEnabled = enabled;
     localStorage.setItem('notifEnabled', enabled ? 'true' : 'false');
   }
+  if (type === 'chat') {
+    localStorage.setItem('notifChat', enabled ? 'true' : 'false');
+  }
 }
 
 function toggleNotification() {
@@ -1977,7 +2011,7 @@ function openStats() {
         var d = snap.data();
         localStorage.setItem("hStats", JSON.stringify(d.data || {}));
         if (!firstLoad && d.updatedBy && d.updatedBy !== myCode) {
-          if (localStorage.getItem('notifTodo') === 'true') sendNotification('통계', '건강 기록이 업데이트됐어요');
+          if (localStorage.getItem('notifApp') === 'true') sendNotification('통계', '건강 기록이 업데이트됐어요');
         }
         firstLoad = false;
         renderStatsUI();
@@ -2434,9 +2468,8 @@ function applyLang() {
   _setText('notifSectionLabel', en ? 'Notifications' : '알림');
   _setText('langLabel', en ? 'Language' : '언어');
   _setText('infoLabel', en ? 'Info' : '정보');
-  _setText('notifAppLabel', en ? 'App Alerts' : '앱 알림');
-  _setText('notifCalLabel', en ? 'Schedule Alerts' : '일정 알림');
-  _setText('notifTodoLabel', en ? 'To-Do Alerts' : '할 일 알림');
+  _setText('notifAppLabel', 'App Alerts');
+  _setText('notifChatLabel', 'Event Alerts');
 
   // 메모
   _setText('newMemoBtn', '+ New');
@@ -2522,9 +2555,8 @@ function applyLang() {
   _setText('calStreakLabel', en ? 'Streak' : '연속 달성');
 
   // 알림 토글
-  _setText('notifAppLabel', en ? 'App Alerts' : '앱 알림');
-  _setText('notifCalLabel', en ? 'Schedule Alerts' : '일정 알림');
-  _setText('notifTodoLabel', en ? 'To-Do Alerts' : '할 일 알림');
+  _setText('notifAppLabel', 'App Alerts');
+  _setText('notifChatLabel', 'Event Alerts');
 
   // 닉네임 설정
   _setText('nicknameLabel', en ? 'Set your nickname' : '닉네임을 설정하세요');
