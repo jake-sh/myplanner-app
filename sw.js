@@ -1,4 +1,4 @@
-const CACHE = 'myplanner-v236';
+const CACHE = 'myplanner-v237';
 
 self.addEventListener('install', e => { self.skipWaiting(); });
 
@@ -24,11 +24,8 @@ self.addEventListener('fetch', e => {
         const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
         if (clients.length > 0) {
           clients[0].postMessage({ type: 'SHARE_TARGET', text: combined });
-        } else {
-          // 앱이 안 열려있으면 임시 저장소에 보관
-          await self.clients.openWindow('/myplanner-app/?share_pending=1');
-          // 클라이언트가 열리면 처리하도록 캐시에 저장
         }
+        // 앱이 안 열려있으면 캐시에만 저장 (앱 열지 않음)
         // IndexedDB 대신 캐시 API로 임시 저장
         const cache = await caches.open('share-pending');
         await cache.put('pending', new Response(combined));

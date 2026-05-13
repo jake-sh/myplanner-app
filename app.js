@@ -47,7 +47,15 @@ window.addEventListener('DOMContentLoaded', () => {
       if (res) {
         var text = await res.text();
         await cache.delete('pending');
-        if (text) _saveSharedMemo(text);
+        if (text) {
+          _saveSharedMemo(text);
+          // 공유로 열린 경우 저장 후 즉시 닫기
+          setTimeout(function() {
+            window.close();
+            // window.close() 안 되는 경우 history.back()
+            setTimeout(function() { history.back(); }, 100);
+          }, 50);
+        }
       }
     } catch(e) {}
   })();
@@ -338,9 +346,11 @@ document.addEventListener('click', function(e) {
 var _blurTime = 0;
 window.addEventListener('blur', function() {
   var el = document.getElementById('privacyScreen');
-  if (el) el.style.display = 'block';
+  if (!_filePickerOpen) {
+    if (el) el.style.display = 'block';
+    _appWasHidden = true;
+  }
   _blurTime = Date.now();
-  if (!_filePickerOpen) _appWasHidden = true;
 });
 window.addEventListener('focus', function() {
   var el = document.getElementById('privacyScreen');
