@@ -1977,9 +1977,7 @@ function renderStatsUI() {
 
   var addHtml = '<div style="text-align:right;margin-bottom:12px;"><button id="openSmBtn" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;">' + (localStorage.getItem('lang')==='en' ? '+ Add' : '+ 입력') + '</button></div>';
 
-  var chartHtml = '<div style="background:#1a1a1a;border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.18);margin-bottom:16px;">'
-    + tabHtml
-    + '<div style="font-size:14px;font-weight:700;color:#f1f5f9;">' + cat.emoji + " " + statLabel(curSC) + '</div><div style="font-size:11px;color:#94a3b8;margin-bottom:12px;">' + (localStorage.getItem('lang')==='en' ? 'Unit: ' : '단위: ') + statUnit(curSC) + '</div>';
+  var chartHtml = '<div style="background:#1A1A1A;border:1.5px solid #2A2A2A;border-radius:16px;padding:16px;margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:#f1f5f9;">' + cat.emoji + " " + statLabel(curSC) + '</div><div style="font-size:11px;color:#94a3b8;margin-bottom:12px;">' + (localStorage.getItem('lang')==='en' ? 'Unit: ' : '단위: ') + statUnit(curSC) + '</div>';
   if (entries.length === 0) {
     chartHtml += '<div style="text-align:center;color:#64748b;font-size:13px;padding:30px 0;">데이터가 없어요.<br>+ 입력으로 추가해보세요!</div>';
   } else {
@@ -1998,7 +1996,7 @@ function renderStatsUI() {
     listHtml += row;
   });
 
-  fc.innerHTML = '<div style="padding:16px;">' + addHtml + chartHtml + listHtml + '</div>';
+  fc.innerHTML = '<div style="padding:16px;">' + addHtml + tabHtml + chartHtml + listHtml + '</div>';
 
   // 이벤트 바인딩
   fc.querySelectorAll("[data-scat]").forEach(function(btn) {
