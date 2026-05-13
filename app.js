@@ -32,24 +32,24 @@ let editingMemoIndex = null;
 
 // ── INIT ───────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
-  // ── Web Share Target 처리 ──
-  (function() {
-    var params = new URLSearchParams(window.location.search);
-    var title = params.get('title') || '';
-    var text  = params.get('text')  || '';
-    var url   = params.get('url')   || '';
-    var combined = [title, text, url].filter(Boolean).join('\n').trim();
-    if (combined) {
-      // 자동 제목: 첫 줄 10토큰
-      var firstLine = combined.split('\n')[0];
-      var autoTitle = firstLine.trim().split(/\s+/).slice(0, 10).join(' ');
-      var memos = JSON.parse(localStorage.getItem('memos') || '[]');
-      var date = new Date().toLocaleDateString('ko-KR');
-      memos.unshift({ title: autoTitle, content: combined, date: date });
-      localStorage.setItem('memos', JSON.stringify(memos));
-      // URL 파라미터 제거 (히스토리 오염 방지)
-      history.replaceState(null, '', window.location.pathname);
+  // ── Web Share Target POST 처리 (SW → 앱 메시지) ──
+  navigator.serviceWorker && navigator.serviceWorker.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'SHARE_TARGET') {
+      _saveSharedMemo(e.data.text);
     }
+  });
+  // ── SW pending 처리 (앱이 닫혀있다가 열린 경우) ──
+  (async function() {
+    if (!('caches' in window)) return;
+    try {
+      var cache = await caches.open('share-pending');
+      var res = await cache.match('pending');
+      if (res) {
+        var text = await res.text();
+        await cache.delete('pending');
+        if (text) _saveSharedMemo(text);
+      }
+    } catch(e) {}
   })();
 
   // ── 최초 실행 시 디폴트값 설정 ──
@@ -763,6 +763,19 @@ function deleteTodo(i) {
 
 // ── 메모 ───────────────────────────────────────────
 function openMemo() { renderMemoList(); showScreen('memoScreen'); }
+
+function _saveSharedMemo(combined) {
+  if (!combined) return;
+  var firstLine = combined.split('\n')[0];
+  var autoTitle = firstLine.trim().split(/\s+/).slice(0, 10).join(' ');
+  var memos = JSON.parse(localStorage.getItem('memos') || '[]');
+  var date = new Date().toLocaleDateString('ko-KR');
+  memos.unshift({ title: autoTitle, content: combined, date: date });
+  localStorage.setItem('memos', JSON.stringify(memos));
+  // 메모 화면이 열려있으면 리스트 갱신
+  var memoScreen = document.getElementById('memoScreen');
+  if (memoScreen && memoScreen.classList.contains('active')) renderMemoList();
+}
 function toggleMemoShare(i, ev) {
   ev.stopPropagation();
   if (!myCode) return;
