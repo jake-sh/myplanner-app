@@ -398,7 +398,7 @@ function openTag() {
   var en = localStorage.getItem('lang') === 'en';
   setTimeout(function() {
     var b = document.getElementById('tagBackBtn');
-    if (b) b.textContent = en ? '← Back' : '← 뒤로';
+    if (b) b.textContent = en ? '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>' : '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>';
     var t = document.getElementById('tagTitle');
     if (t) t.textContent = en ? 'Tags' : '태그';
     var d = document.getElementById('tagDeleteAllBtn');
@@ -745,6 +745,70 @@ function deleteTodo(i) {
 
 // ── 메모 ───────────────────────────────────────────
 function openMemo() { renderMemoList(); showScreen('memoScreen'); }
+function toggleMemoShare(i, ev) {
+  ev.stopPropagation();
+  if (!myCode) { showAlert('채팅 코드를 먼저 설정하세요'); return; }
+  var friends = JSON.parse(localStorage.getItem('friends') || '[]');
+  if (!friends.length) { showAlert('연동할 친구가 없습니다'); return; }
+  var memos = JSON.parse(localStorage.getItem('memos') || '[]');
+  memos[i].shared = !memos[i].shared;
+  localStorage.setItem('memos', JSON.stringify(memos));
+  if (memos[i].shared) {
+    _pushMemoToFriends(memos[i], i);
+  } else {
+    _removeMemoFromFriends(i);
+  }
+  renderMemoList();
+}
+function _pushMemoToFriends(memo, idx) {
+  var friends = JSON.parse(localStorage.getItem('friends') || '[]');
+  friends.forEach(function(fCode) {
+    var roomId = [myCode, fCode].sort().join('_');
+    db.collection('rooms').doc(roomId).collection('sharedMemos').doc(myCode + '_' + idx).set({
+      title: memo.title || '',
+      content: memo.content || '',
+      date: memo.date || '',
+      from: myCode,
+      idx: idx,
+      updatedAt: Date.now()
+    }).catch(function(){});
+  });
+}
+function _removeMemoFromFriends(idx) {
+  var friends = JSON.parse(localStorage.getItem('friends') || '[]');
+  friends.forEach(function(fCode) {
+    var roomId = [myCode, fCode].sort().join('_');
+    db.collection('rooms').doc(roomId).collection('sharedMemos').doc(myCode + '_' + idx).delete().catch(function(){});
+  });
+}
+// 채팅방 진입 시 상대방 공유 메모 수신
+var _sharedMemoListener = null;
+function listenSharedMemos(friendCode) {
+  if (_sharedMemoListener) { _sharedMemoListener(); _sharedMemoListener = null; }
+  if (!myCode || !friendCode) return;
+  var roomId = [myCode, friendCode].sort().join('_');
+  _sharedMemoListener = db.collection('rooms').doc(roomId).collection('sharedMemos')
+    .where('from', '==', friendCode)
+    .onSnapshot(function(snap) {
+      var shared = [];
+      snap.forEach(function(d) { shared.push(d.data()); });
+      localStorage.setItem('sharedMemosFrom_' + friendCode, JSON.stringify(shared));
+      renderSharedMemos(friendCode);
+    });
+}
+function renderSharedMemos(friendCode) {
+  var el = document.getElementById('sharedMemoView');
+  if (!el) return;
+  var shared = JSON.parse(localStorage.getItem('sharedMemosFrom_' + friendCode) || '[]');
+  if (!shared.length) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="shared-memo-header"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> 공유된 메모</div>' +
+    shared.map(function(m) {
+      return '<div class="shared-memo-card"><div class="memo-card-title">' + esc(m.title||'제목 없음') + '</div>' +
+             '<div class="memo-card-preview">' + esc((m.content||'').substring(0,80)) + '</div>' +
+             '<div class="memo-card-date">' + esc(m.date||'') + '</div></div>';
+    }).join('');
+}
+
 function renderMemoList() {
   const memos = JSON.parse(localStorage.getItem('memos') || '[]');
   const el = document.getElementById('memoList');
@@ -756,7 +820,10 @@ function renderMemoList() {
       <div class="memo-card-preview">${esc((m.content||'').substring(0,80))}</div>
       <div class="memo-card-footer">
         <span class="memo-card-date">${m.date||''}</span>
-        <button class="memo-del" onclick="event.stopPropagation();deleteMemo(${i})">🗑</button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="memo-share-btn ${m.shared ? 'on' : ''}" onclick="toggleMemoShare(${i},event)" title="친구 공유"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span class="memo-share-label">${m.shared ? 'ON' : 'OFF'}</span></button>
+          <button class="memo-del" onclick="event.stopPropagation();deleteMemo(${i})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
+        </div>
       </div>
     </div>`).join('');
 }
@@ -766,14 +833,35 @@ function openNewMemo() {
   document.getElementById('memoTitleInput').value = '';
   document.getElementById('memoContentInput').value = '';
   showScreen('memoEditorScreen');
+  _bindMemoAutoTitle();
+}
+function openEditMemo_bindAutoTitle() { _bindMemoAutoTitle(); }
+function _bindMemoAutoTitle() {
+  var contentEl = document.getElementById('memoContentInput');
+  var titleEl = document.getElementById('memoTitleInput');
+  if (!contentEl || !titleEl) return;
+  contentEl._autoTitleBound = true;
+  contentEl.oninput = function() {
+    // 제목이 사용자가 직접 수정한 경우는 덮어쓰지 않음
+    if (titleEl.dataset.userEdited === '1') return;
+    var firstLine = contentEl.value.split('\n')[0];
+    var tokens = firstLine.trim().split(/\s+/).slice(0, 10);
+    titleEl.value = tokens.join(' ');
+  };
+  titleEl.oninput = function() {
+    titleEl.dataset.userEdited = '1';
+  };
 }
 function openEditMemo(i) {
   editingMemoIndex = i;
   const memos = JSON.parse(localStorage.getItem('memos') || '[]');
   document.getElementById('memoEditorTitle').textContent = '메모 편집';
-  document.getElementById('memoTitleInput').value = memos[i].title || '';
+  var titleEl = document.getElementById('memoTitleInput');
+  titleEl.value = memos[i].title || '';
+  titleEl.dataset.userEdited = '1'; // 기존 메모는 제목 보존
   document.getElementById('memoContentInput').value = memos[i].content || '';
   showScreen('memoEditorScreen');
+  _bindMemoAutoTitle();
 }
 function closeMemoEditor() { renderMemoList(); showScreen('memoScreen'); }
 function saveMemo() {
@@ -1154,6 +1242,7 @@ function openChat(friendCode) {
   if (roomListener) { roomListener(); roomListener = null; }
   listenMessages();
   listenRoomSettings();
+  listenSharedMemos(friendCode);
   // 읽지 않은 메시지 삭제 타이머 시작
   markMessagesRead();
 }
@@ -1161,6 +1250,7 @@ function openChat(friendCode) {
 function backToFriendList() {
   if (messageListener) { messageListener(); messageListener = null; }
   if (roomListener) { roomListener(); roomListener = null; }
+  if (_sharedMemoListener) { _sharedMemoListener(); _sharedMemoListener = null; }
   Object.values(countdownTimers).forEach(t => clearInterval(t)); countdownTimers = {};
   activeFriendCode = null; chatRoomId = null;
   showFriendList();
@@ -2247,7 +2337,7 @@ const I18N = {
     todo: '할 일', schedule: '일정표', alarm: '알림',
     memo: '메모', goal: '목표', stats: '통계',
     project: '프로젝트', tag: '태그', calendar: '달력',
-    settings: '설정', back: '← 뒤로',
+    settings: '설정', back: '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>',
     settingsTitle: '설정', appNameLabel: '앱 이름',
     save: '저장', themeColor: '테마 색상',
     notifSection: '알림', notifApp: '앱 알림',
@@ -2268,7 +2358,7 @@ const I18N = {
     todo: 'To-Do', schedule: 'Schedule', alarm: 'Alarm',
     memo: 'Memo', goal: 'Goals', stats: 'Stats',
     project: 'Projects', tag: 'Tags', calendar: 'Calendar',
-    settings: 'Settings', back: '← Back',
+    settings: 'Settings', back: '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>',
     settingsTitle: 'Settings', appNameLabel: 'App Name',
     save: 'Save', themeColor: 'Theme Color',
     notifSection: 'Notifications', notifApp: 'App Alerts',
@@ -2327,8 +2417,8 @@ function applyLang() {
   _setText('featureTitle', document.getElementById('featureTitle') ? document.getElementById('featureTitle').textContent : '');
 
   // 뒤로가기
-  document.querySelectorAll('[data-i18n-back]').forEach(function(el){ el.textContent = en ? '← Back' : '← 뒤로'; });
-  _setText('memoListBack', en ? '← List' : '← 목록');
+  document.querySelectorAll('[data-i18n-back]').forEach(function(el){ el.textContent = en ? '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>' : '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>'; });
+  _setText('memoListBack', en ? '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>' : '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>');
 
   // 설정 라벨
   _setText('appNameLabel', en ? 'App Name' : '앱 이름');
@@ -2366,7 +2456,7 @@ function applyLang() {
   _setText('regenCodeBtn', en ? '🔄 Regenerate' : '🔄 코드 재생성');
 
   // 태그 화면
-  _setText('tagBackBtn', en ? '← Back' : '← 뒤로');
+  _setText('tagBackBtn', en ? '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>' : '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>');
   _setText('tagTitle', en ? 'Tags' : '태그');
   _setText('tagDeleteAllBtn', en ? 'Clear All' : '전체삭제');
   _setText('tagAutoDeleteLabel', en ? 'Auto Delete' : '자동삭제');
@@ -2411,7 +2501,7 @@ function applyLang() {
   if(msgEl) msgEl.placeholder = en ? 'Type a message...' : '메시지 입력...';
 
   // 이미지 다운로드
-  _setText('imgDownloadBtn', en ? '⬇ Save' : '⬇ 저장');
+  _setText('imgDownloadBtn', en ? '저장' : '저장');
 
   // 보안설정 내부 버튼
   var dBtn = document.getElementById('themeDarkBtn'); if(dBtn) dBtn.textContent = en ? 'Dark' : '다크';
@@ -2437,7 +2527,7 @@ function applyLang() {
   // 닉네임 설정
   _setText('nicknameLabel', en ? 'Set your nickname' : '닉네임을 설정하세요');
   _setText('nicknameSetBtn', en ? 'Set' : '설정');
-  _setText('exitChatBtn', en ? '← Exit' : '← 나가기');
+  _setText('exitChatBtn', en ? '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>' : '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>');
   var nnInput = document.getElementById('nicknameInput');
   if (nnInput) nnInput.placeholder = en ? 'Enter nickname' : '닉네임 입력';
 
