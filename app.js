@@ -37,13 +37,18 @@ window.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('darkMode', 'true');
     localStorage.setItem('themeColor', '#6b7280');
     localStorage.setItem('iconStyle', 'svg');
-    localStorage.setItem('svgColorMode', 'off'); // 테마 색상
+    localStorage.setItem('svgColorMode', 'off');
     localStorage.setItem('lang', 'en');
     localStorage.setItem('notifApp', 'true');
     localStorage.setItem('notifCal', 'true');
     localStorage.setItem('notifTodo', 'true');
     localStorage.setItem('autoLock', 'true');
     localStorage.setItem('_defaultsSet', '1');
+  }
+  // 기존 사용자도 다크모드 기본값 강제 적용 (한 번만)
+  if (!localStorage.getItem('_darkDefault')) {
+    localStorage.setItem('darkMode', 'true');
+    localStorage.setItem('_darkDefault', '1');
   }
 
   // 1. 테마/다크/타이틀 즉시 적용
@@ -1978,7 +1983,7 @@ function renderStatsUI() {
 
   var addHtml = '<div style="text-align:right;margin-bottom:12px;"><button id="openSmBtn" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;">' + (localStorage.getItem('lang')==='en' ? '+ Add' : '+ 입력') + '</button></div>';
 
-  var chartHtml = '<div style="background:' + boxBg + ";border:1.5px solid " + boxBd + ";border-radius:16px;padding:16px;margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:" + titleCl + ";">' + cat.emoji + " " + statLabel(curSC) + '</div><div style="font-size:11px;color:#94a3b8;margin-bottom:12px;">' + (localStorage.getItem('lang')==='en' ? 'Unit: ' : '단위: ') + statUnit(curSC) + '</div>';
+  var chartHtml = '<div style="background:' + boxBg + ';border:1.5px solid ' + boxBd + ';border-radius:16px;padding:16px;margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:' + titleCl + ';">' + cat.emoji + ' ' + statLabel(curSC) + '</div><div style="font-size:11px;color:#94a3b8;margin-bottom:12px;">' + (localStorage.getItem('lang')==='en' ? 'Unit: ' : '단위: ') + statUnit(curSC) + '</div>';
   if (entries.length === 0) {
     chartHtml += '<div style="text-align:center;color:#64748b;font-size:13px;padding:30px 0;">데이터가 없어요.<br>+ 입력으로 추가해보세요!</div>';
   } else {
@@ -1992,7 +1997,7 @@ function renderStatsUI() {
     var valDisplay = (curSC === 'bp' && e.dia != null)
       ? '<span style="font-size:15px;font-weight:700;color:' + cat.color + ';">' + e.value + '/' + e.dia + ' <small style="font-size:11px;color:#94a3b8;">mmHg</small></span>'
       : '<span style="font-size:15px;font-weight:700;color:' + cat.color + ';">' + e.value + ' <small style="font-size:11px;color:#94a3b8;">' + cat.unit + '</small></span>';
-    var row = '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:" + boxBg + ";border:1.5px solid " + boxBd + ";border-radius:12px;margin-bottom:6px;">'
+    var row = '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:' + boxBg + ';border:1.5px solid ' + boxBd + ';border-radius:12px;margin-bottom:6px;">'
       + '<span style="font-size:13px;color:' + dateCl + ';">' + e.date + '</span>'
       + valDisplay
       + '<button data-dcat="' + curSC + '" data-didx="' + origIdx + '" style="background:none;border:none;color:#cbd5e1;font-size:20px;cursor:pointer;">×</button>'
