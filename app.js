@@ -756,7 +756,7 @@ function renderMemoList() {
       <div class="memo-card-preview">${esc((m.content||'').substring(0,80))}</div>
       <div class="memo-card-footer">
         <span class="memo-card-date">${m.date||''}</span>
-        <button class="memo-del" onclick="event.stopPropagation();deleteMemo(${i})">🗑</button>
+        <button class="memo-del" onclick="event.stopPropagation();deleteMemo(${i})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
       </div>
     </div>`).join('');
 }
@@ -2410,7 +2410,7 @@ function applyLang() {
   _setText('regenCodeBtn', en ? '🔄 Regenerate' : '🔄 코드 재생성');
 
   // 태그 화면
-  _setText('tagBackBtn', en ? '← Back' : '← 뒤로');
+  // tagBackBtn은 SVG 아이콘 고정
   _setText('tagTitle', en ? 'Tags' : '태그');
   _setText('tagDeleteAllBtn', en ? 'Clear All' : '전체삭제');
   _setText('tagAutoDeleteLabel', en ? 'Auto Delete' : '자동삭제');
