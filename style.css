@@ -470,9 +470,9 @@ input:checked+.slider:before{transform:translateX(20px);}
 
 /* 달력 날짜 */
 .cal-day{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;}
-.cal-day.cal-color-done{background:#FFD8D8!important;color:#1e293b!important;border-radius:50%;}
-.cal-day.cal-color-red{background:#FAF4C0!important;color:#1e293b!important;border-radius:50%;}
-.cal-day.cal-color-green{background:#CEFBC9!important;color:#1e293b!important;border-radius:50%;}
+.cal-day.cal-color-done{background:#FFB3B3!important;color:#1e293b!important;border-radius:50%;}
+.cal-day.cal-color-red{background:#F5E84A!important;color:#1e293b!important;border-radius:50%;}
+.cal-day.cal-color-green{background:#8FF087!important;color:#1e293b!important;border-radius:50%;}
 .cal-day.cal-today{background:var(--primary)!important;color:#fff!important;border-radius:50%;}
 
 /* 메시지 행 */
