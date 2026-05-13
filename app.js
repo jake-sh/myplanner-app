@@ -2417,8 +2417,8 @@ function applyLang() {
   _setText('featureTitle', document.getElementById('featureTitle') ? document.getElementById('featureTitle').textContent : '');
 
   // 뒤로가기
-  document.querySelectorAll('[data-i18n-back]').forEach(function(el){ el.textContent = en ? '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>' : '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>'; });
-  _setText('memoListBack', en ? '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>' : '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>');
+  document.querySelectorAll('[data-i18n-back]').forEach(function(el){ el.innerHTML = '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>'; });
+  var mlb = document.getElementById('memoListBack'); if(mlb) mlb.innerHTML = '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>';
 
   // 설정 라벨
   _setText('appNameLabel', en ? 'App Name' : '앱 이름');
@@ -2456,7 +2456,7 @@ function applyLang() {
   _setText('regenCodeBtn', en ? '🔄 Regenerate' : '🔄 코드 재생성');
 
   // 태그 화면
-  _setText('tagBackBtn', en ? '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>' : '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>');
+  var _b_tagBackBtn = document.getElementById('tagBackBtn'); if(_b_tagBackBtn) _b_tagBackBtn.innerHTML = '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>';
   _setText('tagTitle', en ? 'Tags' : '태그');
   _setText('tagDeleteAllBtn', en ? 'Clear All' : '전체삭제');
   _setText('tagAutoDeleteLabel', en ? 'Auto Delete' : '자동삭제');
@@ -2527,7 +2527,7 @@ function applyLang() {
   // 닉네임 설정
   _setText('nicknameLabel', en ? 'Set your nickname' : '닉네임을 설정하세요');
   _setText('nicknameSetBtn', en ? 'Set' : '설정');
-  _setText('exitChatBtn', en ? '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>' : '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>');
+  var _b_exitChatBtn = document.getElementById('exitChatBtn'); if(_b_exitChatBtn) _b_exitChatBtn.innerHTML = '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>';
   var nnInput = document.getElementById('nicknameInput');
   if (nnInput) nnInput.placeholder = en ? 'Enter nickname' : '닉네임 입력';
 
