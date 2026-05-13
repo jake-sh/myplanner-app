@@ -2561,7 +2561,7 @@ function applyLang() {
   // 닉네임 설정
   _setText('nicknameLabel', en ? 'Set your nickname' : '닉네임을 설정하세요');
   _setText('nicknameSetBtn', en ? 'Set' : '설정');
-  var _b_exitChatBtn = document.getElementById('exitChatBtn'); if(_b_exitChatBtn) _b_exitChatBtn.innerHTML = '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg>';
+  var _b_exitChatBtn = document.getElementById('exitChatBtn'); if(_b_exitChatBtn) _b_exitChatBtn.innerHTML = '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"/></svg> ' + (localStorage.getItem('lang')==='en' ? 'Exit' : '나가기');
   var nnInput = document.getElementById('nicknameInput');
   if (nnInput) nnInput.placeholder = en ? 'Enter nickname' : '닉네임 입력';
 
