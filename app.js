@@ -1238,6 +1238,8 @@ function listenRoomSettings() {
       autoDeleteMinutes = req.minutes;
       localStorage.setItem('autoDeleteMin', autoDeleteMinutes);
       updateAutoDeleteLabel();
+      // 요청 보낸 쪽: 상대가 승인하면 timerModal 자동 닫기
+      closeTimerModal();
     }
   });
 }
