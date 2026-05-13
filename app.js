@@ -397,8 +397,7 @@ function openTag() {
   // 화면 표시 후 영문화 강제 적용
   var en = localStorage.getItem('lang') === 'en';
   setTimeout(function() {
-    var b = document.getElementById('tagBackBtn');
-    if (b) b.textContent = en ? '← Back' : '← 뒤로';
+    // tagBackBtn은 SVG 고정 - textContent 변경 안 함
     var t = document.getElementById('tagTitle');
     if (t) t.textContent = en ? 'Tags' : '태그';
     var d = document.getElementById('tagDeleteAllBtn');
