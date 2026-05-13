@@ -1230,8 +1230,10 @@ function listenRoomSettings() {
     }
     if (req.status === 'rejected') {
       document.getElementById('deleteRequestBanner')?.remove();
-      // 진입 이후 발생한 rejected만 알림
-      if (req.from === myCode && (req.updatedAt || 0) > _roomListenStartTime) showAlert('상대방이 변경을 거부했습니다');
+      if (req.from === myCode && (req.updatedAt || 0) > _roomListenStartTime) {
+        closeTimerModal();
+        showAlert('상대방이 변경을 거부했습니다');
+      }
     }
     if (req.status === 'approved') {
       document.getElementById('deleteRequestBanner')?.remove();
@@ -1542,18 +1544,31 @@ async function _doDeleteAllNow() {
 }
 
 function openTimerSetting() { document.getElementById('timerModal').style.display = 'flex'; }
-function closeTimerModal() { document.getElementById('timerModal').style.display = 'none'; }
+function closeTimerModal() {
+  document.getElementById('timerModal').style.display = 'none';
+  // 모달 상태 초기화 (대기 중 상태에서 닫힐 수 있으므로)
+  var opts = document.querySelector('#timerModal .timer-options');
+  var btn = document.getElementById('closeTimerBtn');
+  var desc = document.querySelector('#timerModal .modal-desc');
+  if (opts) opts.style.display = '';
+  if (btn) btn.style.display = '';
+  if (desc) { desc.textContent = '변경 시 상대방 동의가 필요합니다'; desc.style.color = '#94a3b8'; desc.style.fontSize = '12px'; }
+}
 async function setAutoDelete(min) {
-  closeTimerModal();
   if (!chatRoomId) {
-    autoDeleteMinutes = min; localStorage.setItem('autoDeleteMin', min); updateAutoDeleteLabel(); return;
+    autoDeleteMinutes = min; localStorage.setItem('autoDeleteMin', min); updateAutoDeleteLabel();
+    closeTimerModal(); return;
   }
+  // 모달 유지 - 대기 상태로 전환
+  document.querySelector('#timerModal .timer-options').style.display = 'none';
+  document.getElementById('closeTimerBtn').style.display = 'none';
+  var desc = document.querySelector('#timerModal .modal-desc');
+  if (desc) { desc.textContent = '상대방 승인 대기 중...'; desc.style.color = 'var(--primary)'; desc.style.fontSize = '14px'; }
+
   const reqId = Date.now().toString();
   await db.collection('rooms').doc(chatRoomId).set({
     deleteRequest: { from: myCode, minutes: min, id: reqId, status: 'pending', appliedTo: [], ts: firebase.firestore.Timestamp.now() }
   }, { merge: true });
-  // 요청자는 승인 대기 - 아직 변경 안 함
-  showAlert('상대방 승인 대기 중...');
 }
 function updateAutoDeleteLabel() { document.getElementById('autoDeleteLabel').textContent = `자동삭제: ${autoDeleteMinutes}분`; }
 
