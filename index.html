@@ -153,6 +153,7 @@
     <button onclick="showScreen('fakeApp')" class="back-btn" data-i18n-back="1">← 뒤로</button>
     <span id="memoTitle" class="sub-title">메모</span>
     <button class="sub-action-btn" onclick="openNewMemo()" id="newMemoBtn">+ 새 메모</button>
+
   </div>
   <div id="memoList" class="memo-list"></div>
 </div>
@@ -162,10 +163,13 @@
   <div class="sub-header">
     <button onclick="closeMemoEditor()" id="memoListBack" class="back-btn">← 목록</button>
     <span class="sub-title" id="memoEditorTitle" id="newMemoTitle">새 메모</span>
-    <button class="sub-action-btn" onclick="saveMemo()">저장</button>
+    <button id="memoSaveBtn" class="sub-action-btn" onclick="saveMemo()">저장</button>
   </div>
   <div class="memo-editor-wrap">
-    <input id="memoTitleInput" class="memo-title-input" type="text" id="memoTitlePlaceholder" placeholder="제목"/>
+    <div class="memo-title-wrap">
+      <input id="memoTitleInput" class="memo-title-input" type="text" placeholder="제목"/>
+      <button id="memoTitleClear" class="memo-title-clear" onclick="clearMemoTitle()" tabindex="-1">×</button>
+    </div>
     <textarea id="memoContentInput" class="memo-content-input" placeholder="내용을 입력하세요..."></textarea>
   </div>
 </div>

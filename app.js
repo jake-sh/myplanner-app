@@ -760,21 +760,60 @@ function renderMemoList() {
       </div>
     </div>`).join('');
 }
+// ── 메모 자동 제목 ────────────────────────────────────
+let memoAutoTitle = true;
+
+function getAutoMemoTitle(text) {
+  const firstLine = text.split('\n')[0].trim();
+  if (!firstLine) return '';
+  const tokens = firstLine.match(/\S+/g) || [];
+  return tokens.slice(0, 10).join(' ');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const contentEl = document.getElementById('memoContentInput');
+  const titleEl = document.getElementById('memoTitleInput');
+  if (!contentEl || !titleEl) return;
+
+  // 내용 입력 시 자동 제목 채우기
+  contentEl.addEventListener('input', function() {
+    if (!memoAutoTitle) return;
+    titleEl.value = getAutoMemoTitle(contentEl.value);
+  });
+
+  // 사용자가 제목을 직접 수정하면 자동모드 OFF, 비우면 ON
+  titleEl.addEventListener('input', function() {
+    memoAutoTitle = (titleEl.value === '');
+  });
+});
+
+function clearMemoTitle() {
+  const titleEl = document.getElementById('memoTitleInput');
+  if (!titleEl) return;
+  titleEl.value = '';
+  memoAutoTitle = true;
+  titleEl.focus();
+}
+
 function openNewMemo() {
   editingMemoIndex = null;
   document.getElementById('memoEditorTitle').textContent = '새 메모';
   document.getElementById('memoTitleInput').value = '';
   document.getElementById('memoContentInput').value = '';
+  memoAutoTitle = true;
   showScreen('memoEditorScreen');
 }
+
 function openEditMemo(i) {
   editingMemoIndex = i;
   const memos = JSON.parse(localStorage.getItem('memos') || '[]');
   document.getElementById('memoEditorTitle').textContent = '메모 편집';
   document.getElementById('memoTitleInput').value = memos[i].title || '';
   document.getElementById('memoContentInput').value = memos[i].content || '';
+  memoAutoTitle = false;
   showScreen('memoEditorScreen');
 }
+
 function closeMemoEditor() { renderMemoList(); showScreen('memoScreen'); }
 function saveMemo() {
   const title = document.getElementById('memoTitleInput').value.trim();
@@ -2347,7 +2386,7 @@ function applyLang() {
   _setText('notifTodoLabel', en ? 'To-Do Alerts' : '할 일 알림');
 
   // 메모
-  _setText('newMemoBtn', en ? '+ New Memo' : '+ 새 메모');
+  _setText('newMemoBtn', en ? '+ New' : '+ 새 메모');
   _setText('memoSaveBtn', en ? 'Save' : '저장');
   var memoTP = document.getElementById('memoTitleInput');
   if(memoTP) memoTP.placeholder = en ? 'Title' : '제목';
