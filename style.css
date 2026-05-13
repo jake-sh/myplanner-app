@@ -96,9 +96,10 @@ body:not(.dark-mode) .fake-title{color:var(--primary) !important;}
 
 /* 패턴 변경 화면 전용 - 메인화면에 영향 없음 */
 #setupGrid .menu-item .menu-icon svg { stroke: #444; transition: stroke 0.15s; }
-#setupGrid .menu-item .menu-label { color: #444; transition: color 0.15s; }
+#setupGrid .menu-item .menu-icon svg [fill="currentColor"] { fill: #444; transition: fill 0.15s; }
+#setupGrid .menu-item .menu-label { display: none; }
 #setupGrid .menu-item.active .menu-icon svg { stroke: #ffffff; }
-#setupGrid .menu-item.active .menu-label { color: #ffffff; }
+#setupGrid .menu-item.active .menu-icon svg [fill="currentColor"] { fill: #ffffff; }
 .menu-icon{font-size:30px;}
 .menu-label{font-size:12px;font-weight:700;color:var(--text);opacity:0.75;}
 
