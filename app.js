@@ -32,6 +32,26 @@ let editingMemoIndex = null;
 
 // ── INIT ───────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
+  // ── Web Share Target 처리 ──
+  (function() {
+    var params = new URLSearchParams(window.location.search);
+    var title = params.get('title') || '';
+    var text  = params.get('text')  || '';
+    var url   = params.get('url')   || '';
+    var combined = [title, text, url].filter(Boolean).join('\n').trim();
+    if (combined) {
+      // 자동 제목: 첫 줄 10토큰
+      var firstLine = combined.split('\n')[0];
+      var autoTitle = firstLine.trim().split(/\s+/).slice(0, 10).join(' ');
+      var memos = JSON.parse(localStorage.getItem('memos') || '[]');
+      var date = new Date().toLocaleDateString('ko-KR');
+      memos.unshift({ title: autoTitle, content: combined, date: date });
+      localStorage.setItem('memos', JSON.stringify(memos));
+      // URL 파라미터 제거 (히스토리 오염 방지)
+      history.replaceState(null, '', window.location.pathname);
+    }
+  })();
+
   // ── 최초 실행 시 디폴트값 설정 ──
   if (!localStorage.getItem('_defaultsSet')) {
     localStorage.setItem('darkMode', 'true');
