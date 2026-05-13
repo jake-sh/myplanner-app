@@ -248,11 +248,20 @@ function checkSetupDot(x, y) {
 
 function highlightSetupDot(dot, on) {
   const el = document.querySelector(`#setupGrid [data-dot="${dot}"]`);
-  if (el) el.classList.toggle('active', on);
+  if (el) {
+    el.classList.toggle('active', on);
+    // fill 속성이 있는 svg path/circle도 함께 처리
+    el.querySelectorAll('svg [fill="currentColor"]').forEach(function(p) {
+      p.style.fill = on ? '#ffffff' : '#444';
+    });
+  }
 }
 
 function clearSetupDots() {
-  document.querySelectorAll('#setupGrid .menu-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('#setupGrid .menu-item').forEach(el => {
+    el.classList.remove('active');
+    el.querySelectorAll('svg [fill="currentColor"]').forEach(function(p) { p.style.fill = ''; });
+  });
 }
 
 function savePattern() {
