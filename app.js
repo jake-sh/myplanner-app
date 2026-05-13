@@ -1888,14 +1888,10 @@ function hideInAppNotif() {
 
 // -- Health Stats --
 var STAT_CATS = {
-  weight:     { label: "체중",   labelEn: "Weight",      unit: "kg",    color: "#4A90D9", emoji: "⚖️" },
-  bp_sys:     { label: "혈압수", labelEn: "BP(sys)",     unit: "mmHg",  color: "#ef4444", emoji: "🫀" },
-  bp_dia:     { label: "혈압이", labelEn: "BP(dia)",     unit: "mmHg",  color: "#f97316", emoji: "🫀" },
-  blood_sugar:{ label: "혈당",   labelEn: "Blood Sugar", unit: "mg/dL", color: "#a855f7", emoji: "🩸" },
-  sleep:      { label: "수면",   labelEn: "Sleep",       unit: "h",     color: "#6366f1", emoji: "😴" },
-  steps:      { label: "걸음",   labelEn: "Steps",       unit: "steps", color: "#22c55e", emoji: "🚶" },
-  water:      { label: "물",     labelEn: "Water",       unit: "L",     color: "#06b6d4", emoji: "💧" },
-  exercise:   { label: "운동",   labelEn: "Exercise",    unit: "min",   color: "#f59e0b", emoji: "🏃" }
+  weight:   { label: "체중",   labelEn: "Weight",   unit: "kg",    color: "#4A90D9", emoji: "⚖️" },
+  bp:       { label: "혈압",   labelEn: "BP",       unit: "mmHg",  color: "#ef4444", emoji: "🫀" },
+  steps:    { label: "걸음수", labelEn: "Steps",    unit: "steps", color: "#22c55e", emoji: "🚶" },
+  exercise: { label: "운동",   labelEn: "Exercise", unit: "min",   color: "#f59e0b", emoji: "🏃" }
 };
 
 function statLabel(k) {
@@ -1988,15 +1984,18 @@ function renderStatsUI() {
   var listHtml = '<div style="font-size:13px;font-weight:700;color:#64748b;margin-bottom:8px;">' + (localStorage.getItem('lang')==='en' ? 'Recent Records' : '최근 기록') + '</div>';
   entries.slice().reverse().slice(0,10).forEach(function(e, i) {
     var origIdx = entries.length - 1 - i;
+    var valDisplay = (curSC === 'bp' && e.dia != null)
+      ? '<span style="font-size:15px;font-weight:700;color:' + cat.color + ';">' + e.value + '/' + e.dia + ' <small style="font-size:11px;color:#94a3b8;">mmHg</small></span>'
+      : '<span style="font-size:15px;font-weight:700;color:' + cat.color + ';">' + e.value + ' <small style="font-size:11px;color:#94a3b8;">' + cat.unit + '</small></span>';
     var row = '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#fff;border-radius:12px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,.05);">'
       + '<span style="font-size:13px;color:#64748b;">' + e.date + '</span>'
-      + '<span style="font-size:15px;font-weight:700;color:' + cat.color + ';">' + e.value + ' <small style="font-size:11px;color:#94a3b8;">' + cat.unit + '</small></span>'
+      + valDisplay
       + '<button data-dcat="' + curSC + '" data-didx="' + origIdx + '" style="background:none;border:none;color:#cbd5e1;font-size:20px;cursor:pointer;">×</button>'
       + '</div>';
     listHtml += row;
   });
 
-  fc.innerHTML = '<div style="padding:16px;">' + addHtml + tabHtml + chartHtml + listHtml + '</div>';
+  fc.innerHTML = '<div style="padding:16px;">' + tabHtml + addHtml + chartHtml + listHtml + '</div>';
 
   // 이벤트 바인딩
   fc.querySelectorAll("[data-scat]").forEach(function(btn) {
@@ -2028,37 +2027,59 @@ function drawSC(canvas, entries, cat) {
   canvas.style.height = H + "px";
   var ctx = canvas.getContext("2d");
   ctx.scale(dpr, dpr);
-  var vals = entries.map(function(e){return parseFloat(e.value);});
-  var mn = Math.min.apply(null,vals), mx = Math.max.apply(null,vals), rng = mx-mn||1;
   var pL=40,pR=10,pT=12,pB=24,gW=W-pL-pR,gH=H-pT-pB;
+
+  // 혈압: sys(수축) + dia(이완) 두 라인
+  var isBp = (curSC === 'bp');
+  var allVals = isBp
+    ? entries.map(function(e){return parseFloat(e.value);}).concat(entries.map(function(e){return parseFloat(e.dia||0);}))
+    : entries.map(function(e){return parseFloat(e.value);});
+  var mn=Math.min.apply(null,allVals), mx=Math.max.apply(null,allVals), rng=mx-mn||1;
+
   for(var g=0;g<=4;g++){
     var gy=pT+(gH/4)*g;
-    ctx.strokeStyle="#f1f5f9";ctx.lineWidth=1;
+    ctx.strokeStyle="#333";ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(pL,gy);ctx.lineTo(W-pR,gy);ctx.stroke();
     ctx.fillStyle="#94a3b8";ctx.font="9px sans-serif";ctx.textAlign="right";
     ctx.fillText((mx-(rng/4)*g).toFixed(1),pL-3,gy+3);
   }
-  var pts=entries.map(function(e,i){return{
-    x:pL+(entries.length>1?(gW/(entries.length-1))*i:gW/2),
-    y:pT+gH-((parseFloat(e.value)-mn)/rng)*gH
-  };});
-  var gr=ctx.createLinearGradient(0,pT,0,pT+gH);
-  gr.addColorStop(0,cat.color+"44");gr.addColorStop(1,cat.color+"00");
-  ctx.beginPath();ctx.moveTo(pts[0].x,pT+gH);
-  pts.forEach(function(p){ctx.lineTo(p.x,p.y);});
-  ctx.lineTo(pts[pts.length-1].x,pT+gH);ctx.closePath();
-  ctx.fillStyle=gr;ctx.fill();
-  ctx.beginPath();ctx.strokeStyle=cat.color;ctx.lineWidth=2.5;ctx.lineJoin="round";
-  pts.forEach(function(p,i){i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);});
-  ctx.stroke();
-  pts.forEach(function(p,i){
-    ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);
-    ctx.fillStyle="#fff";ctx.fill();ctx.strokeStyle=cat.color;ctx.lineWidth=2;ctx.stroke();
-    if(entries.length<=7||i%Math.ceil(entries.length/6)===0){
-      ctx.fillStyle="#94a3b8";ctx.font="8px sans-serif";ctx.textAlign="center";
-      ctx.fillText(entries[i].date.slice(5),p.x,H-2);
-    }
-  });
+
+  function drawLine(vals, color, dashed) {
+    var pts = entries.map(function(e,i){return{
+      x:pL+(entries.length>1?(gW/(entries.length-1))*i:gW/2),
+      y:pT+gH-((vals[i]-mn)/rng)*gH
+    };});
+    ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.lineJoin="round";
+    if(dashed) ctx.setLineDash([4,4]); else ctx.setLineDash([]);
+    pts.forEach(function(p,i){i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);});
+    ctx.stroke();ctx.setLineDash([]);
+    pts.forEach(function(p,i){
+      ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);
+      ctx.fillStyle="#1A1A1A";ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=2;ctx.stroke();
+      if(entries.length<=7||i%Math.ceil(entries.length/6)===0){
+        ctx.fillStyle="#94a3b8";ctx.font="8px sans-serif";ctx.textAlign="center";
+        ctx.fillText(entries[i].date.slice(5),p.x,H-2);
+      }
+    });
+  }
+
+  if(isBp){
+    drawLine(entries.map(function(e){return parseFloat(e.value);}), "#ef4444", false);  // 수축
+    drawLine(entries.map(function(e){return parseFloat(e.dia||0);}), "#f97316", true);  // 이완
+  } else {
+    var gr=ctx.createLinearGradient(0,pT,0,pT+gH);
+    gr.addColorStop(0,cat.color+"44");gr.addColorStop(1,cat.color+"00");
+    var vals=entries.map(function(e){return parseFloat(e.value);});
+    var pts=entries.map(function(e,i){return{
+      x:pL+(entries.length>1?(gW/(entries.length-1))*i:gW/2),
+      y:pT+gH-((parseFloat(e.value)-mn)/rng)*gH
+    };});
+    ctx.beginPath();ctx.moveTo(pts[0].x,pT+gH);
+    pts.forEach(function(p){ctx.lineTo(p.x,p.y);});
+    ctx.lineTo(pts[pts.length-1].x,pT+gH);ctx.closePath();
+    ctx.fillStyle=gr;ctx.fill();
+    drawLine(vals, cat.color, false);
+  }
 }
 
 function openSM() {
@@ -2075,9 +2096,11 @@ function openSM() {
   overlay.innerHTML = '<div style="background:#fff;border-radius:20px;padding:24px;width:85%;max-width:320px;">'
     + '<div style="font-size:16px;font-weight:700;margin-bottom:16px;">수치 입력</div>'
     + '<div style="font-size:12px;color:#94a3b8;margin-bottom:4px;">카테고리</div>'
-    + '<select id="smCat" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:13px;margin-bottom:12px;box-sizing:border-box;">' + selOpts + '</select>'
+    + '<select id="smCat" onchange="smCatChange()" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:13px;margin-bottom:12px;box-sizing:border-box;">' + selOpts + '</select>'
     + '<div style="font-size:12px;color:#94a3b8;margin-bottom:4px;">수치</div>'
+    + '<div id="smValWrap">'
     + '<input id="smVal" type="number" step="0.1" placeholder="수치 입력" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:16px;margin-bottom:12px;box-sizing:border-box;"/>'
+    + '</div>'
     + '<div style="font-size:12px;color:#94a3b8;margin-bottom:4px;">날짜</div>'
     + '<input id="smDate" type="date" value="' + today + '" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;margin-bottom:16px;box-sizing:border-box;"/>'
     + '<button id="smSaveBtn" style="width:100%;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:8px;">저장</button>'
@@ -2085,18 +2108,44 @@ function openSM() {
     + '</div>';
 
   document.body.appendChild(overlay);
+  smCatChange(); // 초기 카테고리에 맞게 입력창 설정
   document.getElementById("smSaveBtn").addEventListener("click", saveSE);
   document.getElementById("smCancelBtn").addEventListener("click", function(){ overlay.remove(); });
 }
 
+function smCatChange() {
+  var cat = document.getElementById("smCat").value;
+  var wrap = document.getElementById("smValWrap");
+  if (!wrap) return;
+  if (cat === 'bp') {
+    wrap.innerHTML = '<div style="display:flex;gap:8px;margin-bottom:12px;">'
+      + '<div style="flex:1;"><div style="font-size:11px;color:#94a3b8;margin-bottom:4px;">수축기</div>'
+      + '<input id="smValSys" type="number" step="1" placeholder="120" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:16px;box-sizing:border-box;"/></div>'
+      + '<div style="flex:1;"><div style="font-size:11px;color:#94a3b8;margin-bottom:4px;">이완기</div>'
+      + '<input id="smValDia" type="number" step="1" placeholder="80" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:16px;box-sizing:border-box;"/></div>'
+      + '</div>';
+  } else {
+    wrap.innerHTML = '<input id="smVal" type="number" step="0.1" placeholder="수치 입력" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:16px;margin-bottom:12px;box-sizing:border-box;"/>';
+  }
+}
+
 function saveSE() {
   var cat = document.getElementById("smCat").value;
-  var val = document.getElementById("smVal").value.trim();
   var date = document.getElementById("smDate").value;
-  if(!val||!date){showAlert("수치와 날짜를 입력해주세요");return;}
   var data = getSD();
-  if(!data[cat]) data[cat]=[];
-  data[cat].push({value:parseFloat(val),date:date});
+  if (!data[cat]) data[cat] = [];
+
+  if (cat === 'bp') {
+    var sys = document.getElementById("smValSys")?.value.trim();
+    var dia = document.getElementById("smValDia")?.value.trim();
+    if (!sys || !dia || !date) { showAlert("수치와 날짜를 입력해주세요"); return; }
+    data[cat].push({ value: parseFloat(sys), dia: parseFloat(dia), date: date });
+  } else {
+    var val = document.getElementById("smVal")?.value.trim();
+    if (!val || !date) { showAlert("수치와 날짜를 입력해주세요"); return; }
+    data[cat].push({ value: parseFloat(val), date: date });
+  }
+
   setSD(data);
   curSC = cat;
   document.getElementById("smOverlay").remove();
