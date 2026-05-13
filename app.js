@@ -744,87 +744,7 @@ function deleteTodo(i) {
 }
 
 // ── 메모 ───────────────────────────────────────────
-function openMemo() {
-  renderMemoList();
-  var f = JSON.parse(localStorage.getItem('friends') || '[]');
-  if (myCode && f.length) listenSharedMemos(f[0]);
-  showScreen('memoScreen');
-}
-function toggleMemoShare(i, ev) {
-  ev.stopPropagation();
-  if (!myCode) { showAlert('채팅 코드를 먼저 설정하세요'); return; }
-  var friends = JSON.parse(localStorage.getItem('friends') || '[]');
-  if (!friends.length) { showAlert('연동할 친구가 없습니다'); return; }
-  var memos = JSON.parse(localStorage.getItem('memos') || '[]');
-  memos[i].shared = !memos[i].shared;
-  localStorage.setItem('memos', JSON.stringify(memos));
-  if (memos[i].shared) {
-    _pushMemoToFriends(memos[i], i);
-  } else {
-    _removeMemoFromFriends(i);
-  }
-  renderMemoList();
-}
-function _pushMemoToFriends(memo, idx) {
-  var friends = JSON.parse(localStorage.getItem('friends') || '[]');
-  friends.forEach(function(fCode) {
-    var roomId = [myCode, fCode].sort().join('_');
-    db.collection('rooms').doc(roomId).collection('sharedMemos').doc(myCode + '_' + idx).set({
-      title: memo.title || '',
-      content: memo.content || '',
-      date: memo.date || '',
-      from: myCode,
-      idx: idx,
-      updatedAt: Date.now()
-    }).catch(function(){});
-  });
-}
-function _removeMemoFromFriends(idx) {
-  var friends = JSON.parse(localStorage.getItem('friends') || '[]');
-  friends.forEach(function(fCode) {
-    var roomId = [myCode, fCode].sort().join('_');
-    db.collection('rooms').doc(roomId).collection('sharedMemos').doc(myCode + '_' + idx).delete().catch(function(){});
-  });
-}
-// 채팅방 진입 시 상대방 공유 메모 수신
-var _sharedMemoListener = null;
-function listenSharedMemos(friendCode) {
-  if (_sharedMemoListener) { _sharedMemoListener(); _sharedMemoListener = null; }
-  if (!myCode || !friendCode) return;
-  var roomId = [myCode, friendCode].sort().join('_');
-  _sharedMemoListener = db.collection('rooms').doc(roomId).collection('sharedMemos')
-    .where('from', '==', friendCode)
-    .onSnapshot(function(snap) {
-      var shared = [];
-      snap.forEach(function(d) { shared.push(d.data()); });
-      localStorage.setItem('sharedMemosFrom_' + friendCode, JSON.stringify(shared));
-      renderSharedMemos(friendCode);
-    });
-}
-function renderSharedMemos(friendCode) {
-  var el = document.getElementById('sharedMemoView');
-  var section = document.getElementById('sharedMemoSection');
-  if (!el) return;
-  var fCode = friendCode || (JSON.parse(localStorage.getItem('friends')||'[]')[0]);
-  if (!fCode) return;
-  var shared = JSON.parse(localStorage.getItem('sharedMemosFrom_' + fCode) || '[]');
-  if (!shared.length) {
-    el.innerHTML = '';
-    if (section) section.style.display = 'none';
-    return;
-  }
-  if (section) section.style.display = 'block';
-  var SVG_LINK = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
-  el.innerHTML = '<div class="shared-memo-header" style="font-size:11px;font-weight:700;color:var(--subtext);padding:8px 16px 4px;display:flex;align-items:center;gap:5px;">' + SVG_LINK + ' 공유된 메모</div>' +
-    shared.map(function(m) {
-      return '<div class="memo-card" style="margin:0 12px 8px;" onclick="">' +
-        '<div class="memo-card-title">' + esc(m.title||'제목 없음') + '</div>' +
-        '<div class="memo-card-preview">' + esc((m.content||'').substring(0,80)) + '</div>' +
-        '<div class="memo-card-footer"><span class="memo-card-date">' + esc(m.date||'') + '</span></div>' +
-        '</div>';
-    }).join('');
-}
-
+function openMemo() { renderMemoList(); showScreen('memoScreen'); }
 function renderMemoList() {
   const memos = JSON.parse(localStorage.getItem('memos') || '[]');
   const el = document.getElementById('memoList');
@@ -836,10 +756,7 @@ function renderMemoList() {
       <div class="memo-card-preview">${esc((m.content||'').substring(0,80))}</div>
       <div class="memo-card-footer">
         <span class="memo-card-date">${m.date||''}</span>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <button class="memo-share-btn ${m.shared ? 'on' : ''}" onclick="toggleMemoShare(${i},event)" title="친구 공유">${m.shared ? '🔗' : '🔗'}<span class="memo-share-label">${m.shared ? 'ON' : 'OFF'}</span></button>
-          <button class="memo-del" onclick="event.stopPropagation();deleteMemo(${i})">🗑</button>
-        </div>
+        <button class="memo-del" onclick="event.stopPropagation();deleteMemo(${i})">🗑</button>
       </div>
     </div>`).join('');
 }
@@ -849,35 +766,14 @@ function openNewMemo() {
   document.getElementById('memoTitleInput').value = '';
   document.getElementById('memoContentInput').value = '';
   showScreen('memoEditorScreen');
-  _bindMemoAutoTitle();
-}
-function openEditMemo_bindAutoTitle() { _bindMemoAutoTitle(); }
-function _bindMemoAutoTitle() {
-  var contentEl = document.getElementById('memoContentInput');
-  var titleEl = document.getElementById('memoTitleInput');
-  if (!contentEl || !titleEl) return;
-  contentEl._autoTitleBound = true;
-  contentEl.oninput = function() {
-    // 제목이 사용자가 직접 수정한 경우는 덮어쓰지 않음
-    if (titleEl.dataset.userEdited === '1') return;
-    var firstLine = contentEl.value.split('\n')[0];
-    var tokens = firstLine.trim().split(/\s+/).slice(0, 10);
-    titleEl.value = tokens.join(' ');
-  };
-  titleEl.oninput = function() {
-    titleEl.dataset.userEdited = '1';
-  };
 }
 function openEditMemo(i) {
   editingMemoIndex = i;
   const memos = JSON.parse(localStorage.getItem('memos') || '[]');
   document.getElementById('memoEditorTitle').textContent = '메모 편집';
-  var titleEl = document.getElementById('memoTitleInput');
-  titleEl.value = memos[i].title || '';
-  titleEl.dataset.userEdited = '1'; // 기존 메모는 제목 보존
+  document.getElementById('memoTitleInput').value = memos[i].title || '';
   document.getElementById('memoContentInput').value = memos[i].content || '';
   showScreen('memoEditorScreen');
-  _bindMemoAutoTitle();
 }
 function closeMemoEditor() { renderMemoList(); showScreen('memoScreen'); }
 function saveMemo() {
