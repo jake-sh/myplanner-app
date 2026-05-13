@@ -772,7 +772,11 @@ function deleteTodo(i) {
 }
 
 // ── 메모 ───────────────────────────────────────────
-function openMemo() { renderMemoList(); showScreen('memoScreen'); }
+function openMemo() {
+  renderMemoList();
+  renderSharedMemos();
+  showScreen('memoScreen');
+}
 
 function _saveSharedMemo(combined) {
   if (!combined) return;
@@ -839,15 +843,22 @@ function listenSharedMemos(friendCode) {
 }
 function renderSharedMemos(friendCode) {
   var el = document.getElementById('sharedMemoView');
+  var section = document.getElementById('sharedMemoSection');
   if (!el) return;
-  var shared = JSON.parse(localStorage.getItem('sharedMemosFrom_' + friendCode) || '[]');
-  if (!shared.length) { el.innerHTML = ''; return; }
-  el.innerHTML = '<div class="shared-memo-header"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> 공유된 메모</div>' +
-    shared.map(function(m) {
-      return '<div class="shared-memo-card"><div class="memo-card-title">' + esc(m.title||'제목 없음') + '</div>' +
-             '<div class="memo-card-preview">' + esc((m.content||'').substring(0,80)) + '</div>' +
-             '<div class="memo-card-date">' + esc(m.date||'') + '</div></div>';
-    }).join('');
+  var fCode = friendCode || activeFriendCode;
+  if (!fCode) return;
+  var shared = JSON.parse(localStorage.getItem('sharedMemosFrom_' + fCode) || '[]');
+  if (!shared.length) {
+    el.innerHTML = '';
+    if (section) section.style.display = 'none';
+    return;
+  }
+  if (section) section.style.display = 'block';
+  el.innerHTML = shared.map(function(m) {
+    return '<div class="shared-memo-card"><div class="memo-card-title">' + esc(m.title||'제목 없음') + '</div>' +
+           '<div class="memo-card-preview">' + esc((m.content||'').substring(0,80)) + '</div>' +
+           '<div class="memo-card-date">' + esc(m.date||'') + '</div></div>';
+  }).join('');
 }
 
 function renderMemoList() {
