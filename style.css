@@ -231,12 +231,16 @@ input:checked+.slider:before{transform:translateX(20px);}
 .shared-memo-card .memo-card-date{font-size:11px;color:var(--subtext);margin-top:4px;}
 
 .memo-editor-wrap{flex:1;display:flex;flex-direction:column;padding:16px;gap:12px;}
+.memo-title-wrap{position:relative;display:flex;align-items:center;}
+.memo-title-input{flex:1;padding-right:36px;}
 .memo-title-input{
   padding:14px 18px;border:1.5px solid #ECEEF8;
   border-radius:16px;font-size:17px;font-weight:800;
   font-family:inherit;outline:none;background:#F8F9FF;
 }
 .memo-title-input:focus{border-color:var(--primary);background:#fff;}
+.memo-title-clear{position:absolute;right:8px;background:none;border:none;cursor:pointer;color:var(--subtext);padding:4px;display:flex;align-items:center;opacity:0.6;}
+.memo-title-clear:active{opacity:1;}
 .memo-content-input{
   flex:1;padding:16px 18px;border:1.5px solid #ECEEF8;
   border-radius:16px;font-size:15px;

@@ -164,7 +164,12 @@
     <button class="sub-action-btn" onclick="saveMemo()">저장</button>
   </div>
   <div class="memo-editor-wrap">
-    <input id="memoTitleInput" class="memo-title-input" type="text" id="memoTitlePlaceholder" placeholder="제목"/>
+    <div class="memo-title-wrap">
+      <input id="memoTitleInput" class="memo-title-input" type="text" placeholder="제목"/>
+      <button class="memo-title-clear" onclick="document.getElementById('memoTitleInput').value='';document.getElementById('memoTitleInput').dataset.userEdited='1';document.getElementById('memoTitleInput').focus();">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
     <textarea id="memoContentInput" class="memo-content-input" placeholder="내용을 입력하세요..."></textarea>
   </div>
 </div>
