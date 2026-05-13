@@ -747,7 +747,7 @@ function deleteTodo(i) {
 function openMemo() { renderMemoList(); showScreen('memoScreen'); }
 function toggleMemoShare(i, ev) {
   ev.stopPropagation();
-  if (!myCode) { showAlert('채팅 코드를 먼저 설정하세요'); return; }
+  if (!myCode) { showAlert('공유 대상이 없습니다'); return; }
   var friends = JSON.parse(localStorage.getItem('friends') || '[]');
   if (!friends.length) { showAlert('연동할 친구가 없습니다'); return; }
   var memos = JSON.parse(localStorage.getItem('memos') || '[]');

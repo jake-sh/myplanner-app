@@ -217,6 +217,7 @@ input:checked+.slider:before{transform:translateX(20px);}
 .memo-share-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:2px 7px;font-size:12px;cursor:pointer;color:var(--subtext);display:flex;align-items:center;gap:3px;transition:all .15s;}
 .memo-share-btn.on{border-color:var(--primary);color:var(--primary);background:rgba(108,99,255,0.08);}
 .memo-share-label{font-size:11px;font-weight:700;}
+.memo-del{background:none;border:none;cursor:pointer;padding:4px;color:var(--subtext);display:flex;align-items:center;}
 .shared-memo-view{padding:0 12px;}
 .shared-memo-header{font-size:12px;font-weight:700;color:var(--subtext);padding:8px 0 4px;}
 .shared-memo-card{background:var(--card);border-radius:10px;padding:10px 12px;margin-bottom:6px;border:1px solid var(--border);}
