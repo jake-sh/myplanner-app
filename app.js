@@ -1160,29 +1160,28 @@ async function _doConfirmChangeCode(newCode) {
 // ── CHAT ────────────────────────────────────────────
 // 키패드 올라올때 채팅 스크롤 유지
 if (window.visualViewport) {
-  window.visualViewport.addEventListener('resize', function() {
+  function onViewportChange() {
     var chatView = document.getElementById('activeChatView');
     var list = document.getElementById('messageList');
     if (!chatView || !list) return;
 
-    var viewportHeight = window.visualViewport.height;
-    // 채팅뷰 높이를 실제 뷰포트에 맞게 조정
-    chatView.style.height = viewportHeight + 'px';
+    var vv = window.visualViewport;
+    // 키패드 올라와도 top/height 정확히 맞춤
+    chatView.style.top    = vv.offsetTop + 'px';
+    chatView.style.height = vv.height + 'px';
 
     setTimeout(function() {
-      // 콘텐츠 높이 vs 컨테이너 높이
       var contentH = list.scrollHeight;
       var containerH = list.clientHeight;
-
       if (contentH <= containerH) {
-        // 메시지가 적음: 상단 고정 (스크롤 없음)
         list.scrollTop = 0;
       } else {
-        // 메시지가 많음: 하단 고정
         list.scrollTop = contentH - containerH;
       }
-    }, 80);
-  });
+    }, 50);
+  }
+  window.visualViewport.addEventListener('resize', onViewportChange);
+  window.visualViewport.addEventListener('scroll', onViewportChange);
 }
 
 function openChat(friendCode) {
