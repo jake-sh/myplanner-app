@@ -834,6 +834,7 @@ function openNewMemo() {
   document.getElementById('memoContentInput').value = '';
   showScreen('memoEditorScreen');
   _bindMemoAutoTitle();
+  setTimeout(function(){ var c = document.getElementById('memoContentInput'); if(c) c.focus(); }, 100);
 }
 function openEditMemo_bindAutoTitle() { _bindMemoAutoTitle(); }
 function _bindMemoAutoTitle() {
@@ -862,6 +863,7 @@ function openEditMemo(i) {
   document.getElementById('memoContentInput').value = memos[i].content || '';
   showScreen('memoEditorScreen');
   _bindMemoAutoTitle();
+  setTimeout(function(){ var c = document.getElementById('memoContentInput'); if(c) c.focus(); }, 100);
 }
 function closeMemoEditor() { renderMemoList(); showScreen('memoScreen'); }
 function saveMemo() {
@@ -2437,7 +2439,7 @@ function applyLang() {
   _setText('notifTodoLabel', en ? 'To-Do Alerts' : '할 일 알림');
 
   // 메모
-  _setText('newMemoBtn', en ? '+ New Memo' : '+ 새 메모');
+  _setText('newMemoBtn', '+ New');
   _setText('memoSaveBtn', en ? 'Save' : '저장');
   var memoTP = document.getElementById('memoTitleInput');
   if(memoTP) memoTP.placeholder = en ? 'Title' : '제목';
