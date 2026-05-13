@@ -2278,25 +2278,25 @@ function getDustLevel(pm10) {
 
 function getClothes(temp, pm10) {
   var en = localStorage.getItem('lang') === 'en';
-  var dust = pm10 > 80 ? (en ? ' · Mask recommended' : ' 마스크 착용 권장') : '';
+  var dust = pm10 > 80 ? (en ? '<br>Mask recommended' : '<br>마스크 착용 권장') : '';
   if (en) {
-    if (temp >= 28) return 'Sleeveless·T-shirt·Shorts·Dress' + dust;
-    if (temp >= 23) return 'T-shirt·Light shirt·Shorts' + dust;
-    if (temp >= 20) return 'Blouse·Long sleeve·Pants·Jeans' + dust;
-    if (temp >= 17) return 'Light cardigan·Long pants' + dust;
-    if (temp >= 12) return 'Jacket·Cardigan·Jeans' + dust;
-    if (temp >= 9) return 'Trench coat·Knit·Jeans' + dust;
-    if (temp >= 5) return 'Wool coat·Heattech·Layered' + dust;
-    return 'Padding·Thick coat·Scarf' + dust;
+    if (temp >= 28) return 'Sleeveless<br>T-shirt<br>Shorts<br>Dress' + dust;
+    if (temp >= 23) return 'T-shirt<br>Light shirt<br>Shorts' + dust;
+    if (temp >= 20) return 'Blouse<br>Long sleeve<br>Pants<br>Jeans' + dust;
+    if (temp >= 17) return 'Light cardigan<br>Long pants' + dust;
+    if (temp >= 12) return 'Jacket<br>Cardigan<br>Jeans' + dust;
+    if (temp >= 9) return 'Trench coat<br>Knit<br>Jeans' + dust;
+    if (temp >= 5) return 'Wool coat<br>Heattech<br>Layered' + dust;
+    return 'Padding<br>Thick coat<br>Scarf' + dust;
   }
-  if (temp >= 28) return '민소매·반팔·반바지·원피스' + dust;
-  if (temp >= 23) return '반팔·얇은 셔츠·반바지' + dust;
-  if (temp >= 20) return '블라우스·긴팔·면바지·청바지' + dust;
-  if (temp >= 17) return '얇은 가디건·긴바지' + dust;
-  if (temp >= 12) return '자켓·가디건·청바지' + dust;
-  if (temp >= 9) return '트렌치코트·니트·청바지' + dust;
-  if (temp >= 5) return '울코트·히트텍·레이어드' + dust;
-  return '패딩·두꺼운 코트·목도리' + dust;
+  if (temp >= 28) return '민소매<br>반팔<br>반바지<br>원피스' + dust;
+  if (temp >= 23) return '반팔<br>얇은 셔츠<br>반바지' + dust;
+  if (temp >= 20) return '블라우스<br>긴팔<br>면바지<br>청바지' + dust;
+  if (temp >= 17) return '얇은 가디건<br>긴바지' + dust;
+  if (temp >= 12) return '자켓<br>가디건<br>청바지' + dust;
+  if (temp >= 9) return '트렌치코트<br>니트<br>청바지' + dust;
+  if (temp >= 5) return '울코트<br>히트텍<br>레이어드' + dust;
+  return '패딩<br>두꺼운 코트<br>목도리' + dust;
 }
 
 var _weatherCache = null;
@@ -2316,7 +2316,7 @@ function renderWeatherUI(data) {
     (en ? 'Fine dust ' : '미세 ') + '<b style="color:' + level.color + '">' + level.text + '</b><br>' +
     (en ? 'Ultra-fine ' : '초미세 ') + '<b style="color:' + level25.color + '">' + level25.text + '</b>';
   document.getElementById('widgetDustLevel').textContent = '';
-  document.getElementById('widgetClothesVal').textContent = getClothes(data.temp, data.pm10);
+  document.getElementById('widgetClothesVal').innerHTML = getClothes(data.temp, data.pm10);
 }
 
 async function loadWeather() {
