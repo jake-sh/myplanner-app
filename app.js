@@ -2097,9 +2097,17 @@ function drawSC(canvas, entries, cat) {
 }
 
 function openSM() {
+  var isDark = document.body.classList.contains('dark-mode');
+  var boxBg  = isDark ? '#1A1A1A' : '#fff';
+  var boxBd  = isDark ? '#2A2A2A' : '#e2e8f0';
+  var textCl = isDark ? '#F1F1F1' : '#1e293b';
+  var subCl  = isDark ? '#94a3b8' : '#94a3b8';
+  var cancelBg = isDark ? '#2A2A2A' : '#f1f5f9';
+  var cancelCl = isDark ? '#94a3b8' : '#64748b';
+
   var overlay = document.createElement("div");
   overlay.id = "smOverlay";
-  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;";
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;";
   var today = new Date().toISOString().slice(0,10);
 
   var selOpts = "";
@@ -2107,39 +2115,47 @@ function openSM() {
     selOpts += '<option value="' + k + '"' + (k===curSC?" selected":"") + '>' + statLabel(k) + " (" + statUnit(k) + ")</option>";
   });
 
-  overlay.innerHTML = '<div style="background:#fff;border-radius:20px;padding:24px;width:85%;max-width:320px;">'
-    + '<div style="font-size:16px;font-weight:700;margin-bottom:16px;">수치 입력</div>'
-    + '<div style="font-size:12px;color:#94a3b8;margin-bottom:4px;">카테고리</div>'
-    + '<select id="smCat" onchange="smCatChange()" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:13px;margin-bottom:12px;box-sizing:border-box;">' + selOpts + '</select>'
-    + '<div style="font-size:12px;color:#94a3b8;margin-bottom:4px;">수치</div>'
-    + '<div id="smValWrap">'
-    + '<input id="smVal" type="number" step="0.1" placeholder="수치 입력" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:16px;margin-bottom:12px;box-sizing:border-box;"/>'
-    + '</div>'
-    + '<div style="font-size:12px;color:#94a3b8;margin-bottom:4px;">날짜</div>'
-    + '<input id="smDate" type="date" value="' + today + '" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;margin-bottom:16px;box-sizing:border-box;"/>'
+  var inpStyle = "width:100%;padding:10px;border-radius:10px;border:1.5px solid " + boxBd + ";font-size:16px;margin-bottom:12px;box-sizing:border-box;background:" + boxBg + ";color:" + textCl + ";";
+  var selStyle = "width:100%;padding:10px;border-radius:10px;border:1.5px solid " + boxBd + ";font-size:13px;margin-bottom:12px;box-sizing:border-box;background:" + boxBg + ";color:" + textCl + ";";
+
+  overlay.innerHTML = '<div style="background:' + boxBg + ';border:1.5px solid ' + boxBd + ';border-radius:20px;padding:24px;width:85%;max-width:320px;">'
+    + '<div style="font-size:16px;font-weight:700;margin-bottom:16px;color:' + textCl + ';">수치 입력</div>'
+    + '<div style="font-size:12px;color:' + subCl + ';margin-bottom:4px;">카테고리</div>'
+    + '<select id="smCat" onchange="smCatChange()" style="' + selStyle + '">' + selOpts + '</select>'
+    + '<div style="font-size:12px;color:' + subCl + ';margin-bottom:4px;">수치</div>'
+    + '<div id="smValWrap"></div>'
+    + '<div style="font-size:12px;color:' + subCl + ';margin-bottom:4px;">날짜</div>'
+    + '<input id="smDate" type="date" value="' + today + '" style="' + inpStyle + '"/>'
     + '<button id="smSaveBtn" style="width:100%;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:8px;">저장</button>'
-    + '<button id="smCancelBtn" style="width:100%;padding:10px;background:#f1f5f9;color:#64748b;border:none;border-radius:12px;font-size:14px;cursor:pointer;">취소</button>'
+    + '<button id="smCancelBtn" style="width:100%;padding:10px;background:' + cancelBg + ';color:' + cancelCl + ';border:none;border-radius:12px;font-size:14px;cursor:pointer;">취소</button>'
     + '</div>';
 
   document.body.appendChild(overlay);
-  smCatChange(); // 초기 카테고리에 맞게 입력창 설정
+  smCatChange();
   document.getElementById("smSaveBtn").addEventListener("click", saveSE);
   document.getElementById("smCancelBtn").addEventListener("click", function(){ overlay.remove(); });
 }
 
 function smCatChange() {
+  var isDark = document.body.classList.contains('dark-mode');
+  var boxBg  = isDark ? '#1A1A1A' : '#fff';
+  var boxBd  = isDark ? '#2A2A2A' : '#e2e8f0';
+  var textCl = isDark ? '#F1F1F1' : '#1e293b';
+  var subCl  = isDark ? '#94a3b8' : '#94a3b8';
+  var inpStyle = "width:100%;padding:10px;border-radius:10px;border:1.5px solid " + boxBd + ";font-size:16px;box-sizing:border-box;background:" + boxBg + ";color:" + textCl + ";";
+
   var cat = document.getElementById("smCat").value;
   var wrap = document.getElementById("smValWrap");
   if (!wrap) return;
   if (cat === 'bp') {
     wrap.innerHTML = '<div style="display:flex;gap:8px;margin-bottom:12px;">'
-      + '<div style="flex:1;"><div style="font-size:11px;color:#94a3b8;margin-bottom:4px;">수축기</div>'
-      + '<input id="smValSys" type="number" step="1" placeholder="120" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:16px;box-sizing:border-box;"/></div>'
-      + '<div style="flex:1;"><div style="font-size:11px;color:#94a3b8;margin-bottom:4px;">이완기</div>'
-      + '<input id="smValDia" type="number" step="1" placeholder="80" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:16px;box-sizing:border-box;"/></div>'
+      + '<div style="flex:1;"><div style="font-size:11px;color:' + subCl + ';margin-bottom:4px;">수축기</div>'
+      + '<input id="smValSys" type="number" step="1" placeholder="120" style="' + inpStyle + '"/></div>'
+      + '<div style="flex:1;"><div style="font-size:11px;color:' + subCl + ';margin-bottom:4px;">이완기</div>'
+      + '<input id="smValDia" type="number" step="1" placeholder="80" style="' + inpStyle + '"/></div>'
       + '</div>';
   } else {
-    wrap.innerHTML = '<input id="smVal" type="number" step="0.1" placeholder="수치 입력" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:16px;margin-bottom:12px;box-sizing:border-box;"/>';
+    wrap.innerHTML = '<input id="smVal" type="number" step="0.1" placeholder="수치 입력" style="' + inpStyle + 'margin-bottom:12px;"/>';
   }
 }
 
