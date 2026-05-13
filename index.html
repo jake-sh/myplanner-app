@@ -461,14 +461,14 @@
         <div class="settings-label" style="color:var(--chat-text);font-size:14px;" id="myCodeLabel">내 코드</div>
         <div style="display:flex;align-items:center;gap:8px;">
           <div class="my-code-display" id="myCodeDisplaySettings" style="font-size:13px;padding:8px;"></div>
-          <button style="background:rgba(255,255,255,0.1);color:var(--chat-text);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:7px 0;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;min-width:72px;text-align:center;" onclick="closeSecretSettings();openChangeCode();" id="changeCodeBtn">변경</button>
+          <button class="chat-theme-btn" onclick="closeSecretSettings();openChangeCode();" id="changeCodeBtn">변경</button>
         </div>
       </div>
 
       <div class="secret-setting-item" style="flex-direction:column;align-items:flex-start;gap:8px;">
         <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
           <div class="settings-label" style="color:var(--chat-text);font-size:14px;" id="shareTargetLabel">공유 대상</div>
-          <button onclick="openShareTargetPicker()" style="background:rgba(255,255,255,0.1);color:var(--chat-text);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:7px 0;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;min-width:72px;text-align:center;" id="shareTargetEditBtn">선택</button>
+          <button onclick="openShareTargetPicker()" class="chat-theme-btn" id="shareTargetEditBtn">Select</button>
         </div>
         <div id="shareTargetList" style="width:100%;font-size:12px;color:var(--chat-text2);min-height:18px;"></div>
       </div>

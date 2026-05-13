@@ -2596,6 +2596,7 @@ function applyLang() {
   _setText('fontLgLabel', en ? 'L' : '대');
   _setText('changeCodeBtn', en ? 'Change' : '변경');
   _setText('closeSecretBtn', en ? 'Save' : '저장');
+  _setText('shareTargetEditBtn', en ? 'Select' : 'Select');
   _setText('closeAddFriendBtn', en ? 'Close' : '닫기');
   _setText('closeTimerBtn', en ? 'Close' : '닫기');
 
