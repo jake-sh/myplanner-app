@@ -797,7 +797,9 @@ function clearMemoTitle() {
 
 function openNewMemo() {
   editingMemoIndex = null;
-  document.getElementById('memoEditorTitle').textContent = '새 메모';
+  const en = localStorage.getItem('lang') === 'en';
+  document.getElementById('memoEditorTitle').textContent = en ? 'New Memo' : '새 메모';
+  document.getElementById('memoEditorTitle').style.fontWeight = en ? '800' : '400';
   document.getElementById('memoTitleInput').value = '';
   document.getElementById('memoContentInput').value = '';
   memoAutoTitle = true;
@@ -806,8 +808,10 @@ function openNewMemo() {
 
 function openEditMemo(i) {
   editingMemoIndex = i;
+  const en = localStorage.getItem('lang') === 'en';
   const memos = JSON.parse(localStorage.getItem('memos') || '[]');
-  document.getElementById('memoEditorTitle').textContent = '메모 편집';
+  document.getElementById('memoEditorTitle').textContent = en ? 'Edit Memo' : '메모 편집';
+  document.getElementById('memoEditorTitle').style.fontWeight = en ? '800' : '400';
   document.getElementById('memoTitleInput').value = memos[i].title || '';
   document.getElementById('memoContentInput').value = memos[i].content || '';
   memoAutoTitle = false;
@@ -2365,9 +2369,12 @@ function applyLang() {
   _setText('newMemoTitle', en ? 'New Memo' : '새 메모');
   _setText('featureTitle', document.getElementById('featureTitle') ? document.getElementById('featureTitle').textContent : '');
 
-  // 뒤로가기
-  document.querySelectorAll('[data-i18n-back]').forEach(function(el){ el.textContent = en ? '← Back' : '← 뒤로'; });
-  _setText('memoListBack', en ? '← List' : '← 목록');
+  // sub-title bold: 영문 bold, 한글 normal
+  document.querySelectorAll('.sub-title').forEach(function(el){ el.style.fontWeight = en ? '800' : '400'; });
+
+  // 뒤로가기 — 항상 ‹ 기호만 표시
+  document.querySelectorAll('[data-i18n-back]').forEach(function(el){ el.textContent = '‹'; });
+  _setText('memoListBack', '‹');
 
   // 설정 라벨
   _setText('appNameLabel', en ? 'App Name' : '앱 이름');

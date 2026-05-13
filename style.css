@@ -104,7 +104,7 @@ body:not(.dark-mode) .fake-title{color:var(--primary) !important;}
   border-bottom:1px solid #F0F1F8;
   flex-shrink:0;
 }
-.back-btn{background:none;border:none;font-size:15px;font-weight:700;color:var(--primary);cursor:pointer;white-space:nowrap;}
+.back-btn{background:none;border:none;font-size:22px;font-weight:400;color:var(--primary);cursor:pointer;white-space:nowrap;line-height:1;padding:0 4px;}
 .sub-title{font-size:20px;font-weight:800;flex:1;letter-spacing:-0.3px;}
 .sub-action-btn{
   background:var(--primary);color:#fff;border:none;
