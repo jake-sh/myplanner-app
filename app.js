@@ -913,8 +913,15 @@ function saveMemo() {
   if (!title && !content) { showAlert('내용을 입력하세요'); return; }
   const memos = JSON.parse(localStorage.getItem('memos') || '[]');
   const date = new Date().toLocaleDateString('ko-KR');
-  if (editingMemoIndex !== null) memos[editingMemoIndex] = { title, content, date };
-  else memos.unshift({ title, content, date });
+  if (editingMemoIndex !== null) {
+    memos[editingMemoIndex] = { title, content, date, shared: memos[editingMemoIndex].shared || false };
+  } else {
+    var friends = JSON.parse(localStorage.getItem('friends') || '[]');
+    var defaultShared = friends.length > 0;
+    var newMemo = { title, content, date, shared: defaultShared };
+    memos.unshift(newMemo);
+    if (defaultShared) _pushMemoToFriends(newMemo, 0);
+  }
   localStorage.setItem('memos', JSON.stringify(memos)); closeMemoEditor();
 }
 function deleteMemo(i) {
