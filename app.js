@@ -868,11 +868,15 @@ function removeMemoImg(i) {
 
 async function uploadMemoImg(file) {
   if (!file || !file.type.startsWith('image/')) return;
-  const storageRef = storage.ref('memo_images/' + Date.now() + '_' + Math.random().toString(36).substr(2,6));
-  const snap = await storageRef.put(file);
-  const url = await snap.ref.getDownloadURL();
-  memoImgUrls.push(url);
-  renderMemoImgPreview();
+  try {
+    const path = 'memo_images/' + Date.now() + '_' + Math.random().toString(36).substr(2,6);
+    const snap = await storage.ref().child(path).put(file);
+    const url = await snap.ref.getDownloadURL();
+    memoImgUrls.push(url);
+    renderMemoImgPreview();
+  } catch(err) {
+    showAlert('이미지 업로드 실패: ' + err.message);
+  }
 }
 
 function handleMemoImgSelect(input) {
@@ -883,8 +887,8 @@ function handleMemoImgSelect(input) {
 
 // 클립보드 붙여넣기 (Ctrl+V / 모바일 붙여넣기)
 document.addEventListener('paste', function(e) {
-  const active = document.getElementById('memoEditorScreen');
-  if (!active || !active.classList.contains('active')) return;
+  const screen = document.getElementById('memoEditorScreen');
+  if (!screen || !screen.classList.contains('active')) return;
   const items = e.clipboardData && e.clipboardData.items;
   if (!items) return;
   for (let i = 0; i < items.length; i++) {
