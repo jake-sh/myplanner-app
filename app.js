@@ -888,7 +888,8 @@ async function uploadMemoImg(file) {
   }
 }
 
-function handleMemoImgSelect(input) {
+function handleMemoImgSelect(e) {
+  const input = e.target;
   const files = Array.from(input.files);
   if (files.length) files.forEach(f => uploadMemoImg(f));
   input.value = '';
