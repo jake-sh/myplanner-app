@@ -320,7 +320,7 @@ var _filePickerOpen = false;
 
 // 파일 선택창 열릴 때 플래그
 document.addEventListener('click', function(e) {
-  if (e.target && e.target.id === 'fileInput') _filePickerOpen = true;
+  if (e.target && (e.target.id === 'fileInput' || e.target.id === 'memoImgInput')) _filePickerOpen = true;
 });
 
 var _blurTime = 0;
