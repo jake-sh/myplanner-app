@@ -1664,12 +1664,11 @@ async function _doDeleteAllNow() {
 function openTimerSetting() { document.getElementById('timerModal').style.display = 'flex'; }
 function closeTimerModal() {
   document.getElementById('timerModal').style.display = 'none';
-  // 모달 상태 초기화 (대기 중 상태에서 닫힐 수 있으므로)
   var opts = document.querySelector('#timerModal .timer-options');
   var btn = document.getElementById('closeTimerBtn');
   var desc = document.querySelector('#timerModal .modal-desc');
-  if (opts) opts.style.display = '';
-  if (btn) btn.style.display = '';
+  if (opts) opts.style.display = 'grid';
+  if (btn) btn.style.display = 'block';
   if (desc) { desc.textContent = '변경 시 상대방 동의가 필요합니다'; desc.style.color = '#94a3b8'; desc.style.fontSize = '12px'; }
 }
 async function setAutoDelete(min) {
