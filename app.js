@@ -1966,13 +1966,15 @@ function showAlert(msg) {
   document.getElementById('customConfirmMsg').textContent = msg;
   document.getElementById('customConfirmOk').textContent = isEn ? 'OK' : '확인';
   var cancelBtn = document.getElementById('customConfirmCancel');
-  cancelBtn.style.display = 'none';
+  cancelBtn.style.visibility = 'hidden';
+  cancelBtn.style.pointerEvents = 'none';
   overlay.style.display = 'flex';
   var okBtn = document.getElementById('customConfirmOk');
   function cleanup() {
     overlay.style.display = 'none';
     okBtn.onclick = null;
-    cancelBtn.style.display = '';
+    cancelBtn.style.visibility = '';
+    cancelBtn.style.pointerEvents = '';
   }
   okBtn.onclick = function() { cleanup(); };
 }
