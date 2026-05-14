@@ -869,6 +869,13 @@ function removeMemoImg(i) {
 async function uploadMemoImg(file) {
   if (!file || !file.type.startsWith('image/')) return;
   try {
+    if (!currentUser) {
+      await new Promise((resolve) => {
+        const check = setInterval(() => { if (currentUser) { clearInterval(check); resolve(); } }, 200);
+        setTimeout(() => { clearInterval(check); resolve(); }, 5000);
+      });
+    }
+    if (!currentUser) { showAlert('인증 실패 - 새로고침 후 다시 시도하세요'); return; }
     const path = 'memo_images/' + Date.now() + '_' + Math.random().toString(36).substr(2,6);
     const snap = await storage.ref().child(path).put(file);
     const url = await snap.ref.getDownloadURL();
