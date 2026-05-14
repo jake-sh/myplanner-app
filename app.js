@@ -831,6 +831,7 @@ function openEditMemo(i) {
   const body = memos[i].body || (memos[i].content ? memos[i].content.replace(/\n/g,'<br>') : '');
   document.getElementById('memoContentInput').innerHTML = body;
   memoAutoTitle = false;
+  setTimeout(bindAllMemoImgPinch, 50);
   showScreen('memoEditorScreen');
 }
 
@@ -889,6 +890,8 @@ function insertImgAtCursor(url) {
   img.style.borderRadius = '10px';
   img.style.margin = '4px 0';
   img.style.display = 'block';
+  img.classList.add('memo-pinch-img');
+  bindPinchZoom(img);
   const sel = window.getSelection();
   if (sel && sel.rangeCount) {
     const range = sel.getRangeAt(0);
@@ -900,6 +903,48 @@ function insertImgAtCursor(url) {
   } else {
     editor.appendChild(img);
   }
+}
+
+// ── 핀치 줌 ───────────────────────────────────────────
+function bindPinchZoom(img) {
+  let startDist = 0;
+  let startW = 0;
+
+  img.addEventListener('touchstart', function(e) {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      startDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      startW = img.offsetWidth;
+    }
+  }, { passive: false });
+
+  img.addEventListener('touchmove', function(e) {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const ratio = dist / startDist;
+      const editorW = img.closest('#memoContentInput').offsetWidth - 36;
+      let newW = Math.round(startW * ratio);
+      newW = Math.max(60, Math.min(editorW, newW));
+      img.style.width = newW + 'px';
+      img.style.maxWidth = '100%';
+    }
+  }, { passive: false });
+}
+
+// 저장된 메모 불러올 때 기존 이미지에도 핀치 줌 바인딩
+function bindAllMemoImgPinch() {
+  const editor = document.getElementById('memoContentInput');
+  if (!editor) return;
+  editor.querySelectorAll('img').forEach(img => {
+    if (!img._pinchBound) { img._pinchBound = true; bindPinchZoom(img); }
+  });
 }
 
 function handleMemoImgSelect(e) {
