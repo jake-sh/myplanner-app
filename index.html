@@ -170,16 +170,14 @@
       <input id="memoTitleInput" class="memo-title-input" type="text" placeholder="제목"/>
       <button id="memoTitleClear" class="memo-title-clear" onclick="clearMemoTitle()" tabindex="-1">×</button>
     </div>
-    <textarea id="memoContentInput" class="memo-content-input" placeholder="내용을 입력하세요..."></textarea>
+    <div id="memoContentInput" class="memo-content-input" contenteditable="true" data-placeholder="내용을 입력하세요..."></div>
     <div id="memoImgToolbar" class="memo-img-toolbar">
-      <button class="memo-img-btn" onclick="document.getElementById('memoImgInput').click()">
+      <button class="memo-img-btn" onclick="_filePickerOpen=true; document.getElementById('memoImgInput').click()">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         사진 추가
       </button>
-      <span class="memo-img-hint">Ctrl+V 붙여넣기도 가능</span>
       <input type="file" id="memoImgInput" accept="image/*" multiple style="display:none" onchange="handleMemoImgSelect(event)" onclick="_filePickerOpen=true"/>
     </div>
-    <div id="memoImgPreview" class="memo-img-preview"></div>
   </div>
 </div>
 

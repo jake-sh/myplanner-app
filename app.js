@@ -750,47 +750,52 @@ function deleteTodo(i) {
 }
 
 // ── 메모 ───────────────────────────────────────────
-let memoImgUrls = []; // 현재 편집 중인 메모의 이미지 URL 배열
+// ── 메모 (contenteditable 방식) ──────────────────────────────
 
 function openMemo() { renderMemoList(); showScreen('memoScreen'); }
+
 function renderMemoList() {
   const memos = JSON.parse(localStorage.getItem('memos') || '[]');
   const el = document.getElementById('memoList');
   var isEn = localStorage.getItem('lang') === 'en';
   if (!memos.length) { el.innerHTML = '<div class="empty-state">' + (isEn ? 'No memos yet' : '메모가 없습니다') + '</div>'; return; }
-  el.innerHTML = memos.map((m,i) => `
+  el.innerHTML = memos.map((m,i) => {
+    // 본문 미리보기: HTML에서 텍스트만 추출
+    const tmp = document.createElement('div');
+    tmp.innerHTML = m.body || '';
+    const preview = tmp.textContent.substring(0, 80);
+    // 본문 내 첫 이미지 추출
+    const imgMatch = (m.body || '').match(/<img[^>]+src="([^"]+)"/);
+    const thumb = imgMatch ? `<div class="memo-card-imgs"><img class="memo-card-img-thumb" src="${imgMatch[1]}"></div>` : '';
+    return `
     <div class="memo-card" onclick="openEditMemo(${i})">
       <div class="memo-card-title">${esc(m.title||'제목 없음')}</div>
-      <div class="memo-card-preview">${esc((m.content||'').substring(0,80))}</div>
-      ${(m.images && m.images.length) ? `<div class="memo-card-imgs">${m.images.slice(0,4).map(u=>`<img class="memo-card-img-thumb" src="${u}">`).join('')}</div>` : ''}
+      <div class="memo-card-preview">${esc(preview)}</div>
+      ${thumb}
       <div class="memo-card-footer">
         <span class="memo-card-date">${m.date||''}</span>
         <button class="memo-del" onclick="event.stopPropagation();deleteMemo(${i})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
-// ── 메모 자동 제목 ────────────────────────────────────
-let memoAutoTitle = true;
 
-function getAutoMemoTitle(text) {
-  const firstLine = text.split('\n')[0].trim();
-  if (!firstLine) return '';
-  const tokens = firstLine.match(/\S+/g) || [];
-  return tokens.slice(0, 10).join(' ');
-}
+// ── 메모 자동 제목 ─────────────────────────────────────────
+let memoAutoTitle = true;
 
 document.addEventListener('DOMContentLoaded', function() {
   const contentEl = document.getElementById('memoContentInput');
   const titleEl = document.getElementById('memoTitleInput');
   if (!contentEl || !titleEl) return;
 
-  // 내용 입력 시 자동 제목 채우기
   contentEl.addEventListener('input', function() {
     if (!memoAutoTitle) return;
-    titleEl.value = getAutoMemoTitle(contentEl.value);
+    const text = contentEl.innerText || '';
+    const firstLine = text.split('\n')[0].trim();
+    const tokens = firstLine.match(/\S+/g) || [];
+    titleEl.value = tokens.slice(0, 10).join(' ');
   });
 
-  // 사용자가 제목을 직접 수정하면 자동모드 OFF, 비우면 ON
   titleEl.addEventListener('input', function() {
     memoAutoTitle = (titleEl.value === '');
   });
@@ -806,14 +811,12 @@ function clearMemoTitle() {
 
 function openNewMemo() {
   editingMemoIndex = null;
-  memoImgUrls = [];
   const en = localStorage.getItem('lang') === 'en';
   document.getElementById('memoEditorTitle').textContent = en ? 'New Memo' : '새 메모';
   document.getElementById('memoEditorTitle').style.fontWeight = en ? '800' : '400';
   document.getElementById('memoTitleInput').value = '';
-  document.getElementById('memoContentInput').value = '';
+  document.getElementById('memoContentInput').innerHTML = '';
   memoAutoTitle = true;
-  renderMemoImgPreview();
   showScreen('memoEditorScreen');
 }
 
@@ -824,10 +827,10 @@ function openEditMemo(i) {
   document.getElementById('memoEditorTitle').textContent = en ? 'Edit Memo' : '메모 편집';
   document.getElementById('memoEditorTitle').style.fontWeight = en ? '800' : '400';
   document.getElementById('memoTitleInput').value = memos[i].title || '';
-  document.getElementById('memoContentInput').value = memos[i].content || '';
-  memoImgUrls = memos[i].images ? [...memos[i].images] : [];
+  // body(HTML) 우선, 없으면 구버전 content(텍스트) 폴백
+  const body = memos[i].body || (memos[i].content ? memos[i].content.replace(/\n/g,'<br>') : '');
+  document.getElementById('memoContentInput').innerHTML = body;
   memoAutoTitle = false;
-  renderMemoImgPreview();
   showScreen('memoEditorScreen');
 }
 
@@ -835,39 +838,28 @@ function closeMemoEditor() { renderMemoList(); showScreen('memoScreen'); }
 
 function saveMemo() {
   const title = document.getElementById('memoTitleInput').value.trim();
-  const content = document.getElementById('memoContentInput').value.trim();
-  if (!title && !content && !memoImgUrls.length) { showAlert('내용을 입력하세요'); return; }
+  const body = document.getElementById('memoContentInput').innerHTML.trim();
+  const textOnly = (document.getElementById('memoContentInput').innerText || '').trim();
+  if (!title && !textOnly) { showAlert('내용을 입력하세요'); return; }
   const memos = JSON.parse(localStorage.getItem('memos') || '[]');
   const date = new Date().toLocaleDateString('ko-KR');
-  const memo = { title, content, date, images: [...memoImgUrls] };
+  const memo = { title, body, date };
   if (editingMemoIndex !== null) memos[editingMemoIndex] = memo;
   else memos.unshift(memo);
-  localStorage.setItem('memos', JSON.stringify(memos)); closeMemoEditor();
+  localStorage.setItem('memos', JSON.stringify(memos));
+  closeMemoEditor();
 }
 
 function deleteMemo(i) {
   showConfirm('메모를 삭제할까요?', function() {
-    const memos = JSON.parse(localStorage.getItem('memos') || '[]'); memos.splice(i,1);
-    localStorage.setItem('memos', JSON.stringify(memos)); renderMemoList();
+    const memos = JSON.parse(localStorage.getItem('memos') || '[]');
+    memos.splice(i, 1);
+    localStorage.setItem('memos', JSON.stringify(memos));
+    renderMemoList();
   });
 }
 
-// ── 메모 이미지 ────────────────────────────────────────
-function renderMemoImgPreview() {
-  const wrap = document.getElementById('memoImgPreview');
-  if (!wrap) return;
-  wrap.innerHTML = memoImgUrls.map((url, i) => `
-    <div class="memo-img-thumb">
-      <img src="${url}" onclick="openImgViewer(memoImgUrls,${i})">
-      <button class="memo-img-del" onclick="removeMemoImg(${i})">×</button>
-    </div>`).join('');
-}
-
-function removeMemoImg(i) {
-  memoImgUrls.splice(i, 1);
-  renderMemoImgPreview();
-}
-
+// ── 메모 이미지 업로드 ────────────────────────────────────────
 async function uploadMemoImg(file) {
   if (!file || !file.type.startsWith('image/')) return;
   try {
@@ -881,42 +873,41 @@ async function uploadMemoImg(file) {
     const path = 'memo_images/' + Date.now() + '_' + Math.random().toString(36).substr(2,6);
     const snap = await storage.ref().child(path).put(file);
     const url = await snap.ref.getDownloadURL();
-    memoImgUrls.push(url);
-    renderMemoImgPreview();
+    insertImgAtCursor(url);
   } catch(err) {
     showAlert('이미지 업로드 실패: ' + err.message);
   }
 }
 
-function handleMemoImgSelect(e) {
-  const input = e.target;
-  const files = Array.from(input.files);
-  if (files.length) files.forEach(f => uploadMemoImg(f));
-  input.value = '';
+// 커서 위치에 이미지 삽입
+function insertImgAtCursor(url) {
+  const editor = document.getElementById('memoContentInput');
+  editor.focus();
+  const img = document.createElement('img');
+  img.src = url;
+  img.style.maxWidth = '100%';
+  img.style.borderRadius = '10px';
+  img.style.margin = '4px 0';
+  img.style.display = 'block';
+  const sel = window.getSelection();
+  if (sel && sel.rangeCount) {
+    const range = sel.getRangeAt(0);
+    range.insertNode(img);
+    range.setStartAfter(img);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  } else {
+    editor.appendChild(img);
+  }
 }
 
-// 파일 선택창 열릴 때 popstate 무시 플래그 세팅
-document.addEventListener('DOMContentLoaded', function() {
-  var inp = document.getElementById('memoImgInput');
-  if (inp) inp.addEventListener('click', function() {
-    // 갤러리 닫힐 때 발생하는 popstate 1회 무시
-    setTimeout(function() { _ignorNextPopstate = true; }, 100);
-  });
-});
+function handleMemoImgSelect(e) {
+  const files = Array.from(e.target.files);
+  files.forEach(f => uploadMemoImg(f));
+  e.target.value = '';
+}
 
-// 클립보드 붙여넣기 (Ctrl+V / 모바일 붙여넣기)
-document.addEventListener('paste', function(e) {
-  const screen = document.getElementById('memoEditorScreen');
-  if (!screen || !screen.classList.contains('active')) return;
-  const items = e.clipboardData && e.clipboardData.items;
-  if (!items) return;
-  for (let i = 0; i < items.length; i++) {
-    if (items[i].type.startsWith('image/')) {
-      const file = items[i].getAsFile();
-      if (file) { uploadMemoImg(file); e.preventDefault(); }
-    }
-  }
-});
 
 // ── 달력 ───────────────────────────────────────────
 function getSharedCalId() {
