@@ -1678,7 +1678,6 @@ async function setAutoDelete(min) {
   }
   // 모달 유지 - 대기 상태로 전환
   document.querySelector('#timerModal .timer-options').style.display = 'none';
-  document.getElementById('closeTimerBtn').style.display = 'none';
   var desc = document.querySelector('#timerModal .modal-desc');
   if (desc) { desc.textContent = '상대방 승인 대기 중...'; desc.style.color = 'var(--primary)'; desc.style.fontSize = '14px'; }
 
