@@ -1961,33 +1961,24 @@ function hideUploadStatus() {
 }
 
 function showAlert(msg) {
-  var overlay = document.getElementById('customConfirmOverlay');
+  var overlay = document.getElementById('customAlertOverlay');
   var isEn = localStorage.getItem('lang') === 'en';
-  document.getElementById('customConfirmMsg').textContent = msg;
-  document.getElementById('customConfirmOk').textContent = isEn ? 'OK' : '확인';
-  var cancelBtn = document.getElementById('customConfirmCancel');
-  cancelBtn.style.visibility = 'hidden';
-  cancelBtn.style.pointerEvents = 'none';
+  document.getElementById('customAlertMsg').textContent = msg;
+  var okBtn = document.getElementById('customAlertOk');
+  okBtn.textContent = isEn ? 'OK' : '확인';
   overlay.style.display = 'flex';
-  var okBtn = document.getElementById('customConfirmOk');
-  function cleanup() {
-    overlay.style.display = 'none';
-    okBtn.onclick = null;
-    cancelBtn.style.visibility = '';
-    cancelBtn.style.pointerEvents = '';
-  }
-  okBtn.onclick = function() { cleanup(); };
+  okBtn.onclick = function() { overlay.style.display = 'none'; okBtn.onclick = null; };
 }
 
 function showConfirm(msg, onOk, onCancel) {
   var overlay = document.getElementById('customConfirmOverlay');
   var isEn = localStorage.getItem('lang') === 'en';
   document.getElementById('customConfirmMsg').textContent = msg;
-  document.getElementById('customConfirmOk').textContent = isEn ? 'OK' : '확인';
-  document.getElementById('customConfirmCancel').textContent = isEn ? 'Cancel' : '취소';
-  overlay.style.display = 'flex';
   var okBtn = document.getElementById('customConfirmOk');
   var cancelBtn = document.getElementById('customConfirmCancel');
+  okBtn.textContent = isEn ? 'OK' : '확인';
+  cancelBtn.textContent = isEn ? 'Cancel' : '취소';
+  overlay.style.display = 'flex';
   function cleanup() { overlay.style.display = 'none'; okBtn.onclick = null; cancelBtn.onclick = null; }
   okBtn.onclick = function() { cleanup(); if (onOk) onOk(); };
   cancelBtn.onclick = function() { cleanup(); if (onCancel) onCancel(); };

@@ -537,8 +537,18 @@ try {
   <div id="privacyScreen" style="display:none;position:fixed;inset:0;background:#000;z-index:99999;"></div>
 
   <!-- 커스텀 Confirm 모달 -->
+  <!-- alert 전용 (버튼 1개) -->
+  <div id="customAlertOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:100000;align-items:center;justify-content:center;">
+    <div style="background:var(--card,#1e2235);color:var(--text,#f1f5f9);border-radius:20px;padding:28px 24px 20px;width:85%;max-width:320px;box-shadow:0 12px 40px rgba(0,0,0,0.4);text-align:center;">
+      <p id="customAlertMsg" style="margin:0 0 22px;font-size:15px;line-height:1.6;font-weight:500;white-space:pre-wrap;"></p>
+      <div style="display:flex;justify-content:center;">
+        <button id="customAlertOk" style="flex:1;padding:12px;border:none;border-radius:12px;background:var(--primary,#6C63FF);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">확인</button>
+      </div>
+    </div>
+  </div>
+  <!-- confirm 전용 (버튼 2개) -->
   <div id="customConfirmOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:100000;align-items:center;justify-content:center;">
-    <div id="customConfirmBox" style="background:var(--card,#1e2235);color:var(--text,#f1f5f9);border-radius:20px;padding:28px 24px 20px;width:85%;max-width:320px;box-shadow:0 12px 40px rgba(0,0,0,0.4);text-align:center;">
+    <div style="background:var(--card,#1e2235);color:var(--text,#f1f5f9);border-radius:20px;padding:28px 24px 20px;width:85%;max-width:320px;box-shadow:0 12px 40px rgba(0,0,0,0.4);text-align:center;">
       <p id="customConfirmMsg" style="margin:0 0 22px;font-size:15px;line-height:1.6;font-weight:500;white-space:pre-wrap;"></p>
       <div style="display:flex;gap:10px;justify-content:center;">
         <button id="customConfirmCancel" style="flex:1;padding:12px;border:none;border-radius:12px;background:rgba(255,255,255,0.08);color:var(--text,#f1f5f9);font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;">취소</button>
