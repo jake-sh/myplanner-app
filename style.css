@@ -396,9 +396,9 @@ input:checked+.slider:before{transform:translateX(20px);}
 .modal-title{font-size:18px;font-weight:800;color:var(--chat-text);}
 .modal-desc{font-size:13px;color:var(--chat-text2);font-weight:500;}
 .modal-cancel{
-  background:none;border:1.5px solid var(--chat-border);
-  color:var(--chat-text2);padding:12px;border-radius:12px;
-  font-size:14px;cursor:pointer;font-family:inherit;font-weight:600;
+  background:var(--primary,#6C63FF);border:none;
+  color:#fff;padding:12px;border-radius:12px;
+  font-size:15px;cursor:pointer;font-family:inherit;font-weight:700;
 }
 .add-friend-tabs{display:flex;gap:6px;}
 .tab-btn{
@@ -511,7 +511,7 @@ input:checked+.slider:before{transform:translateX(20px);}
 .theme-btn{background:var(--chat-surface2);border:1.5px solid var(--chat-border);color:var(--chat-text);padding:8px 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s;}
 .theme-btn.theme-active{background:var(--primary);color:#fff;border-color:var(--primary);}
 .modal-title{color:var(--chat-text);}
-.modal-cancel{color:var(--chat-text2)!important;}
+.modal-cancel{color:#fff!important;}
 .font-size-btn.font-active{background:var(--primary)!important;color:#fff!important;border-color:var(--primary)!important;}
 
 /* ══ 친구 목록 아이템 ══ */
