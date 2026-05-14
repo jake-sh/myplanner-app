@@ -93,7 +93,9 @@ function showScreen(id) {
   }
 }
 
+let _ignorNextPopstate = false;
 window.addEventListener('popstate', function(e) {
+  if (_ignorNextPopstate) { _ignorNextPopstate = false; return; }
   // 이미지 뷰어가 열려있으면 닫기
   var viewer = document.getElementById('imgViewer');
   if (viewer && viewer.style.display === 'flex') {
@@ -888,9 +890,18 @@ async function uploadMemoImg(file) {
 
 function handleMemoImgSelect(input) {
   const files = Array.from(input.files);
-  files.forEach(f => uploadMemoImg(f));
+  if (files.length) files.forEach(f => uploadMemoImg(f));
   input.value = '';
 }
+
+// 파일 선택창 열릴 때 popstate 무시 플래그 세팅
+document.addEventListener('DOMContentLoaded', function() {
+  var inp = document.getElementById('memoImgInput');
+  if (inp) inp.addEventListener('click', function() {
+    // 갤러리 닫힐 때 발생하는 popstate 1회 무시
+    setTimeout(function() { _ignorNextPopstate = true; }, 100);
+  });
+});
 
 // 클립보드 붙여넣기 (Ctrl+V / 모바일 붙여넣기)
 document.addEventListener('paste', function(e) {
