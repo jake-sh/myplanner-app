@@ -97,6 +97,10 @@ window.addEventListener('DOMContentLoaded', () => {
   // 3. 화면 표시
   showScreen('fakeApp');
   checkPendingShares();
+
+// 공유로 앱이 재활성화될 때도 체크
+window.addEventListener('pageshow', () => checkPendingShares());
+window.addEventListener('focus', () => checkPendingShares());
   // 4. 나머지 비동기
   setTimeout(function() {
     if (t) { applyMenuTheme(t); applyThemeBtnBorder(t); }
