@@ -258,13 +258,18 @@ function _setPatternBtn(confirmed) {
   const btn = document.getElementById('savePatternBtn');
   const isEn = localStorage.getItem('lang') === 'en';
   if (!btn) return;
-  if (confirmed) {
-    btn.textContent = isEn ? 'Confirm' : '확인';
-    btn.className = 'modal-confirm-ok save-pattern-btn';
-  } else {
-    btn.textContent = isEn ? 'Cancel' : '취소';
-    btn.className = 'modal-cancel-cancel save-pattern-btn';
-  }
+  btn.style.display = 'block';
+  btn.style.width = '100%';
+  btn.style.padding = '14px';
+  btn.style.border = 'none';
+  btn.style.borderRadius = '12px';
+  btn.style.fontSize = '15px';
+  btn.style.cursor = 'pointer';
+  btn.style.fontFamily = 'inherit';
+  btn.style.fontWeight = confirmed ? '700' : '600';
+  btn.style.background = confirmed ? 'var(--primary,#6C63FF)' : 'rgba(255,255,255,0.08)';
+  btn.style.color = confirmed ? '#fff' : 'var(--text,#f1f5f9)';
+  btn.textContent = confirmed ? (isEn ? 'Confirm' : '확인') : (isEn ? 'Cancel' : '취소');
 }
 
 function cancelPatternSetup() {
@@ -2649,6 +2654,7 @@ function applyLang() {
   _setText('fontSizeLabel', en ? 'Font Size' : '폰트 크기');
   _setText('lockPatternLabel', en ? 'Lock Pattern' : '잠금 패턴');
   _setText('patternChangeBtn', en ? 'Change Pattern' : '패턴 변경');
+  _setText('patternSetupTitle', en ? 'Change Pattern' : '패턴 변경');
   _setText('patternGuide', en ? 'Drag to draw a new pattern (min. 4)' : '메뉴를 드래그해서 새 패턴 입력 (최소 4개)');
   _setPatternBtn(false);
   _setText('enhancedSecLabel', en ? 'Enhanced Security' : '강화 보안');
