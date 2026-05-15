@@ -31,6 +31,50 @@ let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
 let editingMemoIndex = null;
 
 // ── INIT ───────────────────────────────────────────
+// ── 공유 텍스트 수신 ──────────────────────────────────
+async function handleSharedText(title, body) {
+  if (!body && !title) return;
+  const memos = JSON.parse(localStorage.getItem('memos') || '[]');
+  const date = new Date().toLocaleDateString('ko-KR');
+  const safeBody = (body || '').split('\n').join('<br>');
+  memos.unshift({ title: title || '', body: safeBody, date });
+  localStorage.setItem('memos', JSON.stringify(memos));
+}
+
+// SW 메시지 수신 (앱 열려있을 때)
+navigator.serviceWorker && navigator.serviceWorker.addEventListener('message', e => {
+  if (e.data && e.data.type === 'SHARED_TEXT') {
+    handleSharedText(e.data.title, e.data.body);
+  }
+});
+
+// 앱 열릴 때 IndexedDB에서 공유 데이터 확인 (?shared=1 파라미터)
+async function checkPendingShares() {
+  if (!window.location.search.includes('shared=1')) return;
+  // URL 파라미터 제거
+  history.replaceState({}, '', window.location.pathname);
+  try {
+    const db = await new Promise((res, rej) => {
+      const req = indexedDB.open('share_db', 1);
+      req.onupgradeneeded = e => e.target.result.createObjectStore('shares', { keyPath: 'id', autoIncrement: true });
+      req.onsuccess = e => res(e.target.result);
+      req.onerror = rej;
+    });
+    const shares = await new Promise((res, rej) => {
+      const tx = db.transaction('shares', 'readwrite');
+      const store = tx.objectStore('shares');
+      const all = [];
+      store.openCursor().onsuccess = e => {
+        const cur = e.target.result;
+        if (cur) { all.push(cur.value); store.delete(cur.key); cur.continue(); }
+        else res(all);
+      };
+      tx.onerror = rej;
+    });
+    for (const s of shares) await handleSharedText(s.title, s.body);
+  } catch(err) {}
+}
+
 window.addEventListener('DOMContentLoaded', () => {
   // ── 최초 실행 시 디폴트값 설정 ──
   if (!localStorage.getItem('_defaultsSet')) {
@@ -61,6 +105,7 @@ window.addEventListener('DOMContentLoaded', () => {
   startClock();
   // 3. 화면 표시
   showScreen('fakeApp');
+  checkPendingShares();
   // 4. 나머지 비동기
   setTimeout(function() {
     if (t) { applyMenuTheme(t); applyThemeBtnBorder(t); }

@@ -1,3 +1,41 @@
+// ── Share Target 처리 ──────────────────────────────
+function openShareDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open('share_db', 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore('shares', { keyPath: 'id', autoIncrement: true });
+    req.onsuccess = e => res(e.target.result);
+    req.onerror = () => rej();
+  });
+}
+function saveShare(db, data) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction('shares', 'readwrite');
+    tx.objectStore('shares').add({ ...data, ts: Date.now() });
+    tx.oncomplete = res;
+    tx.onerror = rej;
+  });
+}
+
+self.addEventListener('fetch', e => {
+  if (e.request.method === 'POST' && e.request.url.includes('share-target')) {
+    e.respondWith((async () => {
+      try {
+        const formData = await e.request.formData();
+        const title = formData.get('title') || '';
+        const text  = formData.get('text')  || '';
+        const url   = formData.get('url')   || '';
+        const body  = [text, url].filter(Boolean).join('\n');
+        const db = await openShareDB();
+        await saveShare(db, { title, body });
+        const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+        clients.forEach(c => c.postMessage({ type: 'SHARED_TEXT', title, body }));
+      } catch(err) {}
+      return Response.redirect('./?shared=1', 303);
+    })());
+    return;
+  }
+});
+
 const CACHE = 'myplanner-v237';
 const PRECACHE = ['./', './index.html', './app.js', './style.css', './manifest.json'];
 
