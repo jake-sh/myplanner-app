@@ -1154,7 +1154,14 @@ function renderFriendList() {
   friends = JSON.parse(localStorage.getItem('friends') || '[]');
   const el = document.getElementById('friendList');
   if (!friends.length) {
-    el.innerHTML = '<div class="no-friend"><div class="big-icon">👤</div><div>' + (localStorage.getItem('lang')==='en' ? 'Add a friend to start chatting' : '친구를 추가하면 채팅이 시작됩니다') + '</div></div>';
+    var _en = localStorage.getItem('lang')==='en';
+    el.innerHTML = '<div class="no-friend">' +
+      '<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.35">' +
+      '<circle cx="12" cy="8" r="4"/>' +
+      '<path d="M5 21c0-4 3.1-7 7-7s7 3 7 7"/>' +
+      '</svg>' +
+      '<div>' + (_en ? 'Add a friend to start chatting' : '친구를 추가하면 채팅이 시작됩니다') + '</div>' +
+      '</div>';
     return;
   }
   el.innerHTML = friends.map(f => `
