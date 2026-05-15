@@ -140,9 +140,30 @@ body:not(.dark-mode) .fake-title{color:var(--primary) !important;}
 .my-code-input-style{
   flex:1;padding:10px 14px;
   background:var(--chat-surface2);border:1.5px solid var(--chat-border);
-  border-radius:14px;font-size:14px;font-family:inherit;
+  border-radius:10px;font-size:14px;font-family:inherit;
   color:var(--chat-text);min-width:0;word-break:break-all;
 }
+/* ── 설정 모달 공통 ── */
+.ss-label{font-size:14px;font-weight:600;color:var(--chat-text);}
+.ss-input{
+  padding:9px 10px;border-radius:10px;
+  border:1.5px solid var(--chat-border);
+  background:var(--chat-surface2);color:var(--chat-text);
+  font-family:inherit;box-sizing:border-box;outline:none;
+}
+.ss-input:focus{border-color:var(--primary);}
+.ss-btn{
+  padding:9px 0;border-radius:10px;border:none;
+  font-size:13px;font-weight:700;cursor:pointer;
+  font-family:inherit;white-space:nowrap;
+  width:100px;text-align:center;flex-shrink:0;
+}
+.ss-btn-primary{background:var(--primary);color:#fff;}
+.ss-btn-secondary{
+  background:var(--chat-surface2);color:var(--chat-text);
+  border:1.5px solid var(--chat-border);
+}
+.ss-btn-secondary:active{background:var(--primary);color:#fff;border-color:var(--primary);}
 .settings-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;font-size:14px;font-weight:600;}
 .settings-select{
   width:100%;padding:12px 16px;
