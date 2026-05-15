@@ -37,7 +37,14 @@ async function handleSharedText(title, body) {
   const memos = JSON.parse(localStorage.getItem('memos') || '[]');
   const date = new Date().toLocaleDateString('ko-KR');
   const safeBody = (body || '').split('\n').join('<br>');
-  memos.unshift({ title: title || '', body: safeBody, date });
+  // 제목 자동 추출: body 첫 줄의 첫 10토큰
+  let autoTitle = title || '';
+  if (!autoTitle && body) {
+    const firstLine = body.split('\n')[0] || '';
+    const tokens = firstLine.trim().split(/\s+/).filter(Boolean);
+    autoTitle = tokens.slice(0, 10).join(' ');
+  }
+  memos.unshift({ title: autoTitle, body: safeBody, date });
   localStorage.setItem('memos', JSON.stringify(memos));
 }
 
@@ -53,6 +60,8 @@ async function checkPendingShares() {
   if (!window.location.search.includes('shared=1')) return;
   // URL 파라미터 제거
   history.replaceState({}, '', window.location.pathname);
+  // 처리 후 앱 닫기 (이전 앱으로 복귀)
+  const shouldClose = true;
   try {
     const db = await new Promise((res, rej) => {
       const req = indexedDB.open('share_db', 1);
@@ -73,6 +82,14 @@ async function checkPendingShares() {
     });
     for (const s of shares) await handleSharedText(s.title, s.body);
   } catch(err) {}
+  // 저장 완료 후 앱 닫기 → 이전 앱으로 복귀
+  if (shouldClose) {
+    setTimeout(() => {
+      try { window.close(); } catch(e) {}
+      // window.close() 안 될 경우 history.back()
+      setTimeout(() => history.back(), 100);
+    }, 300);
+  }
 }
 
 window.addEventListener('DOMContentLoaded', () => {
