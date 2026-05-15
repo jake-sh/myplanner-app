@@ -466,12 +466,13 @@
 
       <div class="secret-setting-item">
         <div class="settings-label" style="color:var(--chat-text);font-size:14px;" id="myCodeLabel">내 코드</div>
-        <div class="my-code-display" id="myCodeDisplaySettings" style="font-size:13px;padding:8px;"></div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="my-code-display" id="myCodeDisplaySettings" style="font-size:13px;padding:8px;"></div>
+          <button class="modal-confirm-ok" style="white-space:nowrap;padding:8px 14px;font-size:13px;width:auto;" onclick="closeSecretSettings();openChangeCode();" id="changeCodeBtn">변경</button>
+        </div>
       </div>
 
-      <button class="settings-btn" style="background:var(--primary);width:100%;font-size:13px;color:#fff;" onclick="closeSecretSettings();openChangeCode();" id="changeCodeBtn">식별 코드 변경</button>
-
-      <button class="modal-cancel" id="closeSecretBtn" style="color:var(--chat-text2);" onclick="closeSecretSettings()">닫기</button>
+      <button class="modal-cancel" id="closeSecretBtn" onclick="closeSecretSettings()">닫기</button>
     </div>
   </div>
 

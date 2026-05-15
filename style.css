@@ -132,9 +132,10 @@ body:not(.dark-mode) .fake-title{color:var(--primary) !important;}
 }
 .settings-input:focus{border-color:var(--primary);background:#fff;}
 .settings-btn{
-  background:var(--primary);color:#fff;border:none;
-  padding:12px 24px;border-radius:14px;
-  font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;
+  background:var(--chat-surface2);color:var(--chat-text);border:1.5px solid var(--chat-border);
+  padding:8px 0;border-radius:10px;
+  font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
+  width:120px;text-align:center;
 }
 .settings-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;font-size:14px;font-weight:600;}
 .settings-select{
@@ -521,7 +522,7 @@ input:checked+.slider:before{transform:translateX(20px);}
 .friend-del-btn:active{color:var(--danger);}
 
 /* 폰트 크기 버튼 */
-.font-size-btn{background:var(--chat-surface2);border:1.5px solid var(--chat-border);color:var(--chat-text);padding:8px 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s;}
+.font-size-btn{background:var(--chat-surface2);border:1.5px solid var(--chat-border);color:var(--chat-text);padding:8px 0;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s;width:48px;text-align:center;}
 .font-size-btn:active{background:var(--primary);color:#fff;}
 
 /* 미디어 */
@@ -603,9 +604,10 @@ input:checked+.slider:before{transform:translateX(20px);}
 /* 채팅 다크/라이트 버튼 */
 .chat-theme-btn{
   background:var(--chat-surface2);border:1.5px solid var(--chat-border);
-  color:var(--chat-text);padding:8px 20px;border-radius:10px;
+  color:var(--chat-text);padding:8px 0;border-radius:10px;
   font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
   transition:background .15s;white-space:nowrap;
+  width:72px;text-align:center;
 }
 .chat-theme-btn.theme-active{background:var(--primary);color:#fff;border-color:var(--primary);}
 
