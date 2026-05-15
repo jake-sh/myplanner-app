@@ -2623,6 +2623,8 @@ function applyLang() {
 
   // 자동삭제
   _setText('autoDeleteTitle', en ? 'Auto-Delete Timer' : '자동삭제 시간');
+  _setText('deleteNowBtn', en ? 'Delete Now' : '즉시삭제');
+  _setText('closeTimerBtn', en ? 'Close' : '닫기');
 
   // 보안설정
   _setText('securityTitle', en ? 'Settings' : '설정');

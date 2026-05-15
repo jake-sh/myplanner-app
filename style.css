@@ -414,6 +414,12 @@ input:checked+.slider:before{transform:translateX(20px);}
   font-size:16px;font-weight:800;text-align:center;letter-spacing:3px;
 }
 .timer-options{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.timer-delete-now-btn{
+  background:#ef4444;border:none;color:#fff;
+  padding:12px;border-radius:12px;font-size:15px;font-weight:700;
+  cursor:pointer;font-family:inherit;width:100%;
+}
+.timer-delete-now-btn:active{background:#dc2626;}
 .timer-opt{
   background:var(--chat-surface2);border:1.5px solid var(--chat-border);
   color:var(--chat-text);padding:12px;border-radius:12px;
