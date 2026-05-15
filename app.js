@@ -48,48 +48,22 @@ async function handleSharedText(title, body) {
   localStorage.setItem('memos', JSON.stringify(memos));
 }
 
-// SW 메시지 수신 (앱 열려있을 때)
-navigator.serviceWorker && navigator.serviceWorker.addEventListener('message', e => {
-  if (e.data && e.data.type === 'SHARED_TEXT') {
-    handleSharedText(e.data.title, e.data.body);
-  }
-});
-
 // 앱 열릴 때 IndexedDB에서 공유 데이터 확인 (?shared=1 파라미터)
 async function checkPendingShares() {
-  if (!window.location.search.includes('shared=1')) return;
-  // URL 파라미터 제거
+  const params = new URLSearchParams(window.location.search);
+  if (!params.has('share')) return;
+  // URL 파라미터 즉시 제거
   history.replaceState({}, '', window.location.pathname);
-  // 처리 후 앱 닫기 (이전 앱으로 복귀)
-  const shouldClose = true;
-  try {
-    const db = await new Promise((res, rej) => {
-      const req = indexedDB.open('share_db', 1);
-      req.onupgradeneeded = e => e.target.result.createObjectStore('shares', { keyPath: 'id', autoIncrement: true });
-      req.onsuccess = e => res(e.target.result);
-      req.onerror = rej;
-    });
-    const shares = await new Promise((res, rej) => {
-      const tx = db.transaction('shares', 'readwrite');
-      const store = tx.objectStore('shares');
-      const all = [];
-      store.openCursor().onsuccess = e => {
-        const cur = e.target.result;
-        if (cur) { all.push(cur.value); store.delete(cur.key); cur.continue(); }
-        else res(all);
-      };
-      tx.onerror = rej;
-    });
-    for (const s of shares) await handleSharedText(s.title, s.body);
-  } catch(err) {}
-  // 저장 완료 후 앱 닫기 → 이전 앱으로 복귀
-  if (shouldClose) {
-    setTimeout(() => {
-      try { window.close(); } catch(e) {}
-      // window.close() 안 될 경우 history.back()
-      setTimeout(() => history.back(), 100);
-    }, 300);
-  }
+  const title = params.get('title') || '';
+  const text  = params.get('text')  || '';
+  const url   = params.get('url')   || '';
+  const body  = [text, url].filter(Boolean).join('\n');
+  await handleSharedText(title, body);
+  // 저장 후 앱 닫기 시도
+  setTimeout(() => {
+    try { window.close(); } catch(e) {}
+    setTimeout(() => history.back(), 100);
+  }, 200);
 }
 
 window.addEventListener('DOMContentLoaded', () => {
