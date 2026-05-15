@@ -1,4 +1,4 @@
-const CACHE = 'myplanner-v239';
+const CACHE = 'myplanner-v241';
 const PRECACHE = ['./', './index.html', './app.js', './style.css', './manifest.json'];
 
 self.addEventListener('install', e => {
@@ -33,7 +33,7 @@ function saveShareDB(data) {
 
 self.addEventListener('fetch', e => {
   // POST 공유 요청 가로채기 → IndexedDB 저장 후 앱으로 리다이렉트
-  if (e.request.method === 'POST') {
+  if (e.request.method === 'POST' && e.request.url.includes('/share')) {
     e.respondWith((async () => {
       try {
         const fd = await e.request.formData();

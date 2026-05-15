@@ -51,6 +51,7 @@ async function handleSharedText(title, body) {
 // 앱 열릴 때 IndexedDB에서 공유 데이터 확인 (?shared=1 파라미터)
 // IndexedDB에서 공유 데이터 읽기
 async function checkPendingShares() {
+  let found = false;
   try {
     const db = await new Promise((res, rej) => {
       const req = indexedDB.open('share_db', 1);
@@ -66,12 +67,17 @@ async function checkPendingShares() {
         if (cur) {
           await handleSharedText(cur.value.title, cur.value.body);
           store.delete(cur.key);
+          found = true;
           cur.continue();
         } else res();
       };
       tx.onerror = rej;
     });
   } catch(err) {}
+  // 공유로 열린 경우 저장 후 즉시 이전 앱으로 복귀
+  if (found) {
+    setTimeout(() => history.back(), 100);
+  }
 }
 
 // SW에서 공유 저장 완료 메시지 수신
