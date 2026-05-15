@@ -49,22 +49,37 @@ async function handleSharedText(title, body) {
 }
 
 // 앱 열릴 때 IndexedDB에서 공유 데이터 확인 (?shared=1 파라미터)
+// IndexedDB에서 공유 데이터 읽기
 async function checkPendingShares() {
-  const params = new URLSearchParams(window.location.search);
-  if (!params.has('share')) return;
-  // URL 파라미터 즉시 제거
-  history.replaceState({}, '', window.location.pathname);
-  const title = params.get('title') || '';
-  const text  = params.get('text')  || '';
-  const url   = params.get('url')   || '';
-  const body  = [text, url].filter(Boolean).join('\n');
-  await handleSharedText(title, body);
-  // 저장 후 앱 닫기 시도
-  setTimeout(() => {
-    try { window.close(); } catch(e) {}
-    setTimeout(() => history.back(), 100);
-  }, 200);
+  try {
+    const db = await new Promise((res, rej) => {
+      const req = indexedDB.open('share_db', 1);
+      req.onupgradeneeded = e => e.target.result.createObjectStore('shares', { keyPath: 'id', autoIncrement: true });
+      req.onsuccess = e => res(e.target.result);
+      req.onerror = rej;
+    });
+    await new Promise((res, rej) => {
+      const tx = db.transaction('shares', 'readwrite');
+      const store = tx.objectStore('shares');
+      store.openCursor().onsuccess = async e => {
+        const cur = e.target.result;
+        if (cur) {
+          await handleSharedText(cur.value.title, cur.value.body);
+          store.delete(cur.key);
+          cur.continue();
+        } else res();
+      };
+      tx.onerror = rej;
+    });
+  } catch(err) {}
 }
+
+// SW에서 공유 저장 완료 메시지 수신
+navigator.serviceWorker && navigator.serviceWorker.addEventListener('message', e => {
+  if (e.data && e.data.type === 'SHARED_SAVED') {
+    setTimeout(() => checkPendingShares(), 100);
+  }
+});
 
 window.addEventListener('DOMContentLoaded', () => {
   // ── 최초 실행 시 디폴트값 설정 ──
@@ -98,9 +113,8 @@ window.addEventListener('DOMContentLoaded', () => {
   showScreen('fakeApp');
   checkPendingShares();
 
-// 공유로 앱이 재활성화될 때도 체크
+// 앱 재활성화 시 미처리 공유 확인
 window.addEventListener('pageshow', () => checkPendingShares());
-window.addEventListener('focus', () => checkPendingShares());
   // 4. 나머지 비동기
   setTimeout(function() {
     if (t) { applyMenuTheme(t); applyThemeBtnBorder(t); }

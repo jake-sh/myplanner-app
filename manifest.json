@@ -60,8 +60,9 @@
     }
   ],
   "share_target": {
-    "action": "./?share",
-    "method": "GET",
+    "action": "./",
+    "method": "POST",
+    "enctype": "multipart/form-data",
     "params": {
       "title": "title",
       "text": "text",
