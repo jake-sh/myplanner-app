@@ -473,7 +473,7 @@
       <div class="secret-setting-item" style="flex-direction:column;align-items:flex-start;gap:6px;">
         <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
           <div class="ss-label" id="enhancedSecLabel">강화 보안</div>
-          <label class="toggle"><input type="checkbox" id="autoLockToggle" onchange="toggleAutoLock(this.checked)"/><span class="slider"></span></label>
+          <button class="ss-onoff-btn" id="autoLockToggle" onclick="toggleAutoLockBtn(this)">ON</button>
         </div>
         <div style="font-size:11px;color:var(--chat-text2);" id="autoLockDesc">화면 이탈 시 채팅 자동 잠금</div>
       </div>

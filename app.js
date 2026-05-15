@@ -2659,7 +2659,7 @@ function applyLang() {
   _setPatternBtn(false);
   _setText('enhancedSecLabel', en ? 'Enhanced Security' : '강화 보안');
   _setText('autoLockDesc', en ? 'Auto-lock chat when leaving screen' : '화면 이탈 시 채팅 자동 잠금');
-  _setText('myCodeLabel', en ? 'My Code' : '내 코드');
+  _setText('myCodeLabel', en ? 'My Code :' : '내 코드 :');
   _setText('changeCodeTitle', en ? 'Change ID Code' : '식별 코드 변경');
   _setText('changeCodeConfirm', en ? 'Confirm' : '변경 확인');
 

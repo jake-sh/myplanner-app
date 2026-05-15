@@ -166,6 +166,15 @@ body:not(.dark-mode) .fake-title{color:var(--primary) !important;}
   border:1.5px solid var(--chat-border);
 }
 .ss-btn-secondary:active{background:var(--primary);color:#fff;border-color:var(--primary);}
+.ss-onoff-btn{
+  padding:0;border-radius:10px;border:1.5px solid var(--chat-border);
+  font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
+  width:60px;height:37px;text-align:center;flex-shrink:0;
+  background:var(--chat-surface2);color:var(--chat-text2);
+}
+.ss-onoff-btn.ss-onoff-on{
+  background:var(--primary);color:#fff;border-color:var(--primary);
+}
 .settings-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;font-size:14px;font-weight:600;}
 .settings-select{
   width:100%;padding:12px 16px;
