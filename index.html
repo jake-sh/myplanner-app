@@ -385,7 +385,7 @@
       <div id="addTabCode" style="margin-bottom:14px;">
         <p id="friendCodeDesc" class="modal-desc" style="margin-bottom:14px;">친구의 식별 코드를 입력하세요</p>
         <input id="friendCodeInput" class="chat-input-field" type="text" id="friendCodeInput2" placeholder="친구 코드 입력" style="display:block;margin-bottom:14px;"/>
-        <button class="chat-action-btn" onclick="addFriendByCode()" id="addFriendBtn" style="display:block;width:100%;">추가</button>
+        <button class="modal-confirm-ok" onclick="addFriendByCode()" id="addFriendBtn">추가</button>
       </div>
       <div id="addTabQr" style="display:none">
         <p id="qrScanDesc" class="modal-desc">친구의 QR코드를 스캔하세요</p>
@@ -398,7 +398,7 @@
         <div class="my-code-display" id="myCodeDisplay2"></div>
         <button class="settings-btn" onclick="regenerateCode()" id="regenCodeBtn">🔄 코드 재생성</button>
       </div>
-      <button class="modal-cancel" id="closeAddFriendBtn" onclick="closeAddFriend()">닫기</button>
+      <button class="modal-cancel-cancel" id="closeAddFriendBtn" onclick="closeAddFriend()">취소</button>
     </div>
   </div>
 
@@ -479,10 +479,12 @@
   <div id="changeCodeModal" class="modal" style="display:none">
     <div class="modal-box">
       <div class="modal-title" id="changeCodeTitle">식별 코드 변경</div>
-      <p class="modal-desc">⚠️ 변경 시 모든 친구가 양측에서 삭제됩니다</p>
+      <p class="modal-desc" id="changeCodeDesc">⚠️ 변경 시 모든 친구가 양측에서 삭제됩니다</p>
       <input id="newCodeInput" class="chat-input-field" type="text" maxlength="20" placeholder="새 식별 코드 입력"/>
-      <button class="chat-action-btn" style="background:#f59e0b;" onclick="confirmChangeCode()" id="changeCodeConfirm">변경 확인</button>
-      <button class="modal-cancel" onclick="closeChangeCode()">취소</button>
+      <div style="display:flex;gap:10px;">
+        <button class="modal-cancel-cancel" onclick="closeChangeCode()" id="changeCodeCancelBtn">취소</button>
+        <button class="modal-confirm-ok" onclick="confirmChangeCode()" id="changeCodeConfirm">변경 확인</button>
+      </div>
     </div>
   </div>
 </div>

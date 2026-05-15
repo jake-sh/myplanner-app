@@ -2669,7 +2669,14 @@ function applyLang() {
   _setText('fontLgLabel', en ? 'L' : '대');
   _setText('changeCodeBtn', en ? 'Change ID Code' : '식별 코드 변경');
   _setText('closeSecretBtn', en ? 'Close' : '닫기');
-  _setText('closeAddFriendBtn', en ? 'Close' : '닫기');
+  _setText('closeAddFriendBtn', en ? 'Cancel' : '취소');
+  _setText('addFriendBtn', en ? 'Add' : '추가');
+  _setText('changeCodeTitle', en ? 'Change ID Code' : '식별 코드 변경');
+  _setText('changeCodeDesc', en ? '⚠️ All friends will be deleted on both sides' : '⚠️ 변경 시 모든 친구가 양측에서 삭제됩니다');
+  _setText('changeCodeConfirm', en ? 'Confirm' : '변경 확인');
+  _setText('changeCodeCancelBtn', en ? 'Cancel' : '취소');
+  var inp = document.getElementById('newCodeInput');
+  if (inp) inp.placeholder = en ? 'Enter new ID code' : '새 식별 코드 입력';
   _setText('closeTimerBtn', en ? 'Close' : '닫기');
 
   // 달력 통계
