@@ -441,7 +441,7 @@ input:checked+.slider:before{transform:translateX(20px);}
 #qrScannerWrap{width:100%;max-width:260px;margin:0 auto;border-radius:16px;overflow:hidden;}
 #myQrCode{display:flex;justify-content:center;}
 #myQrCode canvas,#myQrCode img{border-radius:16px;}
-.save-pattern-btn{display:block;margin:16px auto 20px;padding:14px 40px;}
+.save-pattern-btn{display:block;width:100%;padding:14px;font-size:15px;}
 
 /* 메시지 카운트다운 */
 .msg-footer{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:4px;}

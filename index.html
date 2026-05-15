@@ -495,7 +495,7 @@
     <button onclick="cancelPatternSetup()" class="back-btn" style="color:#60a5fa;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
     <span class="sub-title" style="color:#f1f5f9;">패턴 변경</span>
   </div>
-  <p style="color:#64748b;text-align:center;padding:14px 20px 0;font-size:13px;">메뉴를 드래그해서 새 패턴 입력 (최소 4개)</p>
+  <p id="patternGuide" style="color:#64748b;text-align:center;padding:14px 20px 0;font-size:13px;">메뉴를 드래그해서 새 패턴 입력 (최소 4개)</p>
   <div class="menu-grid" id="setupGrid">
     <div class="menu-item" data-dot="0" ontouchstart="setupDotStart(event,0)" onmousedown="setupDotStart(event,0)"><div class="menu-icon" data-emoji="📋" data-dot="0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="36" height="36"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><div class="menu-label">할 일</div></div>
     <div class="menu-item" data-dot="1" ontouchstart="setupDotStart(event,1)" onmousedown="setupDotStart(event,1)"><div class="menu-icon" data-emoji="📅" data-dot="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="36" height="36"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="15" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="15" r="1" fill="currentColor" stroke="none"/><circle cx="16" cy="15" r="1" fill="currentColor" stroke="none"/></svg></div><div class="menu-label">일정표</div></div>
@@ -507,8 +507,10 @@
     <div class="menu-item" data-dot="7" ontouchstart="setupDotStart(event,7)" onmousedown="setupDotStart(event,7)"><div class="menu-icon" data-emoji="🏷️" data-dot="7"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="36" height="36"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7" stroke-width="2.5"/></svg></div><div class="menu-label">태그</div></div>
     <div class="menu-item" data-dot="8" ontouchstart="setupDotStart(event,8)" onmousedown="setupDotStart(event,8)"><div class="menu-icon" data-emoji="📆" data-dot="8"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="36" height="36"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="7" y1="15" x2="17" y2="15"/><line x1="7" y1="18" x2="13" y2="18"/></svg></div><div class="menu-label">달력</div></div>
   </div>
-  <div id="setupStatus" style="color:#60a5fa;text-align:center;font-size:14px;min-height:20px;padding:0 20px;"></div>
-  <button id="savePatternBtn" class="settings-btn save-pattern-btn" onclick="savePattern()" style="display:none;" id="patternSaveBtn">패턴 저장</button>
+  <div id="setupStatus" style="color:#60a5fa;text-align:center;font-size:14px;height:20px;padding:0 20px;flex-shrink:0;"></div>
+  <div style="padding:0 20px 24px;">
+    <button id="savePatternBtn" class="modal-cancel-cancel save-pattern-btn" onclick="savePattern()">취소</button>
+  </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>

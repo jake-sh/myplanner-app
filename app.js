@@ -190,7 +190,7 @@ function setupDotStart(e, dot) {
   setupPattern = [dot];
   highlightSetupDot(dot, true);
   document.getElementById('setupStatus').textContent = '';
-  document.getElementById('savePatternBtn').style.display = 'none';
+  _setPatternBtn(false);
   document.addEventListener('touchmove', onSetupTouchMove, { passive: false });
   document.addEventListener('touchend', onSetupDragEnd, { once: true });
   document.addEventListener('mousemove', onSetupMouseMove);
@@ -207,11 +207,13 @@ function onSetupDragEnd() {
   document.removeEventListener('mousemove', onSetupMouseMove);
   document.removeEventListener('mouseup', onSetupDragEnd);
   if (setupPattern.length < 4) {
-    document.getElementById('setupStatus').textContent = '최소 4개 이상 연결하세요';
+    const isEn = localStorage.getItem('lang') === 'en';
+    document.getElementById('setupStatus').textContent = isEn ? 'Connect at least 4' : '최소 4개 이상 연결하세요';
     setTimeout(() => { clearSetupDots(); setupPattern = []; document.getElementById('setupStatus').textContent = ''; }, 1000);
   } else {
-    document.getElementById('setupStatus').textContent = `패턴 입력됨 (${setupPattern.length}개)`;
-    document.getElementById('savePatternBtn').style.display = 'block';
+    const isEn2 = localStorage.getItem('lang') === 'en';
+    document.getElementById('setupStatus').textContent = isEn2 ? `Pattern set (${setupPattern.length})` : `패턴 입력됨 (${setupPattern.length}개)`;
+    _setPatternBtn(true);
   }
 }
 
@@ -236,7 +238,9 @@ function clearSetupDots() {
 }
 
 function savePattern() {
-  if (setupPattern.length < 4) return;
+  const isEn = localStorage.getItem('lang') === 'en';
+  // 입력 전(Cancel 상태)이면 뒤로가기
+  if (setupPattern.length < 4) { cancelPatternSetup(); return; }
   savedPattern = [...setupPattern];
   localStorage.setItem('secPattern', JSON.stringify(savedPattern));
   showAlert('패턴이 저장되었습니다!');
@@ -246,8 +250,21 @@ function savePattern() {
 function openPatternSetup() {
   setupPattern = []; isSetupDragging = false; clearSetupDots();
   document.getElementById('setupStatus').textContent = '';
-  document.getElementById('savePatternBtn').style.display = 'none';
+  _setPatternBtn(false);
   showScreen('patternSetup');
+}
+
+function _setPatternBtn(confirmed) {
+  const btn = document.getElementById('savePatternBtn');
+  const isEn = localStorage.getItem('lang') === 'en';
+  if (!btn) return;
+  if (confirmed) {
+    btn.textContent = isEn ? 'Confirm' : '확인';
+    btn.className = 'modal-confirm-ok save-pattern-btn';
+  } else {
+    btn.textContent = isEn ? 'Cancel' : '취소';
+    btn.className = 'modal-cancel-cancel save-pattern-btn';
+  }
 }
 
 function cancelPatternSetup() {
@@ -2632,6 +2649,8 @@ function applyLang() {
   _setText('fontSizeLabel', en ? 'Font Size' : '폰트 크기');
   _setText('lockPatternLabel', en ? 'Lock Pattern' : '잠금 패턴');
   _setText('patternChangeBtn', en ? 'Change Pattern' : '패턴 변경');
+  _setText('patternGuide', en ? 'Drag to draw a new pattern (min. 4)' : '메뉴를 드래그해서 새 패턴 입력 (최소 4개)');
+  _setPatternBtn(false);
   _setText('enhancedSecLabel', en ? 'Enhanced Security' : '강화 보안');
   _setText('autoLockDesc', en ? 'Auto-lock chat when leaving screen' : '화면 이탈 시 채팅 자동 잠금');
   _setText('myCodeLabel', en ? 'My Code' : '내 코드');
