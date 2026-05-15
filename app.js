@@ -31,62 +31,6 @@ let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
 let editingMemoIndex = null;
 
 // ── INIT ───────────────────────────────────────────
-// ── 공유 텍스트 수신 ──────────────────────────────────
-async function handleSharedText(title, body) {
-  if (!body && !title) return;
-  const memos = JSON.parse(localStorage.getItem('memos') || '[]');
-  const date = new Date().toLocaleDateString('ko-KR');
-  const safeBody = (body || '').split('\n').join('<br>');
-  // 제목 자동 추출: body 첫 줄의 첫 10토큰
-  let autoTitle = title || '';
-  if (!autoTitle && body) {
-    const firstLine = body.split('\n')[0] || '';
-    const tokens = firstLine.trim().split(/\s+/).filter(Boolean);
-    autoTitle = tokens.slice(0, 10).join(' ');
-  }
-  memos.unshift({ title: autoTitle, body: safeBody, date });
-  localStorage.setItem('memos', JSON.stringify(memos));
-}
-
-// 앱 열릴 때 IndexedDB에서 공유 데이터 확인 (?shared=1 파라미터)
-// IndexedDB에서 공유 데이터 읽기
-async function checkPendingShares() {
-  let found = false;
-  try {
-    const db = await new Promise((res, rej) => {
-      const req = indexedDB.open('share_db', 1);
-      req.onupgradeneeded = e => e.target.result.createObjectStore('shares', { keyPath: 'id', autoIncrement: true });
-      req.onsuccess = e => res(e.target.result);
-      req.onerror = rej;
-    });
-    await new Promise((res, rej) => {
-      const tx = db.transaction('shares', 'readwrite');
-      const store = tx.objectStore('shares');
-      store.openCursor().onsuccess = async e => {
-        const cur = e.target.result;
-        if (cur) {
-          await handleSharedText(cur.value.title, cur.value.body);
-          store.delete(cur.key);
-          found = true;
-          cur.continue();
-        } else res();
-      };
-      tx.onerror = rej;
-    });
-  } catch(err) {}
-  // 공유로 열린 경우 저장 후 즉시 이전 앱으로 복귀
-  if (found) {
-    setTimeout(() => history.back(), 100);
-  }
-}
-
-// SW에서 공유 저장 완료 메시지 수신
-navigator.serviceWorker && navigator.serviceWorker.addEventListener('message', e => {
-  if (e.data && e.data.type === 'SHARED_SAVED') {
-    setTimeout(() => checkPendingShares(), 100);
-  }
-});
-
 window.addEventListener('DOMContentLoaded', () => {
   // ── 최초 실행 시 디폴트값 설정 ──
   if (!localStorage.getItem('_defaultsSet')) {
@@ -117,10 +61,6 @@ window.addEventListener('DOMContentLoaded', () => {
   startClock();
   // 3. 화면 표시
   showScreen('fakeApp');
-  checkPendingShares();
-
-// 앱 재활성화 시 미처리 공유 확인
-window.addEventListener('pageshow', () => checkPendingShares());
   // 4. 나머지 비동기
   setTimeout(function() {
     if (t) { applyMenuTheme(t); applyThemeBtnBorder(t); }

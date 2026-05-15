@@ -1,4 +1,4 @@
-const CACHE = 'myplanner-v241';
+const CACHE = 'myplanner-v237';
 const PRECACHE = ['./', './index.html', './app.js', './style.css', './manifest.json'];
 
 self.addEventListener('install', e => {
@@ -13,47 +13,8 @@ self.addEventListener('activate', e => {
   );
 });
 
-// ── Share Target (POST) 처리 ─────────────────────────
-function openShareDB() {
-  return new Promise((res, rej) => {
-    const req = indexedDB.open('share_db', 1);
-    req.onupgradeneeded = e => e.target.result.createObjectStore('shares', { keyPath: 'id', autoIncrement: true });
-    req.onsuccess = e => res(e.target.result);
-    req.onerror = rej;
-  });
-}
-function saveShareDB(data) {
-  return openShareDB().then(db => new Promise((res, rej) => {
-    const tx = db.transaction('shares', 'readwrite');
-    tx.objectStore('shares').add({ ...data, ts: Date.now() });
-    tx.oncomplete = res;
-    tx.onerror = rej;
-  }));
-}
-
 self.addEventListener('fetch', e => {
-  // POST 공유 요청 가로채기 → IndexedDB 저장 후 앱으로 리다이렉트
-  if (e.request.method === 'POST' && e.request.url.includes('/share')) {
-    e.respondWith((async () => {
-      try {
-        const fd = await e.request.formData();
-        const title = fd.get('title') || '';
-        const text  = fd.get('text')  || '';
-        const url   = fd.get('url')   || '';
-        const body  = [text, url].filter(Boolean).join('\n');
-        await saveShareDB({ title, body });
-        // 열린 클라이언트에 메시지
-        const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-        clients.forEach(c => c.postMessage({ type: 'SHARED_SAVED' }));
-      } catch(err) {}
-      // 캐시된 index.html 반환 (서버 POST 안 보냄)
-      return caches.match('./index.html')
-        .then(r => r || caches.match('/myplanner-app/index.html'))
-        .then(r => r || new Response('', { status: 200 }));
-    })());
-    return;
-  }
-  // 일반 navigation 요청은 네트워크 우선
+  // navigation 요청은 네트워크 우선
   if (e.request.mode === 'navigate') {
     e.respondWith(fetch(e.request).catch(() => caches.match('/myplanner-app/index.html')));
     return;
