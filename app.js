@@ -827,6 +827,68 @@ document.addEventListener('DOMContentLoaded', function() {
     titleEl.value = tokens.slice(0, 10).join(' ');
   });
 
+  // 클립보드에서 이미지 붙여넣기 (스크린샷, 웹 이미지 복사 등)
+  // - 클립보드에 이미지가 있으면 가로채서 Firebase Storage에 업로드 후 본문에 삽입
+  // - 텍스트만 있는 paste는 기본 동작(contenteditable 자체 처리) 유지
+  contentEl.addEventListener('paste', function(e) {
+    const cd = e.clipboardData || window.clipboardData;
+    if (!cd) return;
+
+    // items에서 이미지 추출 (PNG/JPEG/GIF/WebP 등)
+    const items = cd.items ? Array.from(cd.items) : [];
+    const imageItems = items.filter(function(it) {
+      return it.kind === 'file' && it.type && it.type.indexOf('image/') === 0;
+    });
+    if (!imageItems.length) return; // 이미지 없음 → 기본 텍스트 paste 진행
+
+    // 이미지가 하나라도 있으면 기본 paste 동작 차단하고 직접 처리
+    e.preventDefault();
+
+    // paste 시점의 selection을 보존 (업로드 비동기 동안 사용자가 다른 곳 누를 수 있음)
+    const sel = window.getSelection();
+    let savedRange = null;
+    if (sel && sel.rangeCount > 0) {
+      const r = sel.getRangeAt(0);
+      // 에디터 내부일 때만 보존
+      if (contentEl.contains(r.startContainer)) savedRange = r.cloneRange();
+    }
+
+    // 보조 텍스트(이미지와 같이 복사된 텍스트)는 함께 삽입
+    const pastedText = cd.getData ? cd.getData('text/plain') : '';
+    if (pastedText && savedRange) {
+      try {
+        savedRange.deleteContents();
+        savedRange.insertNode(document.createTextNode(pastedText));
+        savedRange.collapse(false);
+      } catch(err) {}
+    }
+
+    // 업로드 시작 표시
+    try { showUploadStatus('이미지 업로드 중...'); } catch(err) {}
+    let pending = imageItems.length;
+
+    imageItems.forEach(function(it) {
+      const file = it.getAsFile();
+      if (!file) { pending--; return; }
+
+      // 업로드 직전에 저장된 selection을 복원해 두면
+      // 기존 insertImgAtCursor가 현재 selection 위치에 이미지를 삽입함
+      uploadMemoImgAtRange(file, savedRange).finally(function() {
+        pending--;
+        if (pending <= 0) {
+          try { hideUploadStatus(); } catch(err) {}
+          // 자동 제목 갱신 (텍스트가 같이 paste된 경우 대비)
+          if (memoAutoTitle) {
+            const text = contentEl.innerText || '';
+            const firstLine = text.split('\n')[0].trim();
+            const tokens = firstLine.match(/\S+/g) || [];
+            titleEl.value = tokens.slice(0, 10).join(' ');
+          }
+        }
+      });
+    });
+  });
+
   titleEl.addEventListener('input', function() {
     memoAutoTitle = (titleEl.value === '');
   });
@@ -980,6 +1042,38 @@ async function uploadMemoImg(file) {
     const path = 'memo_images/' + Date.now() + '_' + Math.random().toString(36).substr(2,6);
     const snap = await storage.ref().child(path).put(file);
     const url = await snap.ref.getDownloadURL();
+    insertImgAtCursor(url);
+  } catch(err) {
+    showAlert('이미지 업로드 실패: ' + err.message);
+  }
+}
+
+// paste 전용: paste 시점에 저장된 Range 위치에 이미지를 삽입
+// (업로드가 비동기라서 그 사이 사용자가 다른 곳을 눌러도 원래 위치를 지킴)
+async function uploadMemoImgAtRange(file, savedRange) {
+  if (!file || !file.type.startsWith('image/')) return;
+  try {
+    if (!currentUser) {
+      await new Promise((resolve) => {
+        const check = setInterval(() => { if (currentUser) { clearInterval(check); resolve(); } }, 200);
+        setTimeout(() => { clearInterval(check); resolve(); }, 5000);
+      });
+    }
+    if (!currentUser) { showAlert('인증 실패 - 새로고침 후 다시 시도하세요'); return; }
+    const path = 'memo_images/' + Date.now() + '_' + Math.random().toString(36).substr(2,6);
+    const snap = await storage.ref().child(path).put(file);
+    const url = await snap.ref.getDownloadURL();
+
+    // 저장된 Range가 있으면 selection을 복원 후 삽입,
+    // 없거나 끊겼으면 기존 insertImgAtCursor 동작(현재 selection / 끝)
+    const editor = document.getElementById('memoContentInput');
+    if (savedRange && editor && editor.contains(savedRange.startContainer)) {
+      try {
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(savedRange);
+      } catch(err) {}
+    }
     insertImgAtCursor(url);
   } catch(err) {
     showAlert('이미지 업로드 실패: ' + err.message);
