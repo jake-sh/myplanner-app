@@ -1777,6 +1777,13 @@ function updateFontSizeBtns() {
 function toggleAutoLock(enabled) {
   localStorage.setItem('autoLock', enabled ? 'true' : 'false');
 }
+function toggleAutoLockBtn(btn) {
+  var isOn = btn.dataset.on !== 'true';
+  btn.dataset.on = isOn ? 'true' : 'false';
+  btn.textContent = isOn ? 'On' : 'Off';
+  btn.classList.toggle('ss-onoff-on', isOn);
+  localStorage.setItem('autoLock', isOn ? 'true' : 'false');
+}
 
 function openSecretSettings() {
   initTitleInputs();
@@ -1785,7 +1792,12 @@ function openSecretSettings() {
   updateFontSizeBtns();
   updateThemeBtns();
   var autoLockEl = document.getElementById('autoLockToggle');
-  if (autoLockEl) autoLockEl.checked = localStorage.getItem('autoLock') === 'true';
+  if (autoLockEl) {
+    var isOn = localStorage.getItem('autoLock') !== 'false';
+    autoLockEl.dataset.on = isOn ? 'true' : 'false';
+    autoLockEl.textContent = isOn ? 'On' : 'Off';
+    autoLockEl.classList.toggle('ss-onoff-on', isOn);
+  }
   document.getElementById('secretSettingsModal').style.display = 'flex';
 }
 function closeSecretSettings() { document.getElementById('secretSettingsModal').style.display = 'none'; }

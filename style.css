@@ -160,20 +160,28 @@ body:not(.dark-mode) .fake-title{color:var(--primary) !important;}
   width:100px;text-align:center;flex-shrink:0;
   height:37px;
 }
-.ss-btn-primary{background:var(--primary);color:#fff;}
+/* Apply, New Code, New Pattern → 회색 */
+.ss-btn-primary{
+  background:var(--chat-surface2);color:var(--chat-text);
+  border:1.5px solid var(--chat-border);
+}
 .ss-btn-secondary{
   background:var(--chat-surface2);color:var(--chat-text);
   border:1.5px solid var(--chat-border);
 }
-.ss-btn-secondary:active{background:var(--primary);color:#fff;border-color:var(--primary);}
+.ss-btn-primary:active,.ss-btn-secondary:active{
+  background:var(--chat-border);
+}
+/* Security ON/OFF → 버튼세트 디자인, New Code와 동일 사이즈 */
 .ss-onoff-btn{
-  padding:0;border-radius:10px;border:1.5px solid var(--chat-border);
+  padding:0;border-radius:10px;
   font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
-  width:60px;height:37px;text-align:center;flex-shrink:0;
-  background:var(--chat-surface2);color:var(--chat-text2);
+  width:100px;height:37px;text-align:center;flex-shrink:0;
+  background:rgba(255,255,255,0.08);color:var(--text,#f1f5f9);
+  border:none;
 }
 .ss-onoff-btn.ss-onoff-on{
-  background:var(--primary);color:#fff;border-color:var(--primary);
+  background:var(--primary,#6C63FF);color:#fff;border:none;
 }
 .settings-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;font-size:14px;font-weight:600;}
 .settings-select{
