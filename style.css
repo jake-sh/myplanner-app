@@ -135,7 +135,13 @@ body:not(.dark-mode) .fake-title{color:var(--primary) !important;}
   background:var(--chat-surface2);color:var(--chat-text);border:1.5px solid var(--chat-border);
   padding:8px 0;border-radius:10px;
   font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
-  width:120px;text-align:center;
+  width:150px;text-align:center;
+}
+.my-code-input-style{
+  flex:1;padding:10px 14px;
+  background:var(--chat-surface2);border:1.5px solid var(--chat-border);
+  border-radius:14px;font-size:14px;font-family:inherit;
+  color:var(--chat-text);min-width:0;word-break:break-all;
 }
 .settings-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;font-size:14px;font-weight:600;}
 .settings-select{

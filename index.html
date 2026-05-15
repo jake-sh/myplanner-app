@@ -425,6 +425,7 @@
     <div class="modal-box">
       <div class="modal-title" style="color:var(--chat-text);" id="securityTitle">설정</div>
 
+      <!-- App Title -->
       <div class="secret-setting-item" style="flex-direction:column;align-items:flex-start;gap:8px;">
         <div class="settings-label" style="color:var(--chat-text);font-size:14px;" id="appTitleLabel">앱 타이틀</div>
         <div style="display:flex;gap:6px;align-items:center;width:100%;box-sizing:border-box;">
@@ -434,6 +435,7 @@
         </div>
       </div>
 
+      <!-- Theme -->
       <div class="secret-setting-item">
         <div class="settings-label" style="color:var(--chat-text);font-size:14px;" id="themeLabel2">테마</div>
         <div style="display:flex;gap:6px;">
@@ -442,20 +444,32 @@
         </div>
       </div>
 
+      <!-- Font Size -->
       <div class="secret-setting-item">
         <div class="settings-label" style="color:var(--chat-text);font-size:14px;" id="fontSizeLabel">폰트 크기</div>
         <div style="display:flex;gap:6px;">
-          <button class="font-size-btn" id="fontSmBtn" onclick="setChatFontSize(14)" id="fontSmLabel">소</button>
-          <button class="font-size-btn" id="fontMdBtn" onclick="setChatFontSize(18)" id="fontMdLabel">중</button>
-          <button class="font-size-btn" id="fontLgBtn" onclick="setChatFontSize(22)" id="fontLgLabel">대</button>
+          <button class="font-size-btn" id="fontSmBtn" onclick="setChatFontSize(14)">소</button>
+          <button class="font-size-btn" id="fontMdBtn" onclick="setChatFontSize(18)">중</button>
+          <button class="font-size-btn" id="fontLgBtn" onclick="setChatFontSize(22)">대</button>
         </div>
       </div>
 
+      <!-- My Code -->
       <div class="secret-setting-item">
-        <div class="settings-label" style="color:var(--chat-text);font-size:14px;" id="lockPatternLabel">잠금 패턴</div>
-        <button class="settings-btn" style="font-size:13px;padding:8px 14px;" onclick="closeSecretSettings();openPatternSetup();" id="patternChangeBtn">패턴 변경</button>
+        <div class="settings-label" style="color:var(--chat-text);font-size:14px;" id="myCodeLabel">내 코드</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div id="myCodeDisplaySettings" class="my-code-input-style"></div>
+          <button class="modal-confirm-ok" style="white-space:nowrap;padding:8px 0;font-size:13px;width:150px;" onclick="closeSecretSettings();openChangeCode();" id="changeCodeBtn">변경</button>
+        </div>
       </div>
 
+      <!-- Lock Pattern -->
+      <div class="secret-setting-item">
+        <div class="settings-label" style="color:var(--chat-text);font-size:14px;" id="lockPatternLabel">잠금 패턴</div>
+        <button class="settings-btn" onclick="closeSecretSettings();openPatternSetup();" id="patternChangeBtn">패턴 변경</button>
+      </div>
+
+      <!-- Enhanced Security -->
       <div class="secret-setting-item">
         <div>
           <div class="settings-label" style="color:var(--chat-text);font-size:14px;" id="enhancedSecLabel">강화 보안</div>
@@ -464,15 +478,8 @@
         <label class="toggle"><input type="checkbox" id="autoLockToggle" onchange="toggleAutoLock(this.checked)"/><span class="slider"></span></label>
       </div>
 
-      <div class="secret-setting-item">
-        <div class="settings-label" style="color:var(--chat-text);font-size:14px;" id="myCodeLabel">내 코드</div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div class="my-code-display" id="myCodeDisplaySettings" style="font-size:13px;padding:8px;"></div>
-          <button class="modal-confirm-ok" style="white-space:nowrap;padding:8px 14px;font-size:13px;width:auto;" onclick="closeSecretSettings();openChangeCode();" id="changeCodeBtn">변경</button>
-        </div>
-      </div>
-
-      <button class="modal-cancel" id="closeSecretBtn" onclick="closeSecretSettings()">닫기</button>
+      <!-- Close -->
+      <button class="modal-cancel" id="closeSecretBtn" onclick="closeSecretSettings()">OK</button>
     </div>
   </div>
 

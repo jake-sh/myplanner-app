@@ -2653,7 +2653,7 @@ function applyLang() {
   _setText('themeLabel2', en ? 'Theme' : '테마');
   _setText('fontSizeLabel', en ? 'Font Size' : '폰트 크기');
   _setText('lockPatternLabel', en ? 'Lock Pattern' : '잠금 패턴');
-  _setText('patternChangeBtn', en ? 'Change Pattern' : '패턴 변경');
+  _setText('patternChangeBtn', en ? 'Change' : '변경');
   _setText('patternSetupTitle', en ? 'Change Pattern' : '패턴 변경');
   _setText('patternGuide', en ? 'Drag to draw a new pattern (min. 4)' : '메뉴를 드래그해서 새 패턴 입력 (최소 4개)');
   _setPatternBtn(false);
@@ -2693,7 +2693,7 @@ function applyLang() {
   _setText('fontMdLabel', en ? 'M' : '중');
   _setText('fontLgLabel', en ? 'L' : '대');
   _setText('changeCodeBtn', en ? 'Change' : '변경');
-  _setText('closeSecretBtn', en ? 'Close' : '닫기');
+  _setText('closeSecretBtn', en ? 'OK' : 'OK');
   _setText('closeAddFriendBtn', en ? 'Cancel' : '취소');
   _setText('addFriendBtn', en ? 'Add' : '추가');
   _setText('changeCodeTitle', en ? 'Change ID Code' : '식별 코드 변경');
