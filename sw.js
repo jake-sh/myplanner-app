@@ -14,7 +14,16 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // navigation 요청은 네트워크 우선
+  // 공유 요청 가로채기 (?share 파라미터) → 서버 안 보내고 캐시로 응답
+  if (e.request.mode === 'navigate' && e.request.url.includes('?share')) {
+    e.respondWith(
+      caches.match('./index.html')
+        .then(r => r || caches.match('/myplanner-app/index.html'))
+        .then(r => r || fetch('./index.html'))
+    );
+    return;
+  }
+  // 일반 navigation 요청은 네트워크 우선
   if (e.request.mode === 'navigate') {
     e.respondWith(fetch(e.request).catch(() => caches.match('/myplanner-app/index.html')));
     return;
