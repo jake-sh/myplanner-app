@@ -218,10 +218,10 @@ function onSetupDragEnd() {
 }
 
 function checkSetupDot(x, y) {
-  document.querySelectorAll('#setupGrid .menu-item').forEach(item => {
+  document.querySelectorAll('#setupGrid .pattern-dot').forEach(item => {
     const r = item.getBoundingClientRect();
     const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-    if (Math.hypot(x - cx, y - cy) <= 24) {
+    if (Math.hypot(x - cx, y - cy) <= r.width / 2) {
       const d = parseInt(item.dataset.dot);
       if (!setupPattern.includes(d)) { setupPattern.push(d); highlightSetupDot(d, true); }
     }
@@ -230,11 +230,11 @@ function checkSetupDot(x, y) {
 
 function highlightSetupDot(dot, on) {
   const el = document.querySelector(`#setupGrid [data-dot="${dot}"]`);
-  if (el) el.classList.toggle('active', on);
+  if (el) el.classList.toggle('lit', on);
 }
 
 function clearSetupDots() {
-  document.querySelectorAll('#setupGrid .menu-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('#setupGrid .pattern-dot').forEach(el => el.classList.remove('lit'));
 }
 
 function savePattern() {
