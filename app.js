@@ -312,28 +312,32 @@ function openFakeFeature(i) {
 
 
 
-// ── 프라이버시 화면 (태스크뷰 블랙처리) ──────────────
+// ── 프라이버시 화면 (Enhanced Security 연동) ──────────────
+function isAutoLockOn() { return localStorage.getItem('autoLock') !== 'false'; }
+
 document.addEventListener('visibilitychange', function() {
   var el = document.getElementById('privacyScreen');
   if (!el) return;
   if (document.hidden) {
-    el.style.display = 'block';
+    if (isAutoLockOn()) el.style.display = 'block';
   } else {
-    // 블랙 유지한 채 화면 전환 후 충분한 딜레이
-    showScreen('fakeApp');
-    setTimeout(function() { el.style.display = 'none'; }, 600);
+    if (isAutoLockOn()) {
+      showScreen('fakeApp');
+      setTimeout(function() { el.style.display = 'none'; }, 600);
+    } else {
+      el.style.display = 'none';
+    }
   }
 });
 // iOS standalone 대응
 window.addEventListener('pagehide', function() {
   var el = document.getElementById('privacyScreen');
-  if (el) el.style.display = 'block';
+  if (el && isAutoLockOn()) el.style.display = 'block';
 });
 window.addEventListener('pageshow', function(e) {
   var el = document.getElementById('privacyScreen');
   if (el) el.style.display = 'none';
-  // iOS 복귀 시 메인 화면으로 이동 (패턴이 자연스럽게 가림)
-  if (e.persisted) {
+  if (e.persisted && isAutoLockOn()) {
     showScreen('fakeApp');
   }
 });
@@ -348,7 +352,7 @@ document.addEventListener('click', function(e) {
 var _blurTime = 0;
 window.addEventListener('blur', function() {
   var el = document.getElementById('privacyScreen');
-  if (el) el.style.display = 'block';
+  if (el && isAutoLockOn()) el.style.display = 'block';
   _blurTime = Date.now();
   if (!_filePickerOpen) _appWasHidden = true;
 });
@@ -360,14 +364,13 @@ window.addEventListener('focus', function() {
     _filePickerOpen = false;
     return;
   }
-  // 짧은 blur (시스템 다이얼로그 등) 는 메인 이동 안 함
   if (elapsed < 800) {
     _appWasHidden = false;
     return;
   }
   if (_appWasHidden) {
     _appWasHidden = false;
-    showScreen('fakeApp');
+    if (isAutoLockOn()) showScreen('fakeApp');
   }
 });
 
