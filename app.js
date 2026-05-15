@@ -61,6 +61,12 @@ window.addEventListener('DOMContentLoaded', () => {
   startClock();
   // 3. 화면 표시
   showScreen('fakeApp');
+
+  // 3-1. 공유 인텐트 처리 (다른 앱에서 텍스트 공유로 들어온 경우)
+  // 메인 화면을 띄운 직후에 호출 → 백그라운드 동작처럼 보이며 즉시 닫힘 시도
+  // 공유로 진입한 경우 아래의 비동기 초기화는 그대로 두고 창만 닫는다
+  try { handleShareIntent(); } catch(e) {}
+
   // 4. 나머지 비동기
   setTimeout(function() {
     if (t) { applyMenuTheme(t); applyThemeBtnBorder(t); }
@@ -883,6 +889,81 @@ function deleteMemo(i) {
     localStorage.setItem('memos', JSON.stringify(memos));
     renderMemoList();
   });
+}
+
+// ── 공유 인텐트 → 메모 자동 저장 ─────────────────────────────
+// 다른 앱에서 "공유하기 → my planner" 선택 시 호출됨.
+// manifest.json의 share_target이 GET ?title=&text=&url= 로 들어옴.
+// 1) 텍스트 추출 (text > url > title 우선순위)
+// 2) 첫 줄에서 토큰 10개까지 자동 제목 추출 (기존 메모 입력 로직과 동일)
+// 3) localStorage 'memos'에 즉시 unshift 저장
+// 4) 화면을 띄우지 않고 URL을 깨끗이 정리한 뒤 창 닫기 (원래 앱으로 복귀)
+function handleShareIntent() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const sharedTitle = (params.get('title') || '').trim();
+    const sharedText  = (params.get('text')  || '').trim();
+    const sharedUrl   = (params.get('url')   || '').trim();
+
+    // 공유 파라미터가 하나도 없으면 일반 실행 → 종료
+    if (!sharedTitle && !sharedText && !sharedUrl) return false;
+
+    // 본문 합성: text 우선, 없으면 url, 그것도 없으면 title
+    // 일부 브라우저는 공유 URL을 text 안에 같이 넣어주므로 중복 방지
+    let body = '';
+    if (sharedText && sharedUrl) {
+      body = sharedText.includes(sharedUrl) ? sharedText : (sharedText + '\n' + sharedUrl);
+    } else {
+      body = sharedText || sharedUrl || sharedTitle;
+    }
+    body = body.trim();
+    if (!body) return false;
+
+    // 자동 제목 규칙: 메모 입력창과 동일하게 첫 줄의 토큰 10개까지
+    // 단, 공유측에서 title을 명시적으로 보낸 경우 그것을 우선 사용
+    let title;
+    if (sharedTitle) {
+      title = sharedTitle;
+    } else {
+      const firstLine = body.split('\n')[0].trim();
+      const tokens = firstLine.match(/\S+/g) || [];
+      title = tokens.slice(0, 10).join(' ');
+    }
+
+    // 본문을 HTML body 형식으로 저장 (메모 에디터가 innerHTML 기반이므로
+    // 줄바꿈은 <br>로, HTML 특수문자는 이스케이프해서 텍스트로 보존)
+    const safeBody = String(body)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\n/g, '<br>');
+
+    const memos = JSON.parse(localStorage.getItem('memos') || '[]');
+    const date = new Date().toLocaleDateString('ko-KR');
+    memos.unshift({ title: title, body: safeBody, date: date });
+    localStorage.setItem('memos', JSON.stringify(memos));
+
+    // URL에서 공유 파라미터 제거 (새로고침 시 중복 저장 방지)
+    try {
+      const cleanUrl = window.location.pathname + window.location.hash;
+      window.history.replaceState({}, '', cleanUrl);
+    } catch(e) {}
+
+    // 원래 앱으로 복귀: PWA에서 열렸으면 창 닫기 시도
+    // (Android Chrome PWA는 share_target으로 들어오면 window.close()가 동작함)
+    // 실패 시 fakeApp 메인 화면에 머무름 (눈에 띄지 않게 토스트만)
+    setTimeout(function() {
+      try { window.close(); } catch(e) {}
+      // window.close()가 막힌 환경 대응: 작은 안내 토스트
+      try { showUploadStatus('메모에 저장됨'); } catch(e) {}
+      setTimeout(function() { try { hideUploadStatus(); } catch(e) {} }, 1500);
+    }, 50);
+
+    return true;
+  } catch(e) {
+    console.log('share intent error:', e && e.message);
+    return false;
+  }
 }
 
 // ── 메모 이미지 업로드 ────────────────────────────────────────

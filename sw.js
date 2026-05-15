@@ -1,4 +1,4 @@
-const CACHE = 'myplanner-v237';
+const CACHE = 'myplanner-v238';
 const PRECACHE = ['./', './index.html', './app.js', './style.css', './manifest.json'];
 
 self.addEventListener('install', e => {
@@ -14,6 +14,18 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  const url = new URL(e.request.url);
+  // share_target으로 들어온 요청은 캐시 우회 + 쿼리스트링 유지
+  // (manifest의 share_target action이 './' 이므로 origin/scope 루트로 들어옴)
+  const isShareTarget = e.request.method === 'GET' &&
+    (url.searchParams.has('title') || url.searchParams.has('text') || url.searchParams.has('url'));
+  if (isShareTarget) {
+    // 캐시된 index.html을 그대로 응답하고, 쿼리스트링은 클라이언트의 location.search로 살아있음
+    e.respondWith(
+      caches.match('./index.html').then(c => c || caches.match('./')).then(c => c || fetch(e.request))
+    );
+    return;
+  }
   // navigation 요청은 네트워크 우선
   if (e.request.mode === 'navigate') {
     e.respondWith(fetch(e.request).catch(() => caches.match('/myplanner-app/index.html')));
