@@ -146,17 +146,19 @@ body:not(.dark-mode) .fake-title{color:var(--primary) !important;}
 /* ── 설정 모달 공통 ── */
 .ss-label{font-size:14px;font-weight:600;color:var(--chat-text);}
 .ss-input{
-  padding:9px 10px;border-radius:10px;
+  padding:0 10px;border-radius:10px;
   border:1.5px solid var(--chat-border);
   background:var(--chat-surface2);color:var(--chat-text);
   font-family:inherit;box-sizing:border-box;outline:none;
+  height:37px;
 }
 .ss-input:focus{border-color:var(--primary);}
 .ss-btn{
-  padding:9px 0;border-radius:10px;border:none;
+  padding:0;border-radius:10px;border:none;
   font-size:13px;font-weight:700;cursor:pointer;
   font-family:inherit;white-space:nowrap;
   width:100px;text-align:center;flex-shrink:0;
+  height:37px;
 }
 .ss-btn-primary{background:var(--primary);color:#fff;}
 .ss-btn-secondary{

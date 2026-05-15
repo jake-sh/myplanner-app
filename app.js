@@ -2603,7 +2603,7 @@ function applyLang() {
   _setText('iconStyleLabel', en ? 'Icon Style' : '아이콘 스타일');
   _setText('svgColorLabel', en ? 'SVG Line Color' : 'SVG 라인 색상');
   _setText('appTitleLabel', en ? 'App Title' : '앱 타이틀');
-  _setText('titleApplyBtn', en ? 'Apply' : '적용');
+  _setText('titleApplyBtn', en ? 'Apply' : 'Apply');
   _setText('displayModeLabel', en ? 'Display Mode' : '화면 모드');
   _setText('darkModeText', en ? 'Dark Mode' : '다크 모드');
   _setText('themeColorLabel', en ? 'Theme Color' : '테마 색상');
@@ -2653,7 +2653,7 @@ function applyLang() {
   _setText('themeLabel2', en ? 'Theme' : '테마');
   _setText('fontSizeLabel', en ? 'Font Size' : '폰트 크기');
   _setText('lockPatternLabel', en ? 'Lock Pattern' : '잠금 패턴');
-  _setText('patternChangeBtn', en ? 'Change' : '변경');
+  _setText('patternChangeBtn', en ? 'New Pattern' : 'New Pattern');
   _setText('patternSetupTitle', en ? 'Change Pattern' : '패턴 변경');
   _setText('patternGuide', en ? 'Drag to draw a new pattern (min. 4)' : '메뉴를 드래그해서 새 패턴 입력 (최소 4개)');
   _setPatternBtn(false);
@@ -2692,7 +2692,7 @@ function applyLang() {
   _setText('fontSmLabel', en ? 'S' : '소');
   _setText('fontMdLabel', en ? 'M' : '중');
   _setText('fontLgLabel', en ? 'L' : '대');
-  _setText('changeCodeBtn', en ? 'Change' : '변경');
+  _setText('changeCodeBtn', en ? 'New Code' : 'New Code');
   _setText('closeSecretBtn', en ? 'OK' : 'OK');
   _setText('closeAddFriendBtn', en ? 'Cancel' : '취소');
   _setText('addFriendBtn', en ? 'Add' : '추가');
