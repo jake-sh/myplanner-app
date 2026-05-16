@@ -40,10 +40,29 @@ window.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('svgColorMode', 'off');
     localStorage.setItem('lang', 'en');
     localStorage.setItem('notifApp', 'true');
-    localStorage.setItem('notifCal', 'true');
-    localStorage.setItem('notifTodo', 'true');
+    localStorage.setItem('notifEvent', 'true');
     localStorage.setItem('autoLock', 'true');
     localStorage.setItem('_defaultsSet', '1');
+  }
+
+  // 알림 키 마이그레이션 (notifCal/notifTodo/notifEnabled → notifApp/notifEvent)
+  if (!localStorage.getItem('_notifMigrated')) {
+    // notifApp이 없으면 기존 notifCal 또는 notifTodo 중 하나라도 true면 true
+    if (localStorage.getItem('notifApp') === null) {
+      var anyOn = localStorage.getItem('notifCal') === 'true' ||
+                  localStorage.getItem('notifTodo') === 'true';
+      localStorage.setItem('notifApp', anyOn ? 'true' : 'false');
+    }
+    // notifEvent가 없으면 기존 notifEnabled를 그대로 승계
+    if (localStorage.getItem('notifEvent') === null) {
+      localStorage.setItem('notifEvent',
+        localStorage.getItem('notifEnabled') === 'true' ? 'true' : 'false');
+    }
+    // 폐기 키 제거
+    localStorage.removeItem('notifCal');
+    localStorage.removeItem('notifTodo');
+    // notifEnabled는 채팅 알림 로직 호환성 때문에 notifEvent와 같이 둔다 (이후 코드에서 양쪽 모두 set)
+    localStorage.setItem('_notifMigrated', '1');
   }
   // 기존 사용자도 다크모드 기본값 강제 적용 (한 번만)
   if (!localStorage.getItem('_darkDefault')) {
@@ -485,9 +504,10 @@ function _doDeleteAllTags() {
 
 // ── SETTINGS ───────────────────────────────────────
 function openSettings() {
-  document.getElementById('notifApp').checked = localStorage.getItem('notifApp') === 'true';
-  document.getElementById('notifCal').checked = localStorage.getItem('notifCal') === 'true';
-  document.getElementById('notifTodo').checked = localStorage.getItem('notifTodo') === 'true';
+  var notifEventEl = document.getElementById('notifEvent');
+  var notifAppEl = document.getElementById('notifApp');
+  if (notifEventEl) notifEventEl.checked = localStorage.getItem('notifEvent') === 'true';
+  if (notifAppEl) notifAppEl.checked = localStorage.getItem('notifApp') === 'true';
   showScreen('settingsScreen');
   var t2 = localStorage.getItem('themeColor') || '#6C63FF';
   setTimeout(function(){ applyThemeBtnBorder(t2); updateIconStyleBtns(); updateSvgColorBtns(); }, 200);
@@ -706,11 +726,75 @@ function applyMenuTheme(c) {
   });
 }
 
+// ── 공유 인프라 ───────────────────────────────────────
+// 일반 앱(메모/할일/달력/통계)의 데이터 공유 대상을 단일 친구 코드로 통합 관리.
+// 공유 대상 조회.
+// 정합성:
+// - 저장된 shareTarget이 현재 친구 목록에 없으면 무효 처리하고 null 반환 (자동 폴백 없음)
+// - 비어 있으면 null 반환 → 공유 비활성, 완전 로컬 동작
+// - 공유 대상은 사용자가 채팅 설정에서 명시적으로 선택해야만 활성화됨
+function getShareTarget() {
+  var friends = [];
+  try { friends = JSON.parse(localStorage.getItem('friends') || '[]'); } catch(e) {}
+
+  var t = localStorage.getItem('shareTarget');
+  if (t && friends.indexOf(t) >= 0) return t;       // 유효
+  if (t && friends.indexOf(t) < 0) {                 // stale → 정리
+    localStorage.removeItem('shareTarget');
+  }
+  return null;
+}
+
+// 공유 대상 변경 (Q2: 회수 + 재배포)
+// 1) 이전 대상의 모든 공유 문서를 비움 (메모/할일/달력/통계 sid 각각)
+// 2) shareTarget 갱신
+// 3) 새 대상에게 현재 로컬 데이터를 재배포 (단, 메모는 shared:true인 것만)
+async function setShareTarget(newTarget) {
+  if (!myCode) return;
+  var oldTarget = localStorage.getItem('shareTarget');
+  if (oldTarget === newTarget) return;
+
+  // 1) 이전 대상으로부터 회수
+  if (oldTarget) {
+    var oldSids = {
+      memo: [myCode, oldTarget].sort().join('_memo_'),
+      todo: [myCode, oldTarget].sort().join('_todo_'),
+      cal:  [myCode, oldTarget].sort().join('_cal_'),
+      stats:[myCode, oldTarget].sort().join('_stat_')
+    };
+    try {
+      // 메모: 빈 배열로 set → 상대 측 onSnapshot에서 받은 메모 사라짐
+      await db.collection('memos_shared').doc(oldSids.memo).set({
+        memos: [], updatedBy: myCode, ts: firebase.firestore.Timestamp.now()
+      });
+    } catch(e) { console.log('[SHARE] memo recall error:', e.message); }
+    // 할일/달력/통계는 양방향 공유 데이터라 함부로 비우면 안 됨.
+    // 대신 새 대상에게 재push되므로 자연스럽게 분리됨. (이전 대상의 문서는 그대로 남되 더 이상 갱신 안 됨)
+  }
+
+  // 2) 대상 갱신
+  if (newTarget) {
+    localStorage.setItem('shareTarget', newTarget);
+  } else {
+    localStorage.removeItem('shareTarget');
+  }
+
+  // 3) 새 대상으로 재배포
+  if (newTarget) {
+    // 메모: 내가 shared:true로 표시한 것만
+    try { await saveSharedMemosToFirestore(); } catch(e) { console.log('[SHARE] memo push error:', e.message); }
+    // 할일: 현재 로컬 todos 전체 push
+    try { await saveTodosToFirestore(); } catch(e) { console.log('[SHARE] todo push error:', e.message); }
+    // 달력/통계: 기존 함수가 있으면 호출 (현재 코드엔 별도 push 함수가 없고 sync 시점에 set)
+  }
+}
+
 // ── 할 일 ───────────────────────────────────────────
 function getSharedTodoId() {
-  const f = JSON.parse(localStorage.getItem('friends') || '[]');
-  if (!myCode || !f.length) return null;
-  return [myCode, f[0]].sort().join('_todo_');
+  if (!myCode) return null;
+  var target = getShareTarget();
+  if (!target) return null;
+  return [myCode, target].sort().join('_todo_');
 }
 
 function openTodo() {
@@ -725,7 +809,7 @@ function openTodo() {
         const data = snap.data();
         localStorage.setItem('todos', JSON.stringify(data.todos || []));
         if (!firstLoad && data.updatedBy && data.updatedBy !== myCode) {
-          if (localStorage.getItem('notifTodo') === 'true') sendNotification('할 일', '새로운 할 일이 있어요');
+          if (localStorage.getItem('notifApp') === 'true') sendNotification('할 일', '새로운 할 일이 있어요');
         }
         firstLoad = false;
       }
@@ -785,12 +869,63 @@ function deleteTodo(i) {
 
 function openMemo() { renderMemoList(); showScreen('memoScreen'); }
 
+// 메모 데이터 마이그레이션:
+// 기존 메모에 id/owner/shared/ts 자동 추가.
+// - id: 마이그레이션 시점 기준 고유값 생성
+// - owner: myCode (이 단말에서 만든 것으로 간주)
+// - shared: false (기본 비공유)
+// - ts: date에서 파싱 시도, 실패 시 현재 시각
+// 반환값: 변환 후 배열. localStorage 갱신은 호출측에서 결정.
+function migrateMemos(memos) {
+  var changed = false;
+  var now = Date.now();
+  memos.forEach(function(m, idx) {
+    if (!m.id) {
+      // 인덱스 + now로 어느 정도 시간 분리. 작은 음수 오프셋으로 오래된 항목이 뒤에 오게.
+      m.id = (now - idx) + '_' + Math.random().toString(36).slice(2,8);
+      changed = true;
+    }
+    if (!('owner' in m)) {
+      m.owner = myCode || '';
+      changed = true;
+    }
+    if (!('shared' in m)) {
+      m.shared = false;
+      changed = true;
+    }
+    if (!('ts' in m)) {
+      // date 문자열을 파싱 시도 (ko-KR: "YYYY. M. D." 등). 실패 시 인덱스 보정
+      var ts = NaN;
+      if (m.date) {
+        var d = new Date(m.date);
+        if (!isNaN(d.getTime())) ts = d.getTime();
+      }
+      if (isNaN(ts)) ts = now - idx * 1000; // 인덱스 순서 보존
+      m.ts = ts;
+      changed = true;
+    }
+  });
+  return { memos: memos, changed: changed };
+}
+
+// 로컬 메모 로드: 마이그레이션 + 변경 시 즉시 저장
+function loadMemos() {
+  var memos = [];
+  try { memos = JSON.parse(localStorage.getItem('memos') || '[]'); } catch(e) {}
+  var r = migrateMemos(memos);
+  if (r.changed) localStorage.setItem('memos', JSON.stringify(r.memos));
+  return r.memos;
+}
+
 function renderMemoList() {
-  const memos = JSON.parse(localStorage.getItem('memos') || '[]');
+  // 마이그레이션 적용 + ts 내림차순 정렬
+  var memos = loadMemos();
+  memos.sort(function(a,b) { return (b.ts||0) - (a.ts||0); });
+
   const el = document.getElementById('memoList');
   var isEn = localStorage.getItem('lang') === 'en';
   if (!memos.length) { el.innerHTML = '<div class="empty-state">' + (isEn ? 'No memos yet' : '메모가 없습니다') + '</div>'; return; }
-  el.innerHTML = memos.map((m,i) => {
+  el.innerHTML = memos.map(function(m) {
     // 본문 미리보기: HTML에서 텍스트만 추출
     const tmp = document.createElement('div');
     tmp.innerHTML = m.body || '';
@@ -798,14 +933,35 @@ function renderMemoList() {
     // 본문 내 첫 이미지 추출
     const imgMatch = (m.body || '').match(/<img[^>]+src="([^"]+)"/);
     const thumb = imgMatch ? `<div class="memo-card-imgs"><img class="memo-card-img-thumb" src="${imgMatch[1]}"></div>` : '';
+
+    // 공유 상태 아이콘
+    // - 받은 메모(from 있음): ▼ 고정, 클릭 무동작
+    // - 내 메모: shared면 ▲, 아니면 △ — 클릭으로 토글
+    var isReceived = !!m.from;
+    var shareIcon, shareCls, shareOnclick;
+    if (isReceived) {
+      shareIcon = '▼';
+      shareCls = 'memo-share-icon memo-share-received';
+      shareOnclick = ''; // 받은 메모는 클릭 무시
+    } else if (m.shared) {
+      shareIcon = '▲';
+      shareCls = 'memo-share-icon memo-share-on';
+      shareOnclick = 'onclick="event.stopPropagation();toggleMemoShare(\'' + esc(m.id) + '\')"';
+    } else {
+      shareIcon = '△';
+      shareCls = 'memo-share-icon memo-share-off';
+      shareOnclick = 'onclick="event.stopPropagation();toggleMemoShare(\'' + esc(m.id) + '\')"';
+    }
+
     return `
-    <div class="memo-card" onclick="openEditMemo(${i})">
+    <div class="memo-card" onclick="openEditMemo('${esc(m.id)}')">
       <div class="memo-card-title">${esc(m.title||'제목 없음')}</div>
       <div class="memo-card-preview">${esc(preview)}</div>
       ${thumb}
       <div class="memo-card-footer">
         <span class="memo-card-date">${m.date||''}</span>
-        <button class="memo-del" onclick="event.stopPropagation();deleteMemo(${i})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
+        <button class="${shareCls}" ${shareOnclick} aria-label="share">${shareIcon}</button>
+        <button class="memo-del" onclick="event.stopPropagation();deleteMemo('${esc(m.id)}')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
       </div>
     </div>`;
   }).join('');
@@ -831,6 +987,11 @@ document.addEventListener('DOMContentLoaded', function() {
   // - 클립보드에 이미지가 있으면 가로채서 Firebase Storage에 업로드 후 본문에 삽입
   // - 텍스트만 있는 paste는 기본 동작(contenteditable 자체 처리) 유지
   contentEl.addEventListener('paste', function(e) {
+    // 받은 메모(읽기 전용) 편집 시에는 paste 차단
+    if (contentEl.getAttribute('contenteditable') === 'false') {
+      e.preventDefault();
+      return;
+    }
     const cd = e.clipboardData || window.clipboardData;
     if (!cd) return;
 
@@ -902,28 +1063,102 @@ function clearMemoTitle() {
   titleEl.focus();
 }
 
+// 편집 중인 메모 ID. null이면 새 메모. 기존 editingMemoIndex 변수는 호환 위해 두지만 이 함수들에선 사용 안 함.
+var editingMemoId = null;
+
 function openNewMemo() {
+  editingMemoId = null;
   editingMemoIndex = null;
   const en = localStorage.getItem('lang') === 'en';
   document.getElementById('memoEditorTitle').textContent = en ? 'New Memo' : '새 메모';
   document.getElementById('memoEditorTitle').style.fontWeight = en ? '800' : '400';
   document.getElementById('memoTitleInput').value = '';
   document.getElementById('memoContentInput').innerHTML = '';
+  // 새 메모는 항상 편집 가능 상태로 초기화
+  applyMemoEditorReadonly(false);
   memoAutoTitle = true;
   showScreen('memoEditorScreen');
 }
 
-function openEditMemo(i) {
-  editingMemoIndex = i;
+// 메모 에디터를 읽기 전용/편집 가능으로 전환
+// readonly=true (받은 메모): 편집 차단, 텍스트 선택만 허용, 저장 버튼을 Close 버튼으로 교체
+// readonly=false: 편집 가능 (기본)
+function applyMemoEditorReadonly(readonly) {
+  var titleEl = document.getElementById('memoTitleInput');
+  var contentEl = document.getElementById('memoContentInput');
+  var saveBtn = document.getElementById('memoSaveBtn');
+  var toolbar = document.getElementById('memoImgToolbar');
+  var clearBtn = document.getElementById('memoTitleClear');
+  if (!titleEl || !contentEl) return;
+  var en = localStorage.getItem('lang') === 'en';
+  if (readonly) {
+    titleEl.setAttribute('readonly', 'readonly');
+    contentEl.setAttribute('contenteditable', 'false');
+    // 편집 caret은 숨기되 텍스트 선택은 가능 (브라우저 기본 동작)
+    contentEl.style.caretColor = 'transparent';
+    contentEl.style.outline = 'none';
+    contentEl.style.userSelect = 'text';
+    contentEl.style.webkitUserSelect = 'text';
+    if (toolbar) toolbar.style.display = 'none';
+    if (clearBtn) clearBtn.style.display = 'none';
+    // 저장 버튼을 Close로 변환 (같은 자리에 그대로 두고 텍스트/핸들러만 교체)
+    if (saveBtn) {
+      saveBtn.style.display = '';
+      saveBtn.textContent = en ? 'Close' : '닫기';
+      saveBtn.setAttribute('onclick', 'closeMemoEditor()');
+      saveBtn.dataset.mode = 'close';
+    }
+  } else {
+    titleEl.removeAttribute('readonly');
+    contentEl.setAttribute('contenteditable', 'true');
+    contentEl.style.caretColor = '';
+    contentEl.style.outline = '';
+    contentEl.style.userSelect = '';
+    contentEl.style.webkitUserSelect = '';
+    if (toolbar) toolbar.style.display = '';
+    if (clearBtn) clearBtn.style.display = '';
+    // Close 버튼이었으면 다시 저장 버튼으로 복원
+    if (saveBtn) {
+      saveBtn.style.display = '';
+      saveBtn.textContent = en ? 'Save' : '저장';
+      saveBtn.setAttribute('onclick', 'saveMemo()');
+      saveBtn.dataset.mode = 'save';
+    }
+  }
+}
+
+function openEditMemo(id) {
+  // 호환성: 숫자가 들어오면 인덱스로 처리 (구버전 호출 흔적 방어)
+  var memos = loadMemos();
+  memos.sort(function(a,b) { return (b.ts||0) - (a.ts||0); });
+  var memo = null;
+  if (typeof id === 'number') {
+    memo = memos[id];
+  } else {
+    memo = memos.find(function(m) { return m.id === id; });
+  }
+  if (!memo) return;
+
+  editingMemoId = memo.id;
+  editingMemoIndex = null; // 인덱스 기반 식별 폐기
+
   const en = localStorage.getItem('lang') === 'en';
-  const memos = JSON.parse(localStorage.getItem('memos') || '[]');
-  document.getElementById('memoEditorTitle').textContent = en ? 'Edit Memo' : '메모 편집';
+  var isReceived = !!memo.from;
+  // 받은 메모: 뷰어 모드 / 내 메모: 편집 모드
+  var headerText = isReceived
+    ? (en ? 'View Memo' : '메모 보기')
+    : (en ? 'Edit Memo' : '메모 편집');
+  document.getElementById('memoEditorTitle').textContent = headerText;
   document.getElementById('memoEditorTitle').style.fontWeight = en ? '800' : '400';
-  document.getElementById('memoTitleInput').value = memos[i].title || '';
+  document.getElementById('memoTitleInput').value = memo.title || '';
   // body(HTML) 우선, 없으면 구버전 content(텍스트) 폴백
-  const body = memos[i].body || (memos[i].content ? memos[i].content.replace(/\n/g,'<br>') : '');
+  const body = memo.body || (memo.content ? memo.content.replace(/\n/g,'<br>') : '');
   document.getElementById('memoContentInput').innerHTML = body;
   memoAutoTitle = false;
+
+  // 받은 메모는 읽기 전용 (편집 진입 X, Close 버튼 표시)
+  applyMemoEditorReadonly(isReceived);
+
   setTimeout(bindAllMemoImgPinch, 50);
   showScreen('memoEditorScreen');
 }
@@ -935,23 +1170,178 @@ function saveMemo() {
   const body = document.getElementById('memoContentInput').innerHTML.trim();
   const textOnly = (document.getElementById('memoContentInput').innerText || '').trim();
   if (!title && !textOnly) { showAlert('내용을 입력하세요'); return; }
-  const memos = JSON.parse(localStorage.getItem('memos') || '[]');
+
+  var memos = loadMemos();
   const date = new Date().toLocaleDateString('ko-KR');
-  const memo = { title, body, date };
-  if (editingMemoIndex !== null) memos[editingMemoIndex] = memo;
-  else memos.unshift(memo);
+  var now = Date.now();
+
+  if (editingMemoId) {
+    // 기존 메모 수정 — 받은 메모는 저장 안 됨 (UI에서 저장버튼 숨겨두긴 했지만 방어)
+    var idx = memos.findIndex(function(m) { return m.id === editingMemoId; });
+    if (idx >= 0) {
+      if (memos[idx].from) return; // 받은 메모는 수정 금지
+      memos[idx].title = title;
+      memos[idx].body = body;
+      memos[idx].date = date;
+      memos[idx].ts = now;
+      // shared 유지, owner 유지
+    }
+  } else {
+    // 새 메모
+    memos.unshift({
+      id: now + '_' + Math.random().toString(36).slice(2,8),
+      owner: myCode || '',
+      shared: false,
+      title: title,
+      body: body,
+      date: date,
+      ts: now
+    });
+  }
+
   localStorage.setItem('memos', JSON.stringify(memos));
+  // 공유 중인 메모를 수정했다면 Firestore에도 반영
+  saveSharedMemosToFirestore();
   closeMemoEditor();
 }
 
-function deleteMemo(i) {
+function deleteMemo(id) {
+  // 호환성: 숫자 인덱스도 받아줌
   showConfirm('메모를 삭제할까요?', function() {
-    const memos = JSON.parse(localStorage.getItem('memos') || '[]');
-    memos.splice(i, 1);
+    var memos = loadMemos();
+    if (typeof id === 'number') {
+      // 인덱스: 정렬된 화면 기준이므로 그 정렬을 한 번 더 적용해야 동일 항목
+      memos.sort(function(a,b) { return (b.ts||0) - (a.ts||0); });
+      memos.splice(id, 1);
+    } else {
+      var idx = memos.findIndex(function(m) { return m.id === id; });
+      if (idx >= 0) memos.splice(idx, 1);
+    }
     localStorage.setItem('memos', JSON.stringify(memos));
+    // 내가 공유 중이던 메모를 지웠다면 Firestore에서도 회수
+    saveSharedMemosToFirestore();
     renderMemoList();
   });
 }
+
+// 공유 토글: 내 메모만 대상. 받은 메모는 토글 불가.
+// 공유 대상이 없으면 알림 없이 조용히 무시.
+function toggleMemoShare(id) {
+  var memos = loadMemos();
+  var idx = memos.findIndex(function(m) { return m.id === id; });
+  if (idx < 0) return;
+  if (memos[idx].from) return; // 받은 메모는 토글 불가
+  if (!getShareTarget()) return; // 공유 대상 없으면 조용히 무시
+
+  memos[idx].shared = !memos[idx].shared;
+  // 토글 시 ts 갱신하지 않음 (정렬 위치 안 바뀜)
+  localStorage.setItem('memos', JSON.stringify(memos));
+  saveSharedMemosToFirestore();
+  renderMemoList();
+}
+
+// ── 메모 Firestore 동기화 ────────────────────────────────────
+var memoListener = null;
+
+// 내가 공유 ON으로 표시한 메모만 Firestore에 push
+async function saveSharedMemosToFirestore() {
+  if (!myCode) return;
+  var target = getShareTarget();
+  if (!target) return;
+  var sid = [myCode, target].sort().join('_memo_');
+
+  var memos = loadMemos();
+  // 내가 작성했고(shared:true) 받은 메모(from 없음)인 것만 골라서 전송
+  var outgoing = memos.filter(function(m) { return m.shared && !m.from; })
+                      .map(function(m) {
+                        // 상대 입장에서 보일 데이터만 (owner는 상대에게도 보임)
+                        return {
+                          id: m.id, owner: myCode,
+                          title: m.title || '', body: m.body || '',
+                          date: m.date || '', ts: m.ts || Date.now()
+                        };
+                      });
+  try {
+    await db.collection('memos_shared').doc(sid).set({
+      memos: outgoing, updatedBy: myCode, ts: firebase.firestore.Timestamp.now()
+    });
+  } catch(e) {
+    console.log('[MEMO] save error:', e.message);
+  }
+}
+
+// 상대가 공유한 메모를 받아 로컬과 머지
+function applyIncomingSharedMemos(incoming, fromCode) {
+  // 1) 내 로컬에서 이 sender(fromCode)로부터 받았던 메모들의 ID 집합
+  var memos = loadMemos();
+  var receivedFromThisSender = memos.filter(function(m) { return m.from === fromCode; });
+  var receivedIds = receivedFromThisSender.map(function(m) { return m.id; });
+
+  // 2) incoming 배열의 ID 집합
+  var incomingIds = (incoming || []).map(function(m) { return m.id; });
+
+  // 3) 머지:
+  //    - incoming에 있고 로컬에 없는 것 → 추가 (from:fromCode)
+  //    - incoming에 있고 로컬에 있는 것 → 내용 갱신 (from:fromCode 유지)
+  //    - incoming에 없는데 로컬에는 받은걸로 있는 것 → 상대가 공유 해제 → 로컬에서 제거
+  // 새 배열 구성: (내가 소유한 메모) + (이번 sender가 아닌 다른 from의 메모) + (incoming을 from으로 변환)
+  var keep = memos.filter(function(m) {
+    return !m.from || m.from !== fromCode;
+  });
+  var fromIncoming = (incoming || []).map(function(m) {
+    return {
+      id: m.id,
+      owner: m.owner || fromCode,
+      from: fromCode,         // 받은 메모 표식
+      shared: false,          // 받은 메모는 내 입장에서 공유 토글 불가
+      title: m.title || '',
+      body: m.body || '',
+      date: m.date || '',
+      ts: m.ts || Date.now()
+    };
+  });
+
+  var merged = keep.concat(fromIncoming);
+  localStorage.setItem('memos', JSON.stringify(merged));
+}
+
+// 메모 화면 열 때 구독 시작 (할일과 동일 패턴)
+function startMemoListener() {
+  if (memoListener) { try { memoListener(); } catch(e) {} memoListener = null; }
+  if (!myCode) return;
+  var target = getShareTarget();
+  if (!target) return;
+  var sid = [myCode, target].sort().join('_memo_');
+
+  var firstLoad = true;
+  memoListener = db.collection('memos_shared').doc(sid).onSnapshot(function(snap) {
+    if (snap.exists) {
+      var data = snap.data() || {};
+      // 이 문서에는 양쪽 다 쓸 수 있지만, updatedBy가 내가 아닌 경우에만 incoming으로 처리
+      // (내가 set한 직후의 echo는 무시)
+      if (data.updatedBy && data.updatedBy !== myCode) {
+        // updatedBy가 상대 → memos는 상대가 나에게 공유한 메모들
+        applyIncomingSharedMemos(data.memos || [], data.updatedBy);
+        if (!firstLoad) {
+          if (localStorage.getItem('notifApp') === 'true') {
+            try { sendNotification('메모', '새로운 공유 메모가 있어요'); } catch(e) {}
+          }
+        }
+        renderMemoList();
+      }
+    }
+    firstLoad = false;
+  }, function(err) {
+    console.log('[MEMO] listener error:', err && err.message);
+  });
+}
+
+// openMemo 진입 시 리스너 시작 — 기존 openMemo를 확장
+var _origOpenMemo = openMemo;
+window.openMemo = function() {
+  _origOpenMemo();
+  startMemoListener();
+};
 
 // ── 공유 인텐트 → 메모 자동 저장 ─────────────────────────────
 // 다른 앱에서 "공유하기 → my planner" 선택 시 호출됨.
@@ -1002,7 +1392,14 @@ function handleShareIntent() {
 
     const memos = JSON.parse(localStorage.getItem('memos') || '[]');
     const date = new Date().toLocaleDateString('ko-KR');
-    memos.unshift({ title: title, body: safeBody, date: date });
+    var now = Date.now();
+    memos.unshift({
+      id: now + '_' + Math.random().toString(36).slice(2,8),
+      owner: myCode || '',
+      shared: false,
+      title: title, body: safeBody, date: date,
+      ts: now
+    });
     localStorage.setItem('memos', JSON.stringify(memos));
 
     // URL에서 공유 파라미터 제거 (새로고침 시 중복 저장 방지)
@@ -1156,9 +1553,10 @@ function handleMemoImgSelect(e) {
 
 // ── 달력 ───────────────────────────────────────────
 function getSharedCalId() {
-  const f = JSON.parse(localStorage.getItem('friends') || '[]');
-  if (!myCode || !f.length) return null;
-  return [myCode, f[0]].sort().join('_cal_');
+  if (!myCode) return null;
+  var target = getShareTarget();
+  if (!target) return null;
+  return [myCode, target].sort().join('_cal_');
 }
 
 function openCalendar() {
@@ -1173,7 +1571,7 @@ function openCalendar() {
         localStorage.setItem('habits', JSON.stringify(data.habits || {}));
         // 상대방이 업데이트한 경우만 알림
         if (!firstCalLoad && data.updatedBy && data.updatedBy !== myCode) {
-          if (localStorage.getItem('notifCal') === 'true') sendNotification('달력', '새 일정이 있어요');
+          if (localStorage.getItem('notifApp') === 'true') sendNotification('달력', '새 일정이 있어요');
         }
         firstCalLoad = false;
       }
@@ -1363,8 +1761,29 @@ function listenFriendChanges() {
     var newFriends = snap.data().friends || [];
     // 서버에서 빈 배열이 오더라도 캐시가 있으면 무시 (일시적 오류 방어)
     if (newFriends.length === 0 && friends.length > 0 && snap.metadata.fromCache) return;
+
+    // 친구 목록에서 사라진 코드들 찾기 (상대가 나를 삭제한 경우)
+    var removed = friends.filter(function(f) { return newFriends.indexOf(f) < 0; });
+
     friends = newFriends;
     localStorage.setItem('friends', JSON.stringify(friends));
+
+    // stale shareTarget 정리
+    var st = localStorage.getItem('shareTarget');
+    if (st && friends.indexOf(st) < 0) {
+      localStorage.removeItem('shareTarget');
+    }
+    // 사라진 친구로부터 받았던 메모 제거
+    if (removed.length) {
+      try {
+        var memos = JSON.parse(localStorage.getItem('memos') || '[]');
+        var cleaned = memos.filter(function(m) { return removed.indexOf(m.from) < 0; });
+        if (cleaned.length !== memos.length) {
+          localStorage.setItem('memos', JSON.stringify(cleaned));
+        }
+      } catch(e) {}
+    }
+
     renderFriendList();
   }, function(err) {
     console.warn('friendsListener error:', err);
@@ -1388,6 +1807,21 @@ async function _doDeleteChat(friendCode) {
   await db.collection('users').doc(myCode).update({ friends: firebase.firestore.FieldValue.arrayRemove(friendCode) }).catch(() => {});
   // 3. 상대 친구목록에서 나 제거 (Firestore)
   await db.collection('users').doc(friendCode).update({ friends: firebase.firestore.FieldValue.arrayRemove(myCode) }).catch(() => {});
+
+  // 4. 삭제된 친구가 공유 대상이었으면 정리
+  //    - setShareTarget(null)을 통해 Firestore 메모 문서를 비워 상대측에서도 회수 반영
+  //    - 이 친구로부터 받았던 메모(from=friendCode)도 로컬에서 제거
+  if (localStorage.getItem('shareTarget') === friendCode) {
+    try { await setShareTarget(null); } catch(e) {}
+  }
+  try {
+    var memos = JSON.parse(localStorage.getItem('memos') || '[]');
+    var cleaned = memos.filter(function(m) { return m.from !== friendCode; });
+    if (cleaned.length !== memos.length) {
+      localStorage.setItem('memos', JSON.stringify(cleaned));
+    }
+  } catch(e) {}
+
   renderFriendList();
   showAlert('대화 및 친구가 삭제되었습니다');
 }
@@ -1458,6 +1892,13 @@ async function _doRegenerateCode() {
   await db.collection('users').doc(myCode).delete().catch(() => {});
   myCode = 'U' + Math.random().toString(36).substr(2,7).toUpperCase();
   friends = []; localStorage.setItem('myCode', myCode); localStorage.setItem('friends', '[]');
+  // 공유 대상 + 받은 메모 정리 (모든 친구 관계가 끊겼으므로)
+  localStorage.removeItem('shareTarget');
+  try {
+    var memos = JSON.parse(localStorage.getItem('memos') || '[]');
+    var cleaned = memos.filter(function(m) { return !m.from; });
+    if (cleaned.length !== memos.length) localStorage.setItem('memos', JSON.stringify(cleaned));
+  } catch(e) {}
   await db.collection('users').doc(myCode).set({ code: myCode, friends: [], ts: firebase.firestore.Timestamp.now() });
   renderMyQr(); renderFriendList(); showAlert('코드 재생성: ' + myCode);
 }
@@ -1477,6 +1918,13 @@ async function _doConfirmChangeCode(newCode) {
   await db.collection('users').doc(myCode).delete().catch(() => {});
   myCode = newCode; friends = [];
   localStorage.setItem('myCode', myCode); localStorage.setItem('friends', '[]');
+  // 공유 대상 + 받은 메모 정리 (모든 친구 관계가 끊겼으므로)
+  localStorage.removeItem('shareTarget');
+  try {
+    var memos = JSON.parse(localStorage.getItem('memos') || '[]');
+    var cleaned = memos.filter(function(m) { return !m.from; });
+    if (cleaned.length !== memos.length) localStorage.setItem('memos', JSON.stringify(cleaned));
+  } catch(e) {}
   await db.collection('users').doc(myCode).set({ code: myCode, friends: [], ts: firebase.firestore.Timestamp.now() });
   closeChangeCode(); closeSecretSettings();
   renderFriendList(); showAlert('코드가 변경되었습니다: ' + myCode);
@@ -1976,6 +2424,7 @@ function openSecretSettings() {
   updateNotifBtn();
   updateFontSizeBtns();
   updateThemeBtns();
+  updateShareTargetDisplay();
   var autoLockEl = document.getElementById('autoLockToggle');
   if (autoLockEl) {
     var isOn = localStorage.getItem('autoLock') !== 'false';
@@ -1987,8 +2436,68 @@ function openSecretSettings() {
 }
 function closeSecretSettings() { document.getElementById('secretSettingsModal').style.display = 'none'; }
 
+// 공유 대상 현재값 표시
+function updateShareTargetDisplay() {
+  var el = document.getElementById('shareTargetCurrent');
+  if (!el) return;
+  var t = localStorage.getItem('shareTarget');
+  var en = localStorage.getItem('lang') === 'en';
+  el.textContent = t || (en ? '(none)' : '(없음)');
+}
+
+// 공유 대상 선택 모달 열기
+function openShareTargetPicker() {
+  var listEl = document.getElementById('shareTargetList');
+  var friends = JSON.parse(localStorage.getItem('friends') || '[]');
+  var current = localStorage.getItem('shareTarget');
+  var en = localStorage.getItem('lang') === 'en';
+
+  if (!friends.length) {
+    listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--chat-text2);font-size:13px;">' +
+      (en ? 'No friends yet. Add a friend first.' : '친구가 없습니다. 먼저 친구를 추가하세요.') + '</div>';
+  } else {
+    listEl.innerHTML = friends.map(function(code) {
+      var isCurrent = code === current;
+      return '<button class="ss-btn ' + (isCurrent ? 'ss-btn-primary' : '') + '" ' +
+             'style="padding:14px;text-align:left;font-size:14px;font-weight:600;border-radius:10px;' +
+             (isCurrent ? '' : 'background:var(--chat-bg2);color:var(--chat-text);') + '" ' +
+             'onclick="pickShareTarget(\'' + esc(code) + '\')">' +
+             esc(code) + (isCurrent ? ' ✓' : '') + '</button>';
+    }).join('');
+  }
+  document.getElementById('shareTargetModal').style.display = 'flex';
+}
+
+function closeShareTargetPicker() {
+  document.getElementById('shareTargetModal').style.display = 'none';
+}
+
+// 친구 선택 시 호출
+async function pickShareTarget(code) {
+  closeShareTargetPicker();
+  try { showUploadStatus('공유 대상 변경 중...'); } catch(e) {}
+  try {
+    await setShareTarget(code);
+  } catch(e) { console.log('[SHARE] set error:', e.message); }
+  try { hideUploadStatus(); } catch(e) {}
+  updateShareTargetDisplay();
+}
+
+// 공유 대상 해제
+async function clearShareTarget() {
+  closeShareTargetPicker();
+  try { showUploadStatus('공유 대상 해제 중...'); } catch(e) {}
+  try {
+    await setShareTarget(null);
+  } catch(e) { console.log('[SHARE] clear error:', e.message); }
+  try { hideUploadStatus(); } catch(e) {}
+  updateShareTargetDisplay();
+}
+
 // ── NOTIFICATIONS (in-app only) ─────────────────────
-let notifEnabled = localStorage.getItem('notifEnabled') === 'true';
+// notifEnabled = 채팅(이벤트) 알림 마스터. 새 키 notifEvent와 동기 유지.
+let notifEnabled = (localStorage.getItem('notifEvent') === 'true') ||
+                   (localStorage.getItem('notifEnabled') === 'true');
 let swReg = null;
 
 // SW 준비
@@ -2130,10 +2639,13 @@ let unreadCount = 0;
 function toggleSettingsNotif(type, enabled) {
   var key = 'notif' + type.charAt(0).toUpperCase() + type.slice(1);
   localStorage.setItem(key, enabled ? 'true' : 'false');
-  if (type === 'app') {
+  // 'event' = 채팅(이벤트) 알림 마스터 → 채팅 코드가 참조하는 notifEnabled와 동기화
+  if (type === 'event') {
     notifEnabled = enabled;
     localStorage.setItem('notifEnabled', enabled ? 'true' : 'false');
+    if (typeof updateNotifBtn === 'function') updateNotifBtn();
   }
+  // 'app' = 일반 앱 알림 마스터. 채팅 알림과 무관.
 }
 
 function toggleNotification() {
@@ -2143,7 +2655,12 @@ function toggleNotification() {
     _filePickerOpen = true;
     _appWasHidden = false; // 강제 리셋
     Notification.requestPermission().then(p => {
-      if (p === 'granted') { notifEnabled = true; localStorage.setItem('notifEnabled', 'true'); updateNotifBtn(); }
+      if (p === 'granted') {
+        notifEnabled = true;
+        localStorage.setItem('notifEnabled', 'true');
+        localStorage.setItem('notifEvent', 'true');
+        updateNotifBtn();
+      }
       // 권한 결과 후 충분히 대기 (blur/focus 이벤트 모두 흘려보낸 후 해제)
       setTimeout(function() {
         _filePickerOpen = false;
@@ -2153,14 +2670,17 @@ function toggleNotification() {
     return;
   }
   notifEnabled = !notifEnabled;
-  localStorage.setItem('notifEnabled', notifEnabled);
+  localStorage.setItem('notifEnabled', notifEnabled ? 'true' : 'false');
+  localStorage.setItem('notifEvent', notifEnabled ? 'true' : 'false');
   updateNotifBtn();
 }
 
 function updateNotifBtn() {
   const btn = document.getElementById('notifToggleBtn');
   if (!btn) return;
-  notifEnabled = localStorage.getItem('notifEnabled') === 'true';
+  // notifEvent를 우선 보되, 폴백으로 notifEnabled
+  notifEnabled = (localStorage.getItem('notifEvent') === 'true') ||
+                 (localStorage.getItem('notifEnabled') === 'true');
   btn.textContent = notifEnabled ? '🔔 알림 켜짐' : '🔕 알림 꺼짐';
   btn.style.background = notifEnabled ? '#22c55e' : '#475569';
 }
@@ -2241,9 +2761,10 @@ function statUnit(k) {
 var curSC = "weight";
 
 function getSharedStatId() {
-  var f = JSON.parse(localStorage.getItem('friends') || '[]');
-  if (!myCode || !f.length) return null;
-  return [myCode, f[0]].sort().join('_stat_');
+  if (!myCode) return null;
+  var target = getShareTarget();
+  if (!target) return null;
+  return [myCode, target].sort().join('_stat_');
 }
 
 var statListener = null;
@@ -2272,7 +2793,7 @@ function openStats() {
         var d = snap.data();
         localStorage.setItem("hStats", JSON.stringify(d.data || {}));
         if (!firstLoad && d.updatedBy && d.updatedBy !== myCode) {
-          if (localStorage.getItem('notifTodo') === 'true') sendNotification('통계', '건강 기록이 업데이트됐어요');
+          if (localStorage.getItem('notifApp') === 'true') sendNotification('통계', '건강 기록이 업데이트됐어요');
         }
         firstLoad = false;
         renderStatsUI();
@@ -2714,8 +3235,8 @@ const I18N = {
     settings: '설정', back: '← 뒤로',
     settingsTitle: '설정', appNameLabel: '앱 이름',
     save: '저장', themeColor: '테마 색상',
-    notifSection: '알림', notifApp: '앱 알림',
-    notifCal: '일정 알림', notifTodo: '할 일 알림',
+    notifSection: '알림', notifApp: '앱 알림 (메모/일정/할일/통계)',
+    notifEvent: '이벤트 알림 (채팅)',
     language: '언어',
     todoTitle: '할 일', todoPlaceholder: '새 할 일 추가...',
     memoTitle: '메모', calendarTitle: '달력',
@@ -2735,8 +3256,8 @@ const I18N = {
     settings: 'Settings', back: '← Back',
     settingsTitle: 'Settings', appNameLabel: 'App Name',
     save: 'Save', themeColor: 'Theme Color',
-    notifSection: 'Notifications', notifApp: 'App Alerts',
-    notifCal: 'Schedule Alerts', notifTodo: 'To-Do Alerts',
+    notifSection: 'Notifications', notifApp: 'App Alerts (Memo/Schedule/To-Do/Stats)',
+    notifEvent: 'Event Alerts (Chat)',
     language: 'Language',
     todoTitle: 'To-Do', todoPlaceholder: 'Add new task...',
     memoTitle: 'Memo', calendarTitle: 'Calendar',
@@ -2807,9 +3328,15 @@ function applyLang() {
   _setText('notifSectionLabel', en ? 'Notifications' : '알림');
   _setText('langLabel', en ? 'Language' : '언어');
   _setText('infoLabel', en ? 'Info' : '정보');
-  _setText('notifAppLabel', en ? 'App Alerts' : '앱 알림');
-  _setText('notifCalLabel', en ? 'Schedule Alerts' : '일정 알림');
-  _setText('notifTodoLabel', en ? 'To-Do Alerts' : '할 일 알림');
+  _setText('notifEventLabel', en ? 'Event Alerts (Chat)' : '이벤트 알림 (채팅)');
+  _setText('notifAppLabel', en ? 'App Alerts (Memo/Schedule/To-Do/Stats)' : '앱 알림 (메모/일정/할일/통계)');
+  _setText('shareTargetLabel', en ? 'Share Target' : '공유 대상');
+  _setText('shareTargetDesc', en ? 'Friend to share Memo/To-Do/Schedule/Stats with:' : '메모/할일/일정/통계를 공유할 친구:');
+  _setText('shareTargetBtn', en ? 'Change' : '변경');
+  _setText('shareTargetModalTitle', en ? 'Select Share Target' : '공유 대상 선택');
+  _setText('shareTargetModalDesc', en ? 'Choose a friend to share Memo/To-Do/Schedule/Stats with' : '메모/할일/일정/통계를 함께 사용할 친구를 선택하세요');
+  _setText('shareTargetCancelBtn', en ? 'Cancel' : '취소');
+  _setText('shareTargetClearBtn', en ? 'Clear' : '해제');
 
   // 메모
   _setText('newMemoBtn', en ? '+ New' : '+ 새 메모');
@@ -2907,9 +3434,15 @@ function applyLang() {
   _setText('calStreakLabel', en ? 'Streak' : '연속 달성');
 
   // 알림 토글
-  _setText('notifAppLabel', en ? 'App Alerts' : '앱 알림');
-  _setText('notifCalLabel', en ? 'Schedule Alerts' : '일정 알림');
-  _setText('notifTodoLabel', en ? 'To-Do Alerts' : '할 일 알림');
+  _setText('notifEventLabel', en ? 'Event Alerts (Chat)' : '이벤트 알림 (채팅)');
+  _setText('notifAppLabel', en ? 'App Alerts (Memo/Schedule/To-Do/Stats)' : '앱 알림 (메모/일정/할일/통계)');
+  _setText('shareTargetLabel', en ? 'Share Target' : '공유 대상');
+  _setText('shareTargetDesc', en ? 'Friend to share Memo/To-Do/Schedule/Stats with:' : '메모/할일/일정/통계를 공유할 친구:');
+  _setText('shareTargetBtn', en ? 'Change' : '변경');
+  _setText('shareTargetModalTitle', en ? 'Select Share Target' : '공유 대상 선택');
+  _setText('shareTargetModalDesc', en ? 'Choose a friend to share Memo/To-Do/Schedule/Stats with' : '메모/할일/일정/통계를 함께 사용할 친구를 선택하세요');
+  _setText('shareTargetCancelBtn', en ? 'Cancel' : '취소');
+  _setText('shareTargetClearBtn', en ? 'Clear' : '해제');
 
   // 닉네임 설정
   _setText('nicknameLabel', en ? 'Set your nickname' : '닉네임을 설정하세요');
