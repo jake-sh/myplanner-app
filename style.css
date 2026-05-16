@@ -261,8 +261,19 @@ input:checked+.slider:before{transform:translateX(20px);}
 .memo-card:active{border-color:var(--primary);}
 .memo-card-title{font-size:16px;font-weight:800;margin-bottom:6px;color:var(--text);}
 .memo-card-preview{font-size:13px;color:var(--subtext);line-height:1.6;margin-bottom:10px;white-space:pre-wrap;word-break:break-word;}
-.memo-card-footer{display:flex;align-items:center;justify-content:space-between;}
-.memo-card-date{font-size:11px;color:#C4C7DC;font-weight:600;}
+.memo-card-footer{display:flex;align-items:center;justify-content:space-between;gap:6px;}
+.memo-card-date{font-size:11px;color:#C4C7DC;font-weight:600;flex:1;}
+.memo-share-icon{
+  background:none;border:none;cursor:pointer;padding:4px 8px;
+  font-size:16px;font-weight:700;line-height:1;
+  display:flex;align-items:center;justify-content:center;border-radius:8px;
+  font-family:inherit;
+}
+.memo-share-icon:active{opacity:.6;}
+.memo-share-off{color:#9aa0b4;}      /* △ 공유안함 */
+.memo-share-on{color:#22c55e;}        /* ▲ 공유중 */
+.memo-share-received{color:#60a5fa;cursor:default;}  /* ▼ 공유받음 */
+.memo-share-received:active{opacity:1;}
 .memo-del{background:none;border:none;cursor:pointer;padding:6px;color:#C4C7DC;display:flex;align-items:center;justify-content:center;border-radius:8px;}
 .memo-del:active{opacity:.6;}
 .memo-editor-wrap{flex:1;display:flex;flex-direction:column;padding:16px;gap:12px;}

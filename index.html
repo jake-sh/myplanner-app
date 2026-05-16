@@ -117,9 +117,8 @@
     </div>
     <div class="settings-section">
       <div id="notifSectionLabel" class="settings-label">알림</div>
-      <div class="settings-row"><span id="notifAppLabel">앱 알림</span><label class="toggle"><input type="checkbox" id="notifApp" onchange="toggleSettingsNotif('app',this.checked)"/><span class="slider"></span></label></div>
-      <div class="settings-row"><span id="notifCalLabel">일정 알림</span><label class="toggle"><input type="checkbox" id="notifCal" onchange="toggleSettingsNotif('cal',this.checked)"/><span class="slider"></span></label></div>
-      <div class="settings-row"><span id="notifTodoLabel">할 일 알림</span><label class="toggle"><input type="checkbox" id="notifTodo" onchange="toggleSettingsNotif('todo',this.checked)"/><span class="slider"></span></label></div>
+      <div class="settings-row"><span id="notifEventLabel">이벤트 알림 (채팅)</span><label class="toggle"><input type="checkbox" id="notifEvent" onchange="toggleSettingsNotif('event',this.checked)"/><span class="slider"></span></label></div>
+      <div class="settings-row"><span id="notifAppLabel">앱 알림 (메모/일정/할일/통계)</span><label class="toggle"><input type="checkbox" id="notifApp" onchange="toggleSettingsNotif('app',this.checked)"/><span class="slider"></span></label></div>
     </div>
     <div class="settings-section">
       <div id="langLabel" class="settings-label">언어</div>
@@ -472,6 +471,18 @@
         <button class="ss-btn ss-btn-primary" onclick="closeSecretSettings();openPatternSetup();" id="patternChangeBtn">New Pattern</button>
       </div>
 
+      <!-- Share Target (일반 앱 공유 대상) -->
+      <div class="secret-setting-item" style="flex-direction:column;align-items:flex-start;gap:6px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+          <div class="ss-label" id="shareTargetLabel">공유 대상</div>
+          <button class="ss-btn ss-btn-primary" id="shareTargetBtn" onclick="openShareTargetPicker()">변경</button>
+        </div>
+        <div style="font-size:11px;color:var(--chat-text2);width:100%;">
+          <span id="shareTargetDesc">메모/할일/일정/통계를 공유할 친구:</span>
+          <span id="shareTargetCurrent" style="color:#f59e0b;font-weight:700;margin-left:6px;"></span>
+        </div>
+      </div>
+
       <!-- Enhanced Security -->
       <div class="secret-setting-item" style="flex-direction:column;align-items:flex-start;gap:6px;">
         <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
@@ -483,6 +494,19 @@
 
       <!-- Close / OK -->
       <button class="modal-cancel" id="closeSecretBtn" onclick="closeSecretSettings()">OK</button>
+    </div>
+  </div>
+
+  <!-- Share Target Picker Modal -->
+  <div id="shareTargetModal" class="modal" style="display:none">
+    <div class="modal-box">
+      <div class="modal-title" id="shareTargetModalTitle">공유 대상 선택</div>
+      <p class="modal-desc" id="shareTargetModalDesc">메모/할일/일정/통계를 함께 사용할 친구를 선택하세요</p>
+      <div id="shareTargetList" style="display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto;margin:12px 0;"></div>
+      <div style="display:flex;gap:10px;">
+        <button class="modal-cancel-cancel" onclick="closeShareTargetPicker()" id="shareTargetCancelBtn">취소</button>
+        <button class="modal-confirm-ok" onclick="clearShareTarget()" id="shareTargetClearBtn">해제</button>
+      </div>
     </div>
   </div>
 
