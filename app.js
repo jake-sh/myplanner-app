@@ -934,21 +934,26 @@ function renderMemoList() {
     const imgMatch = (m.body || '').match(/<img[^>]+src="([^"]+)"/);
     const thumb = imgMatch ? `<div class="memo-card-imgs"><img class="memo-card-img-thumb" src="${imgMatch[1]}"></div>` : '';
 
-    // 공유 상태 아이콘
-    // - 받은 메모(from 있음): ▼ 고정, 클릭 무동작
-    // - 내 메모: shared면 ▲, 아니면 △ — 클릭으로 토글
+
+    // 공유 상태 아이콘 (SVG, 라운드 코너)
+    // △ 라인 = 공유 안 함 / ▲ 채우기 = 공유 중 / ▼ 채우기 = 공유 받음
+    // 색상은 CSS currentColor 상속 (클래스에서 color 지정 안 함)
+    var SVG_TRIANGLE_LINE = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M8 2.5 L2 13.5 L14 13.5 Z"/></svg>';
+    var SVG_TRIANGLE_UP   = '<svg width="16" height="16" viewBox="0 0 16 16"><path d="M8 2.5 L2 13.5 L14 13.5 Z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+    var SVG_TRIANGLE_DOWN = '<svg width="16" height="16" viewBox="0 0 16 16"><path d="M8 13.5 L2 2.5 L14 2.5 Z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+
     var isReceived = !!m.from;
     var shareIcon, shareCls, shareOnclick;
     if (isReceived) {
-      shareIcon = '▼';
+      shareIcon = SVG_TRIANGLE_DOWN;
       shareCls = 'memo-share-icon memo-share-received';
-      shareOnclick = ''; // 받은 메모는 클릭 무시
+      shareOnclick = '';
     } else if (m.shared) {
-      shareIcon = '▲';
+      shareIcon = SVG_TRIANGLE_UP;
       shareCls = 'memo-share-icon memo-share-on';
       shareOnclick = 'onclick="event.stopPropagation();toggleMemoShare(\'' + esc(m.id) + '\')"';
     } else {
-      shareIcon = '△';
+      shareIcon = SVG_TRIANGLE_LINE;
       shareCls = 'memo-share-icon memo-share-off';
       shareOnclick = 'onclick="event.stopPropagation();toggleMemoShare(\'' + esc(m.id) + '\')"';
     }

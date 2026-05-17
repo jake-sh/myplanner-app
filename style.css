@@ -264,16 +264,15 @@ input:checked+.slider:before{transform:translateX(20px);}
 .memo-card-footer{display:flex;align-items:center;justify-content:space-between;gap:6px;}
 .memo-card-date{font-size:11px;color:#C4C7DC;font-weight:600;flex:1;}
 .memo-share-icon{
-  background:none;border:none;cursor:pointer;padding:4px 8px;
-  font-size:16px;font-weight:700;line-height:1;
+  background:none;border:none;cursor:pointer;padding:4px 6px;
   display:flex;align-items:center;justify-content:center;border-radius:8px;
-  font-family:inherit;
+  color:currentColor;opacity:0.55;
 }
-.memo-share-icon:active{opacity:.6;}
-.memo-share-off{color:#9aa0b4;}      /* △ 공유안함 */
-.memo-share-on{color:#22c55e;}        /* ▲ 공유중 */
-.memo-share-received{color:#60a5fa;cursor:default;}  /* ▼ 공유받음 */
-.memo-share-received:active{opacity:1;}
+.memo-share-icon:active{opacity:.3;}
+.memo-share-off{}                              /* △ 라인 — 색상 상속 */
+.memo-share-on{opacity:0.85;}                  /* ▲ 채우기 — 약간 더 뚜렷 */
+.memo-share-received{cursor:default;opacity:0.55;}  /* ▼ 채우기 — 클릭 불가 */
+.memo-share-received:active{opacity:0.55;}
 .memo-del{background:none;border:none;cursor:pointer;padding:6px;color:#C4C7DC;display:flex;align-items:center;justify-content:center;border-radius:8px;}
 .memo-del:active{opacity:.6;}
 .memo-editor-wrap{flex:1;display:flex;flex-direction:column;padding:16px;gap:12px;}
