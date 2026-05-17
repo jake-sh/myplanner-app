@@ -507,6 +507,20 @@
     </div>
   </div>
 
+  <!-- Restore From Backup Modal -->
+  <div id="restoreModal" class="modal" style="display:none">
+    <div class="modal-box">
+      <div class="modal-title" id="restoreTitle">백업에서 복원</div>
+      <p class="modal-desc" id="restoreDesc">기존 코드를 입력하면 클라우드 백업에서 데이터를 복원합니다.</p>
+      <input type="text" id="restoreCodeInput" placeholder="ABC1234" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--chat-border);background:var(--chat-bg2);color:var(--chat-text);font-size:14px;text-align:center;text-transform:uppercase;margin:12px 0;">
+      <p id="restoreWarn" style="font-size:11px;color:#f59e0b;margin:8px 0;display:none;"></p>
+      <div style="display:flex;gap:10px;">
+        <button class="modal-cancel-cancel" onclick="closeRestoreModal()" id="restoreCancelBtn">취소</button>
+        <button class="modal-confirm-ok" onclick="performRestore()" id="restoreOkBtn">복원</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Share Request Modal (받은 공유 요청 승인/거절) -->
   <div id="shareReqModal" class="modal" style="display:none">
     <div class="modal-box">

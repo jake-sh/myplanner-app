@@ -30,6 +30,24 @@ let deleteTimers = {}, countdownTimers = {}, qrScanner = null;
 let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
 let editingMemoIndex = null;
 
+// ── localStorage.setItem 래퍼: 백업 대상 키 변경 시 자동 백업 스케줄 ──
+// BACKUP_KEYS는 아래쪽에 정의되어 있어 런타임 참조 시점엔 존재함
+(function() {
+  var origSetItem = Storage.prototype.setItem;
+  Storage.prototype.setItem = function(key, value) {
+    var result = origSetItem.apply(this, arguments);
+    try {
+      // myCode가 있고, 백업 대상 키인 경우에만 스케줄
+      if (this === window.localStorage && typeof myCode !== 'undefined' && myCode &&
+          typeof BACKUP_KEYS !== 'undefined' && BACKUP_KEYS.indexOf(key) >= 0 &&
+          typeof scheduleBackup === 'function') {
+        scheduleBackup();
+      }
+    } catch(e) {}
+    return result;
+  };
+})();
+
 // ── INIT ───────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   // ── 최초 실행 시 디폴트값 설정 ──
@@ -1906,6 +1924,9 @@ function renderFriendList() {
       '<path d="M5 21c0-4 3.1-7 7-7s7 3 7 7"/>' +
       '</svg>' +
       '<div>' + (_en ? 'Add a friend to start chatting' : '친구를 추가하면 채팅이 시작됩니다') + '</div>' +
+      '<button class="restore-link" onclick="openRestoreModal()" style="margin-top:18px;background:none;border:none;color:#60a5fa;font-size:12px;text-decoration:underline;cursor:pointer;">' +
+        (_en ? 'Restore from backup' : '백업에서 복원') +
+      '</button>' +
       '</div>';
     return;
   }
@@ -1921,6 +1942,172 @@ function renderFriendList() {
     </div>`).join('');
 }
 
+// ── Firestore 자동 백업/복원 ──────────────────────────
+// 캐시 삭제 / 새 기기 / PWA 재설치 등으로 localStorage가 비어도
+// myCode만 알면 users/{myCode}/backup/data 에서 복원 가능.
+//
+// 백업 정책:
+//   - 변경 후 10초 디바운스
+//   - 패턴(secPattern)은 보안상 백업 제외
+//   - 채팅 메시지/친구 목록은 이미 Firestore에 있으므로 백업 안 함
+//   - last-write-wins (단일 기기 전제)
+
+// 백업 대상 키 목록 (패턴/임시 플래그 제외)
+var BACKUP_KEYS = [
+  'memos', 'todos', 'habits', 'hStats',
+  'appName', 'lang', 'darkMode', 'themeColor', 'iconStyle', 'svgColorMode',
+  'chatTheme', 'chatFontSize',
+  'notifApp', 'notifEvent',
+  'autoLock', 'autoDeleteMin',
+  'shareTarget',
+  '_titleMain', '_titleSub'
+];
+
+var _backupTimer = null;
+var _backupInProgress = false;
+
+// 변경 시 호출. 1분 디바운스 후 실제 백업.
+function scheduleBackup() {
+  if (!myCode) return;
+  if (_backupTimer) clearTimeout(_backupTimer);
+  _backupTimer = setTimeout(performBackup, 60000); // 1분
+}
+
+async function performBackup() {
+  if (!myCode || _backupInProgress) return;
+  _backupInProgress = true;
+  try {
+    var payload = {};
+    BACKUP_KEYS.forEach(function(k) {
+      var v = localStorage.getItem(k);
+      if (v !== null) payload[k] = v;
+    });
+    await db.collection('users').doc(myCode).collection('backup').doc('data').set({
+      payload: payload,
+      ts: firebase.firestore.Timestamp.now()
+    });
+    localStorage.setItem('_lastBackup', String(Date.now()));
+  } catch(e) {
+    console.log('[BACKUP] error:', e.message);
+  } finally {
+    _backupInProgress = false;
+  }
+}
+
+// 강제 즉시 백업 (디바운스 무시) — 앱 종료 직전 등에 호출
+function flushBackup() {
+  if (_backupTimer) { clearTimeout(_backupTimer); _backupTimer = null; }
+  return performBackup();
+}
+
+// 복원: 주어진 코드의 백업 문서를 읽어 localStorage에 풀어넣음
+// 반환: {success: bool, count: number, error?: string}
+async function restoreFromBackup(code) {
+  if (!code) return { success: false, error: 'no code' };
+  try {
+    var snap = await db.collection('users').doc(code).collection('backup').doc('data').get();
+    if (!snap.exists) return { success: false, error: 'no backup' };
+    var data = snap.data() || {};
+    var payload = data.payload || {};
+    var count = 0;
+    Object.keys(payload).forEach(function(k) {
+      if (BACKUP_KEYS.indexOf(k) >= 0) {
+        localStorage.setItem(k, payload[k]);
+        count++;
+      }
+    });
+    // 코드 자체도 저장 (사용자가 이걸로 로그인 상태가 됨)
+    localStorage.setItem('myCode', code);
+    return { success: true, count: count };
+  } catch(e) {
+    console.log('[RESTORE] error:', e.message);
+    return { success: false, error: e.message };
+  }
+}
+
+// 페이지 닫기/숨김 시 백업 디바운스가 남아있다면 동기적 시도
+window.addEventListener('pagehide', function() {
+  if (_backupTimer && myCode) {
+    clearTimeout(_backupTimer);
+    performBackup();
+  }
+});
+window.addEventListener('beforeunload', function() {
+  if (_backupTimer && myCode) {
+    clearTimeout(_backupTimer);
+    performBackup();
+  }
+});
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'hidden' && _backupTimer && myCode) {
+    clearTimeout(_backupTimer);
+    performBackup();
+  }
+});
+
+// ── 복원 모달 ──
+function openRestoreModal() {
+  var modal = document.getElementById('restoreModal');
+  if (!modal) return;
+  var input = document.getElementById('restoreCodeInput');
+  if (input) input.value = '';
+  var warn = document.getElementById('restoreWarn');
+  if (warn) {
+    // 메모/할일이 있으면 덮어쓰기 경고
+    var hasData = false;
+    try {
+      hasData = (JSON.parse(localStorage.getItem('memos') || '[]').length > 0) ||
+                (JSON.parse(localStorage.getItem('todos') || '[]').length > 0);
+    } catch(e) {}
+    if (hasData) {
+      warn.style.display = '';
+      var en = localStorage.getItem('lang') === 'en';
+      warn.textContent = en
+        ? 'Existing memos and to-dos will be replaced by the backup.'
+        : '현재 메모/할일은 백업 데이터로 대체됩니다.';
+    } else {
+      warn.style.display = 'none';
+    }
+  }
+  modal.style.display = 'flex';
+}
+
+function closeRestoreModal() {
+  var modal = document.getElementById('restoreModal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function performRestore() {
+  var input = document.getElementById('restoreCodeInput');
+  if (!input) return;
+  var code = input.value.trim().toUpperCase();
+  if (!code || code.length < 4) {
+    showAlert(localStorage.getItem('lang') === 'en' ? 'Enter a valid code' : '코드를 입력하세요');
+    return;
+  }
+  if (code === myCode) {
+    showAlert(localStorage.getItem('lang') === 'en' ? 'Same as current code' : '현재 사용 중인 코드와 동일합니다');
+    return;
+  }
+  closeRestoreModal();
+  try { showUploadStatus('복원 중...'); } catch(e) {}
+  var r = await restoreFromBackup(code);
+  try { hideUploadStatus(); } catch(e) {}
+
+  var en = localStorage.getItem('lang') === 'en';
+  if (r.success) {
+    showAlert(en
+      ? 'Restored ' + r.count + ' items. App will reload.'
+      : r.count + '개 항목 복원됨. 앱이 새로고침됩니다.');
+    setTimeout(function() { window.location.reload(); }, 1200);
+  } else {
+    var msg = r.error === 'no backup'
+      ? (en ? 'No backup found for that code' : '해당 코드의 백업을 찾을 수 없습니다')
+      : (en ? 'Restore failed: ' + r.error : '복원 실패: ' + r.error);
+    showAlert(msg);
+  }
+}
+
 function listenFriendChanges() {
   if (!myCode) return;
   if (friendsListener) friendsListener();
@@ -1931,6 +2118,21 @@ function listenFriendChanges() {
   // 공유 요청/응답 리스너 동시 시작
   try { startShareRequestListener(); } catch(e) {}
   try { startShareResponseListener(); } catch(e) {}
+
+  // 영속성 강화 권한 (조용히 시도, 실패해도 무해)
+  try {
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist().catch(function() {});
+    }
+  } catch(e) {}
+
+  // 앱 시작 시 한 번 백업 수행 (마지막 백업 6시간 초과 시)
+  try {
+    var last = parseInt(localStorage.getItem('_lastBackup') || '0');
+    if (Date.now() - last > 6 * 60 * 60 * 1000) {
+      scheduleBackup();
+    }
+  } catch(e) {}
 
   friendsListener = db.collection('users').doc(myCode).onSnapshot(snap => {
     if (!snap.exists) return;
@@ -2069,20 +2271,97 @@ function startQrScanner() {
 function stopQrScanner() { if (qrScanner) { qrScanner.stop().catch(() => {}); qrScanner = null; } }
 
 async function regenerateCode() {
-  showConfirm('코드를 재생성하면 모든 친구가 삭제됩니다. 계속할까요?', function() { _doRegenerateCode(); }); return;
+  var en = localStorage.getItem('lang') === 'en';
+  var msg = en
+    ? 'Regenerating your code will permanently delete all chats, memos, todos, calendar, stats, and backup data from server. Continue?'
+    : '코드 재생성 시 채팅/메모/할일/달력/통계/백업 모든 데이터가 서버에서 영구 삭제됩니다. 계속할까요?';
+  showConfirm(msg, function() { _doRegenerateCode(); }); return;
 }
-async function _doRegenerateCode() {
-  for (const f of friends) { await db.collection('users').doc(f).update({ friends: firebase.firestore.FieldValue.arrayRemove(myCode) }).catch(() => {}); }
-  await db.collection('users').doc(myCode).delete().catch(() => {});
-  myCode = 'U' + Math.random().toString(36).substr(2,7).toUpperCase();
-  friends = []; localStorage.setItem('myCode', myCode); localStorage.setItem('friends', '[]');
-  // 공유 대상 + 받은 메모 정리 (모든 친구 관계가 끊겼으므로)
-  localStorage.removeItem('shareTarget');
+// 코드 변경/재생성 시 서버에 남은 내 데이터 전부 삭제
+// - 백업 문서
+// - 내가 참여한 모든 채팅방 (rooms/{roomId}/messages 포함)
+// - 모든 공유 데이터 sid 문서 (todos/calendars/stats/memos_shared)
+// - 공유 요청/응답 문서
+// - users/{oldCode} 문서
+async function _purgeServerData(oldCode, oldFriends) {
+  if (!oldCode) return;
+
+  // 1) 백업 문서 삭제
   try {
-    var memos = JSON.parse(localStorage.getItem('memos') || '[]');
-    var cleaned = memos.filter(function(m) { return !m.from; });
-    if (cleaned.length !== memos.length) localStorage.setItem('memos', JSON.stringify(cleaned));
+    await db.collection('users').doc(oldCode).collection('backup').doc('data').delete();
   } catch(e) {}
+
+  // 2) 친구별 정리: 채팅방, 공유 sid, 공유 요청
+  for (const f of oldFriends || []) {
+    const roomId = [oldCode, f].sort().join('_');
+    // 채팅 메시지 일괄 삭제 (500개씩 페이지네이션)
+    try {
+      while (true) {
+        const snap = await db.collection('rooms').doc(roomId).collection('messages').limit(450).get();
+        if (snap.empty) break;
+        const batch = db.batch();
+        snap.docs.forEach(d => batch.delete(d.ref));
+        await batch.commit();
+        if (snap.size < 450) break;
+      }
+    } catch(e) {}
+    try { await db.collection('rooms').doc(roomId).delete(); } catch(e) {}
+
+    // 공유 sid 문서들
+    const memoSid = [oldCode, f].sort().join('_memo_');
+    const todoSid = [oldCode, f].sort().join('_todo_');
+    const calSid  = [oldCode, f].sort().join('_cal_');
+    const statSid = [oldCode, f].sort().join('_stat_');
+    try { await db.collection('memos_shared').doc(memoSid).delete(); } catch(e) {}
+    try { await db.collection('todos').doc(todoSid).delete(); } catch(e) {}
+    try { await db.collection('calendars').doc(calSid).delete(); } catch(e) {}
+    try { await db.collection('stats').doc(statSid).delete(); } catch(e) {}
+
+    // 공유 요청/응답 (양방향)
+    try { await db.collection('shareRequests').doc(f + '_' + oldCode + '_req').delete(); } catch(e) {}
+    try { await db.collection('shareRequests').doc(oldCode + '_' + f + '_req').delete(); } catch(e) {}
+    try { await db.collection('shareRequests').doc(f + '_' + oldCode + '_resp').delete(); } catch(e) {}
+    try { await db.collection('shareRequests').doc(oldCode + '_' + f + '_resp').delete(); } catch(e) {}
+
+    // 친구의 users 문서에서 내 코드 제거
+    try {
+      await db.collection('users').doc(f).update({
+        friends: firebase.firestore.FieldValue.arrayRemove(oldCode)
+      });
+    } catch(e) {}
+  }
+
+  // 3) 마지막으로 내 users 문서 삭제
+  try { await db.collection('users').doc(oldCode).delete(); } catch(e) {}
+}
+
+// 로컬 데이터 전부 삭제 (코드 변경/재생성 시)
+function _purgeLocalData() {
+  // 진행 중 백업 타이머 취소 (oldCode로 백업되는 것 방지)
+  if (typeof _backupTimer !== 'undefined' && _backupTimer) {
+    clearTimeout(_backupTimer);
+    _backupTimer = null;
+  }
+  // 친구 관계 끊겼으므로 모든 앱 데이터 제거 + 설정 일부 유지
+  // 유지: 언어/테마/다크/아이콘/잠금패턴/타이틀 등 사용자 환경설정
+  // 삭제: 친구, 공유타겟, 메모, 할일, 달력, 통계, 백업타임스탬프
+  ['friends', 'shareTarget', 'memos', 'todos', 'habits', 'hStats', '_lastBackup']
+    .forEach(function(k) { localStorage.removeItem(k); });
+}
+
+async function _doRegenerateCode() {
+  var oldCode = myCode;
+  var oldFriends = friends.slice();
+  try { showUploadStatus('서버 데이터 삭제 중...'); } catch(e) {}
+  await _purgeServerData(oldCode, oldFriends);
+  try { hideUploadStatus(); } catch(e) {}
+
+  myCode = 'U' + Math.random().toString(36).substr(2,7).toUpperCase();
+  friends = [];
+  _purgeLocalData();
+  localStorage.setItem('myCode', myCode);
+  localStorage.setItem('friends', '[]');
+
   await db.collection('users').doc(myCode).set({ code: myCode, friends: [], ts: firebase.firestore.Timestamp.now() });
   renderMyQr(); renderFriendList(); showAlert('코드 재생성: ' + myCode);
 }
@@ -2095,23 +2374,32 @@ async function confirmChangeCode() {
   const newCode = document.getElementById('newCodeInput').value.trim().toUpperCase();
   if (!newCode || newCode.length < 2) { showAlert('2자 이상 입력하세요'); return; }
   if (newCode === myCode) { showAlert('현재 코드와 같습니다'); return; }
-  showConfirm('코드를 "' + newCode + '"로 변경하면 모든 친구가 양측에서 삭제됩니다. 계속할까요?', function() { _doConfirmChangeCode(newCode); }); return;
+  var en = localStorage.getItem('lang') === 'en';
+  var msg = en
+    ? 'Changing your code will permanently delete all chats, memos, todos, calendar, stats, and backup data from server. Continue?'
+    : '코드 변경 시 채팅/메모/할일/달력/통계/백업 모든 데이터가 서버에서 영구 삭제됩니다. 계속할까요?';
+  showConfirm(msg, function() { _doConfirmChangeCode(newCode); }); return;
 }
+
 async function _doConfirmChangeCode(newCode) {
-  for (const f of friends) { await db.collection('users').doc(f).update({ friends: firebase.firestore.FieldValue.arrayRemove(myCode) }).catch(() => {}); }
-  await db.collection('users').doc(myCode).delete().catch(() => {});
-  myCode = newCode; friends = [];
-  localStorage.setItem('myCode', myCode); localStorage.setItem('friends', '[]');
-  // 공유 대상 + 받은 메모 정리 (모든 친구 관계가 끊겼으므로)
-  localStorage.removeItem('shareTarget');
-  try {
-    var memos = JSON.parse(localStorage.getItem('memos') || '[]');
-    var cleaned = memos.filter(function(m) { return !m.from; });
-    if (cleaned.length !== memos.length) localStorage.setItem('memos', JSON.stringify(cleaned));
-  } catch(e) {}
+  var oldCode = myCode;
+  var oldFriends = friends.slice();
+  try { showUploadStatus('서버 데이터 삭제 중...'); } catch(e) {}
+  await _purgeServerData(oldCode, oldFriends);
+  try { hideUploadStatus(); } catch(e) {}
+
+  myCode = newCode;
+  friends = [];
+  _purgeLocalData();
+  localStorage.setItem('myCode', myCode);
+  localStorage.setItem('friends', '[]');
+
   await db.collection('users').doc(myCode).set({ code: myCode, friends: [], ts: firebase.firestore.Timestamp.now() });
   closeChangeCode(); closeSecretSettings();
-  renderFriendList(); showAlert('코드가 변경되었습니다: ' + myCode);
+  renderFriendList();
+  showAlert((localStorage.getItem('lang') === 'en')
+    ? 'Code changed to: ' + myCode
+    : '코드가 변경되었습니다: ' + myCode);
 }
 
 // ── CHAT ────────────────────────────────────────────
@@ -3516,6 +3804,10 @@ function applyLang() {
   _setText('shareTargetBtn', en ? 'Change' : '변경');
   _setText('shareTargetModalTitle', en ? 'Select Share Target' : '공유 대상 선택');
   _setText('shareReqTitle',       en ? 'Share Request' : '공유 요청');
+  _setText('restoreTitle',        en ? 'Restore from Backup' : '백업에서 복원');
+  _setText('restoreDesc',         en ? 'Enter your existing code to restore data from cloud backup.' : '기존 코드를 입력하면 클라우드 백업에서 데이터를 복원합니다.');
+  _setText('restoreCancelBtn',    en ? 'Cancel' : '취소');
+  _setText('restoreOkBtn',        en ? 'Restore' : '복원');
   _setText('shareReqDescText',    en ? ' sent you a share request.' : '님이 공유 대상으로 지정했습니다.');
   _setText('shareReqHint',        en ? 'Accept to share Memo/To-Do/Schedule/Stats together.' : '승인하면 메모/할일/일정/통계를 함께 사용합니다.');
   _setText('shareReqRejectBtn',   en ? 'Reject' : '거절');
@@ -3625,6 +3917,10 @@ function applyLang() {
   _setText('shareTargetBtn', en ? 'Change' : '변경');
   _setText('shareTargetModalTitle', en ? 'Select Share Target' : '공유 대상 선택');
   _setText('shareReqTitle',       en ? 'Share Request' : '공유 요청');
+  _setText('restoreTitle',        en ? 'Restore from Backup' : '백업에서 복원');
+  _setText('restoreDesc',         en ? 'Enter your existing code to restore data from cloud backup.' : '기존 코드를 입력하면 클라우드 백업에서 데이터를 복원합니다.');
+  _setText('restoreCancelBtn',    en ? 'Cancel' : '취소');
+  _setText('restoreOkBtn',        en ? 'Restore' : '복원');
   _setText('shareReqDescText',    en ? ' sent you a share request.' : '님이 공유 대상으로 지정했습니다.');
   _setText('shareReqHint',        en ? 'Accept to share Memo/To-Do/Schedule/Stats together.' : '승인하면 메모/할일/일정/통계를 함께 사용합니다.');
   _setText('shareReqRejectBtn',   en ? 'Reject' : '거절');
