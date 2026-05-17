@@ -21,6 +21,33 @@ const DEFAULT_PATTERN = [0,1,2,5,4,7,8];
 let savedPattern = JSON.parse(localStorage.getItem('secPattern') || JSON.stringify(DEFAULT_PATTERN));
 let currentPattern = [], isDragging = false;
 let setupPattern = [], isSetupDragging = false;
+
+// ── 패턴 해시 (복원 키) ──────────────────────────────
+// 패턴 배열 → SHA-256 16진 문자열
+// 백업/패턴인덱스의 키로 사용
+async function patternToHash(pattern) {
+  if (!pattern || !pattern.length) return null;
+  var text = JSON.stringify(pattern);
+  try {
+    var enc = new TextEncoder().encode(text);
+    var buf = await crypto.subtle.digest('SHA-256', enc);
+    var hex = Array.from(new Uint8Array(buf))
+      .map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+    return hex;
+  } catch(e) {
+    // crypto.subtle 미지원 환경 폴백 (이론적으로만, 모던 브라우저에서는 발생 안 함)
+    return text;
+  }
+}
+
+// 기본 패턴 여부 판정 (마스터 PIN인가)
+function isMasterPattern(pattern) {
+  if (!pattern || pattern.length !== DEFAULT_PATTERN.length) return false;
+  for (var i = 0; i < pattern.length; i++) {
+    if (pattern[i] !== DEFAULT_PATTERN[i]) return false;
+  }
+  return true;
+}
 let autoDeleteMinutes = parseInt(localStorage.getItem('autoDeleteMin') || '5');
 let myCode = localStorage.getItem('myCode') || '';
 let friends = JSON.parse(localStorage.getItem('friends') || '[]');
@@ -86,6 +113,20 @@ window.addEventListener('DOMContentLoaded', () => {
   if (!localStorage.getItem('_darkDefault')) {
     localStorage.setItem('darkMode', 'true');
     localStorage.setItem('_darkDefault', '1');
+  }
+
+  // 백업 v2 마이그레이션: 옛 백업 위치(users/{myCode}/backup/data) 자동 정리
+  // 첫 실행 시 한 번만 실행. 옛 데이터 삭제 + 새 구조로 자동 백업 트리거.
+  if (!localStorage.getItem('_backupV2Migrated')) {
+    setTimeout(function() {
+      if (!myCode || typeof db === 'undefined') return;
+      // 옛 백업 문서 삭제
+      db.collection('users').doc(myCode).collection('backup').doc('data')
+        .delete().catch(function(){});
+      // 새 구조로 즉시 백업 (현재 패턴으로 patternIndex 등록 + backups/{myCode} 생성)
+      try { performBackup(); } catch(e) {}
+      localStorage.setItem('_backupV2Migrated', '1');
+    }, 3000);  // 앱 초기화가 충분히 끝난 뒤
   }
 
   // 1. 테마/다크/타이틀 즉시 적용
@@ -192,10 +233,36 @@ function onDragEnd() {
   const uniqueDots = [...new Set(patternCopy)];
   if (uniqueDots.length <= 1) {
     openFeature(tapped);
-  } else if (arraysEqual(patternCopy, savedPattern)) {
-    enterChatApp();
+    return;
   }
-  // else: 잘못된 패턴 → 아무것도 안 함
+
+  // [캐시 + myCode 있음] = 평소 흐름. 저장된 패턴과 일치하면 즉시 진입, 아니면 조용히 무시
+  if (myCode) {
+    if (arraysEqual(patternCopy, savedPattern)) {
+      enterChatApp();
+    }
+    return;
+  }
+
+  // [myCode 없음] = 캐시 손실 또는 첫 사용자. 자동 복원 분기 호출
+  tryAutoRestore(patternCopy).then(function(r) {
+    if (!r) return;
+    if (r.action === 'enter') {
+      if (r.restored) {
+        // 자동 복원 성공 → 새로고침으로 깔끔하게 시작
+        window.location.reload();
+      } else {
+        // 마스터 패턴 신규 진입 → chatSetup이 알아서 코드 입력 화면 표시
+        enterChatApp();
+      }
+    } else if (r.action === 'askCode') {
+      // 후보 N명 → 마이코드 입력 모달
+      showCodeInputModal(r.source, r.candidates);
+    }
+    // 'silent' → 아무 동작 안 함 (비인가 사용자 차단)
+  }).catch(function(e) {
+    console.log('[PATTERN] auto restore error:', e && e.message);
+  });
 }
 
 function checkDot(x, y) {
@@ -280,13 +347,32 @@ function clearSetupDots() {
   document.querySelectorAll('#setupGrid .pattern-dot').forEach(el => el.classList.remove('lit'));
 }
 
-function savePattern() {
+async function savePattern() {
   const isEn = localStorage.getItem('lang') === 'en';
   // 입력 전(Cancel 상태)이면 뒤로가기
   if (setupPattern.length < 4) { cancelPatternSetup(); return; }
+  var oldPattern = savedPattern;
   savedPattern = [...setupPattern];
   localStorage.setItem('secPattern', JSON.stringify(savedPattern));
-  showAlert(localStorage.getItem('lang') === 'en' ? 'Pattern saved!' : '패턴이 저장되었습니다!');
+
+  // patternIndex 갱신: 옛 hash에서 내 myCode 제거, 새 hash에 추가
+  // myCode가 있고 마스터 패턴(0125478)에서 벗어났을 때만 의미가 있음
+  if (myCode) {
+    try {
+      var oldHash = await patternToHash(oldPattern);
+      var newHash = await patternToHash(savedPattern);
+      if (oldHash && oldHash !== newHash) {
+        // 옛 인덱스에서 제거
+        await db.collection('patternIndex').doc(oldHash).set({
+          codes: firebase.firestore.FieldValue.arrayRemove(myCode)
+        }, { merge: true }).catch(function(){});
+      }
+      // 새 hash로 즉시 백업 (인덱스 등록 포함)
+      await performBackup();
+    } catch(e) { console.log('[PATTERN] save error:', e.message); }
+  }
+
+  showAlert(isEn ? 'Pattern saved!' : '패턴이 저장되었습니다!');
   showScreen('chatApp');
 }
 
@@ -1897,11 +1983,34 @@ function exitChat() {
   showScreen('fakeApp');
 }
 
-function saveMyCode() {
+async function saveMyCode() {
   const code = document.getElementById('myCodeInput').value.trim().toUpperCase();
-  if (!code || code.length < 2) { showAlert('2자 이상 입력하세요'); return; }
+  if (!code || code.length < 2) {
+    showAlert(localStorage.getItem('lang') === 'en' ? 'At least 2 chars required' : '2자 이상 입력하세요');
+    return;
+  }
+  // 코드 중복 검증: 이미 다른 사용자가 백업해둔 코드면 거부
+  try {
+    var bk = await db.collection('backups').doc(code).get();
+    if (bk.exists) {
+      var data = bk.data() || {};
+      var myHash = await patternToHash(savedPattern);
+      // 본인 백업(패턴 일치)이면 복원, 아니면 거부
+      if (data.patternHash === myHash) {
+        var ok = await _restoreCode(code, myHash);
+        if (ok) { window.location.reload(); return; }
+      }
+      showAlert(localStorage.getItem('lang') === 'en'
+        ? 'Code already in use'
+        : '이미 등록된 코드입니다');
+      return;
+    }
+  } catch(e) { console.log('[saveMyCode] check error:', e.message); }
+
   myCode = code; localStorage.setItem('myCode', myCode);
   db.collection('users').doc(myCode).set({ code: myCode, friends: [], ts: firebase.firestore.Timestamp.now() }, { merge: true });
+  // 신규 사용자 첫 백업 트리거
+  try { performBackup(); } catch(e) {}
   showFriendList();
 }
 
@@ -1924,9 +2033,6 @@ function renderFriendList() {
       '<path d="M5 21c0-4 3.1-7 7-7s7 3 7 7"/>' +
       '</svg>' +
       '<div>' + (_en ? 'Add a friend to start chatting' : '친구를 추가하면 채팅이 시작됩니다') + '</div>' +
-      '<button class="restore-link" onclick="openRestoreModal()" style="margin-top:18px;background:none;border:none;color:#60a5fa;font-size:12px;text-decoration:underline;cursor:pointer;">' +
-        (_en ? 'Restore from backup' : '백업에서 복원') +
-      '</button>' +
       '</div>';
     return;
   }
@@ -1942,50 +2048,61 @@ function renderFriendList() {
     </div>`).join('');
 }
 
-// ── Firestore 자동 백업/복원 ──────────────────────────
-// 캐시 삭제 / 새 기기 / PWA 재설치 등으로 localStorage가 비어도
-// myCode만 알면 users/{myCode}/backup/data 에서 복원 가능.
+// ── Firestore 자동 백업/복원 (v2: patternHash 기반) ──────────────────────────
 //
-// 백업 정책:
-//   - 변경 후 10초 디바운스
-//   - 패턴(secPattern)은 보안상 백업 제외
-//   - 채팅 메시지/친구 목록은 이미 Firestore에 있으므로 백업 안 함
-//   - last-write-wins (단일 기기 전제)
+// 데이터 구조:
+//   backups/{myCode} = {
+//     patternHash: SHA-256(현재 패턴),
+//     payload: { memos, todos, ...설정 },
+//     ts: Timestamp
+//   }
+//   patternIndex/{patternHash} = {
+//     codes: [myCode, ...]   // arrayUnion/Remove로 관리
+//   }
+//
+// 복원 흐름은 진입 시점 자동. 사용자가 명시적 호출 안 함.
+// 백업 정책: 1분 디바운스, 패턴은 백업 payload 제외 (해시는 별도 필드)
 
-// 백업 대상 키 목록 (패턴/임시 플래그 제외)
 var BACKUP_KEYS = [
   'memos', 'todos', 'habits', 'hStats',
   'appName', 'lang', 'darkMode', 'themeColor', 'iconStyle', 'svgColorMode',
   'chatTheme', 'chatFontSize',
   'notifApp', 'notifEvent',
   'autoLock', 'autoDeleteMin',
-  'shareTarget',
+  'shareTarget', 'friends',
   '_titleMain', '_titleSub'
 ];
 
 var _backupTimer = null;
 var _backupInProgress = false;
 
-// 변경 시 호출. 1분 디바운스 후 실제 백업.
 function scheduleBackup() {
   if (!myCode) return;
   if (_backupTimer) clearTimeout(_backupTimer);
-  _backupTimer = setTimeout(performBackup, 60000); // 1분
+  _backupTimer = setTimeout(performBackup, 60000);
 }
 
 async function performBackup() {
   if (!myCode || _backupInProgress) return;
   _backupInProgress = true;
   try {
+    var patternHash = await patternToHash(savedPattern);
+    if (!patternHash) return;
     var payload = {};
     BACKUP_KEYS.forEach(function(k) {
       var v = localStorage.getItem(k);
       if (v !== null) payload[k] = v;
     });
-    await db.collection('users').doc(myCode).collection('backup').doc('data').set({
+    // 백업 문서 set
+    await db.collection('backups').doc(myCode).set({
+      patternHash: patternHash,
       payload: payload,
       ts: firebase.firestore.Timestamp.now()
     });
+    // 패턴 인덱스에 내 코드 등록 (arrayUnion: 동시성 안전)
+    await db.collection('patternIndex').doc(patternHash).set({
+      codes: firebase.firestore.FieldValue.arrayUnion(myCode)
+    }, { merge: true });
     localStorage.setItem('_lastBackup', String(Date.now()));
   } catch(e) {
     console.log('[BACKUP] error:', e.message);
@@ -1994,116 +2111,191 @@ async function performBackup() {
   }
 }
 
-// 강제 즉시 백업 (디바운스 무시) — 앱 종료 직전 등에 호출
 function flushBackup() {
   if (_backupTimer) { clearTimeout(_backupTimer); _backupTimer = null; }
   return performBackup();
 }
 
-// 복원: 주어진 코드의 백업 문서를 읽어 localStorage에 풀어넣음
-// 반환: {success: bool, count: number, error?: string}
-async function restoreFromBackup(code) {
-  if (!code) return { success: false, error: 'no code' };
-  try {
-    var snap = await db.collection('users').doc(code).collection('backup').doc('data').get();
-    if (!snap.exists) return { success: false, error: 'no backup' };
-    var data = snap.data() || {};
-    var payload = data.payload || {};
-    var count = 0;
-    Object.keys(payload).forEach(function(k) {
-      if (BACKUP_KEYS.indexOf(k) >= 0) {
-        localStorage.setItem(k, payload[k]);
-        count++;
-      }
-    });
-    // 코드 자체도 저장 (사용자가 이걸로 로그인 상태가 됨)
-    localStorage.setItem('myCode', code);
-    return { success: true, count: count };
-  } catch(e) {
-    console.log('[RESTORE] error:', e.message);
-    return { success: false, error: e.message };
-  }
-}
-
-// 페이지 닫기/숨김 시 백업 디바운스가 남아있다면 동기적 시도
+// 페이지 닫기/숨김 시 백업 디바운스가 남아있다면 즉시 발사
 window.addEventListener('pagehide', function() {
-  if (_backupTimer && myCode) {
-    clearTimeout(_backupTimer);
-    performBackup();
-  }
+  if (_backupTimer && myCode) { clearTimeout(_backupTimer); performBackup(); }
 });
 window.addEventListener('beforeunload', function() {
-  if (_backupTimer && myCode) {
-    clearTimeout(_backupTimer);
-    performBackup();
-  }
+  if (_backupTimer && myCode) { clearTimeout(_backupTimer); performBackup(); }
 });
 document.addEventListener('visibilitychange', function() {
   if (document.visibilityState === 'hidden' && _backupTimer && myCode) {
-    clearTimeout(_backupTimer);
-    performBackup();
+    clearTimeout(_backupTimer); performBackup();
   }
 });
 
-// ── 복원 모달 ──
-function openRestoreModal() {
+// ── 자동 복원 (캐시 손실 시 진입 시점에 호출) ──────────────────
+//
+// 호출 시점: 사용자가 패턴 입력 후 채팅 진입 시도 직전.
+// 반환 값:
+//   { action: 'enter',          ...상황별 부가 정보 }     → 채팅 진입 진행
+//   { action: 'askCode' }                                  → 마이코드 입력 모달 (신규 또는 후보 N명)
+//   { action: 'silent' }                                   → 조용히 무시 (비인가 사용자)
+//
+// 호출자는 enter면 진입, askCode면 모달, silent면 아무 동작 안 함.
+
+async function tryAutoRestore(inputPattern) {
+  // 캐시에 myCode가 살아있으면 자동 복원 흐름 불필요 (호출자가 결정)
+  // 이 함수는 myCode 없을 때만 호출된다는 전제
+
+  // 마스터 패턴(0125478)이면 → 그냥 진입.
+  // enterChatApp이 myCode 없으면 chatSetup(코드 입력 화면)을 표시함.
+  // 자동 복원 모달 없음.
+  if (isMasterPattern(inputPattern)) {
+    return { action: 'enter' };
+  }
+
+  // 마스터 아니면 → patternIndex 조회
+  var hash = await patternToHash(inputPattern);
+  if (!hash) return { action: 'silent' };
+
+  try {
+    var snap = await db.collection('patternIndex').doc(hash).get();
+    if (!snap.exists) return { action: 'silent' };
+    var codes = (snap.data() || {}).codes || [];
+    if (!codes.length) return { action: 'silent' };
+
+    if (codes.length === 1) {
+      // 후보 단독 → 조용히 복원
+      var ok = await _restoreCode(codes[0], hash);
+      if (ok) return { action: 'enter', restored: true };
+      return { action: 'silent' };
+    }
+    // 후보 여러 명 → 코드 입력 모달
+    return { action: 'askCode', source: 'multi', candidates: codes, hash: hash };
+  } catch(e) {
+    console.log('[RESTORE] index lookup error:', e.message);
+    return { action: 'silent' };
+  }
+}
+
+// 마이코드 입력 후 처리. 패턴은 이미 입력된 상태(savedPattern)
+// source: 'master' = 마스터 패턴 흐름 (신규/복원 모두 허용)
+//         'multi'  = 후보 여러 명 (후보 중에서만 복원, 없으면 거부)
+// 반환:
+//   { ok: true, mode: 'restored'|'new' }
+//   { ok: false, error: 'duplicate'|'notFound' }
+async function applyCodeAfterPattern(inputCode, source, candidates) {
+  inputCode = (inputCode || '').trim().toUpperCase();
+  if (!inputCode) return { ok: false, error: 'notFound' };
+
+  var currentHash = await patternToHash(savedPattern);
+
+  if (source === 'master') {
+    // 신규 또는 같은 패턴(드물게 마스터+같은 코드)의 본인 복원
+    try {
+      var snap = await db.collection('backups').doc(inputCode).get();
+      if (!snap.exists) {
+        // 백업 없음 → 신규 사용자로 시작
+        await _initNewUser(inputCode);
+        return { ok: true, mode: 'new' };
+      }
+      // 백업 있음 → patternHash 비교
+      var data = snap.data();
+      if (data.patternHash === currentHash) {
+        // 동일 패턴+동일 코드 → 본인. 복원 (드문 케이스)
+        var ok = await _restoreCode(inputCode, currentHash);
+        if (ok) return { ok: true, mode: 'restored' };
+      }
+      // 패턴 다른데 코드 중복 = 다른 사용자 → 거부
+      return { ok: false, error: 'duplicate' };
+    } catch(e) {
+      return { ok: false, error: 'notFound' };
+    }
+  }
+
+  // source === 'multi' : 후보 중에서만 매칭
+  if (!candidates || candidates.indexOf(inputCode) < 0) {
+    return { ok: false, error: 'notFound' };
+  }
+  var ok2 = await _restoreCode(inputCode, currentHash);
+  return ok2 ? { ok: true, mode: 'restored' } : { ok: false, error: 'notFound' };
+}
+
+// 실제 복원: backups/{code}에서 payload 가져와 localStorage 적용
+async function _restoreCode(code, expectedHash) {
+  try {
+    var snap = await db.collection('backups').doc(code).get();
+    if (!snap.exists) return false;
+    var data = snap.data() || {};
+    // 패턴 해시 추가 검증 (불일치 시 거부)
+    if (expectedHash && data.patternHash !== expectedHash) return false;
+    var payload = data.payload || {};
+    Object.keys(payload).forEach(function(k) {
+      if (BACKUP_KEYS.indexOf(k) >= 0) {
+        localStorage.setItem(k, payload[k]);
+      }
+    });
+    localStorage.setItem('myCode', code);
+    return true;
+  } catch(e) {
+    console.log('[RESTORE] _restoreCode error:', e.message);
+    return false;
+  }
+}
+
+// 신규 사용자 초기화: 입력한 코드로 시작
+async function _initNewUser(code) {
+  localStorage.setItem('myCode', code);
+  localStorage.setItem('friends', '[]');
+  try {
+    await db.collection('users').doc(code).set({
+      code: code, friends: [], ts: firebase.firestore.Timestamp.now()
+    });
+  } catch(e) { console.log('[NEW] user create error:', e.message); }
+  // 첫 백업 트리거 (자기 코드를 patternIndex에 등록)
+  try { await performBackup(); } catch(e) {}
+}
+
+// ── 마이코드 입력 모달 (restoreModal 재활용) ──
+// 신규 사용자 / 후보 N명일 때 동일 모달 표시
+var _pendingRestore = null;  // {source, candidates}
+
+function showCodeInputModal(source, candidates) {
+  _pendingRestore = { source: source, candidates: candidates || [] };
   var modal = document.getElementById('restoreModal');
   if (!modal) return;
   var input = document.getElementById('restoreCodeInput');
   if (input) input.value = '';
   var warn = document.getElementById('restoreWarn');
-  if (warn) {
-    // 메모/할일이 있으면 덮어쓰기 경고
-    var hasData = false;
-    try {
-      hasData = (JSON.parse(localStorage.getItem('memos') || '[]').length > 0) ||
-                (JSON.parse(localStorage.getItem('todos') || '[]').length > 0);
-    } catch(e) {}
-    if (hasData) {
-      warn.style.display = '';
-      var en = localStorage.getItem('lang') === 'en';
-      warn.textContent = en
-        ? 'Existing memos and to-dos will be replaced by the backup.'
-        : '현재 메모/할일은 백업 데이터로 대체됩니다.';
-    } else {
-      warn.style.display = 'none';
-    }
-  }
+  if (warn) warn.style.display = 'none';
   modal.style.display = 'flex';
 }
 
 function closeRestoreModal() {
   var modal = document.getElementById('restoreModal');
   if (modal) modal.style.display = 'none';
+  _pendingRestore = null;
 }
 
 async function performRestore() {
   var input = document.getElementById('restoreCodeInput');
-  if (!input) return;
+  if (!input || !_pendingRestore) { closeRestoreModal(); return; }
   var code = input.value.trim().toUpperCase();
-  if (!code || code.length < 4) {
-    showAlert(localStorage.getItem('lang') === 'en' ? 'Enter a valid code' : '코드를 입력하세요');
-    return;
-  }
-  if (code === myCode) {
-    showAlert(localStorage.getItem('lang') === 'en' ? 'Same as current code' : '현재 사용 중인 코드와 동일합니다');
-    return;
-  }
+  if (!code) return;
+
+  var ctx = _pendingRestore;
   closeRestoreModal();
-  try { showUploadStatus('복원 중...'); } catch(e) {}
-  var r = await restoreFromBackup(code);
+  try { showUploadStatus('확인 중...'); } catch(e) {}
+  var r = await applyCodeAfterPattern(code, ctx.source, ctx.candidates);
   try { hideUploadStatus(); } catch(e) {}
 
   var en = localStorage.getItem('lang') === 'en';
-  if (r.success) {
-    showAlert(en
-      ? 'Restored ' + r.count + ' items. App will reload.'
-      : r.count + '개 항목 복원됨. 앱이 새로고침됩니다.');
-    setTimeout(function() { window.location.reload(); }, 1200);
+  if (r.ok) {
+    // 성공: 페이지 새로고침으로 깔끔하게 시작
+    setTimeout(function() { window.location.reload(); }, 200);
   } else {
-    var msg = r.error === 'no backup'
-      ? (en ? 'No backup found for that code' : '해당 코드의 백업을 찾을 수 없습니다')
-      : (en ? 'Restore failed: ' + r.error : '복원 실패: ' + r.error);
+    var msg;
+    if (r.error === 'duplicate') {
+      msg = en ? 'Code already in use' : '이미 등록된 코드입니다';
+    } else {
+      msg = en ? 'No matching code registered' : '등록된 코드가 없습니다';
+    }
     showAlert(msg);
   }
 }
@@ -2286,9 +2478,21 @@ async function regenerateCode() {
 async function _purgeServerData(oldCode, oldFriends) {
   if (!oldCode) return;
 
-  // 1) 백업 문서 삭제
+  // 1) 백업 문서 삭제 (옛 위치 + 새 위치)
   try {
     await db.collection('users').doc(oldCode).collection('backup').doc('data').delete();
+  } catch(e) {}
+  try {
+    await db.collection('backups').doc(oldCode).delete();
+  } catch(e) {}
+  // patternIndex에서 내 코드 제거 (현재 patternHash 기준)
+  try {
+    var hash = await patternToHash(savedPattern);
+    if (hash) {
+      await db.collection('patternIndex').doc(hash).set({
+        codes: firebase.firestore.FieldValue.arrayRemove(oldCode)
+      }, { merge: true });
+    }
   } catch(e) {}
 
   // 2) 친구별 정리: 채팅방, 공유 sid, 공유 요청
@@ -2372,20 +2576,52 @@ function closeChangeCode() { document.getElementById('changeCodeModal').style.di
 
 async function confirmChangeCode() {
   const newCode = document.getElementById('newCodeInput').value.trim().toUpperCase();
-  if (!newCode || newCode.length < 2) { showAlert('2자 이상 입력하세요'); return; }
-  if (newCode === myCode) { showAlert('현재 코드와 같습니다'); return; }
-  var en = localStorage.getItem('lang') === 'en';
-  var msg = en
-    ? 'Changing your code will permanently delete all chats, memos, todos, calendar, stats, and backup data from server. Continue?'
-    : '코드 변경 시 채팅/메모/할일/달력/통계/백업 모든 데이터가 서버에서 영구 삭제됩니다. 계속할까요?';
-  showConfirm(msg, function() { _doConfirmChangeCode(newCode); }); return;
+  if (!newCode || newCode.length < 2) {
+    showAlert(localStorage.getItem('lang') === 'en' ? 'At least 2 chars required' : '2자 이상 입력하세요');
+    return;
+  }
+  if (newCode === myCode) {
+    showAlert(localStorage.getItem('lang') === 'en' ? 'Same as current code' : '현재 코드와 같습니다');
+    return;
+  }
+  closeChangeCode();
+  // 두 번째 모달: 데이터 초기화 / 유지 / 취소
+  openChangeCodeChoiceModal(newCode);
 }
 
-async function _doConfirmChangeCode(newCode) {
+// 두 번째 확인 모달: 데이터 처리 방식 선택
+function openChangeCodeChoiceModal(newCode) {
+  var modal = document.getElementById('changeCodeChoiceModal');
+  if (!modal) return;
+  modal.dataset.newCode = newCode;
+  modal.style.display = 'flex';
+}
+function closeChangeCodeChoiceModal() {
+  var modal = document.getElementById('changeCodeChoiceModal');
+  if (modal) modal.style.display = 'none';
+}
+
+// "데이터 초기화" 선택: 기존 모든 서버+로컬 데이터 삭제 후 새 코드로 신규 시작
+async function changeCodeAndPurge() {
+  var modal = document.getElementById('changeCodeChoiceModal');
+  var newCode = modal ? modal.dataset.newCode : '';
+  closeChangeCodeChoiceModal();
+  if (!newCode) return;
+
   var oldCode = myCode;
   var oldFriends = friends.slice();
   try { showUploadStatus('서버 데이터 삭제 중...'); } catch(e) {}
+  // 서버 풀 정리 (백업/패턴인덱스 포함)
   await _purgeServerData(oldCode, oldFriends);
+  try {
+    var oldHash = await patternToHash(savedPattern);
+    if (oldHash && oldCode) {
+      await db.collection('patternIndex').doc(oldHash).set({
+        codes: firebase.firestore.FieldValue.arrayRemove(oldCode)
+      }, { merge: true }).catch(function(){});
+    }
+    await db.collection('backups').doc(oldCode).delete().catch(function(){});
+  } catch(e) {}
   try { hideUploadStatus(); } catch(e) {}
 
   myCode = newCode;
@@ -2395,11 +2631,72 @@ async function _doConfirmChangeCode(newCode) {
   localStorage.setItem('friends', '[]');
 
   await db.collection('users').doc(myCode).set({ code: myCode, friends: [], ts: firebase.firestore.Timestamp.now() });
-  closeChangeCode(); closeSecretSettings();
+  // 새 백업 (patternIndex 자동 등록)
+  try { await performBackup(); } catch(e) {}
+  closeSecretSettings();
   renderFriendList();
   showAlert((localStorage.getItem('lang') === 'en')
     ? 'Code changed to: ' + myCode
     : '코드가 변경되었습니다: ' + myCode);
+}
+
+// "데이터 유지" 선택: 메모/할일/통계/달력/설정은 유지, 친구/채팅/공유만 정리
+async function changeCodeAndKeep() {
+  var modal = document.getElementById('changeCodeChoiceModal');
+  var newCode = modal ? modal.dataset.newCode : '';
+  closeChangeCodeChoiceModal();
+  if (!newCode) return;
+
+  var oldCode = myCode;
+  var oldFriends = friends.slice();
+  try { showUploadStatus('코드 변경 중...'); } catch(e) {}
+
+  // 친구 관계 + 서버 양측 정리 (메모/할일/통계/달력 로컬은 유지)
+  await _purgeServerData(oldCode, oldFriends);
+  // 옛 백업 + 옛 patternIndex에서 oldCode 제거
+  try {
+    var hash = await patternToHash(savedPattern);
+    if (hash && oldCode) {
+      await db.collection('patternIndex').doc(hash).set({
+        codes: firebase.firestore.FieldValue.arrayRemove(oldCode)
+      }, { merge: true }).catch(function(){});
+    }
+    await db.collection('backups').doc(oldCode).delete().catch(function(){});
+  } catch(e) {}
+
+  // 로컬: 친구/공유 관련만 정리, 데이터는 유지
+  localStorage.removeItem('friends');
+  localStorage.removeItem('shareTarget');
+  // 받은 메모(from 있는) 제거
+  try {
+    var memos = JSON.parse(localStorage.getItem('memos') || '[]');
+    var cleaned = memos.filter(function(m) { return !m.from; });
+    if (cleaned.length !== memos.length) localStorage.setItem('memos', JSON.stringify(cleaned));
+  } catch(e) {}
+
+  myCode = newCode;
+  friends = [];
+  localStorage.setItem('myCode', myCode);
+  localStorage.setItem('friends', '[]');
+
+  // 새 users 문서
+  await db.collection('users').doc(myCode).set({ code: myCode, friends: [], ts: firebase.firestore.Timestamp.now() });
+  // 새 백업 (새 myCode로 patternIndex 등록 + 데이터는 그대로)
+  try { await performBackup(); } catch(e) {}
+  try { hideUploadStatus(); } catch(e) {}
+  closeSecretSettings();
+  renderFriendList();
+  showAlert((localStorage.getItem('lang') === 'en')
+    ? 'Code changed to: ' + myCode
+    : '코드가 변경되었습니다: ' + myCode);
+}
+
+// 기존 _doConfirmChangeCode는 폐기 (호환 위해 changeCodeAndPurge 호출하도록)
+async function _doConfirmChangeCode(newCode) {
+  // 구버전 호출 흔적이 있을 경우 안전 폴백
+  var modal = document.getElementById('changeCodeChoiceModal');
+  if (modal) modal.dataset.newCode = newCode;
+  await changeCodeAndPurge();
 }
 
 // ── CHAT ────────────────────────────────────────────
@@ -3874,8 +4171,8 @@ function applyLang() {
   _setText('shareTargetBtn', en ? 'Change' : '변경');
   _setText('shareTargetModalTitle', en ? 'Select Share Target' : '공유 대상 선택');
   _setText('shareReqTitle',       en ? 'Share Request' : '공유 요청');
-  _setText('restoreTitle',        en ? 'Restore from Backup' : '백업에서 복원');
-  _setText('restoreDesc',         en ? 'Enter your existing code to restore data from cloud backup.' : '기존 코드를 입력하면 클라우드 백업에서 데이터를 복원합니다.');
+  _setText('restoreTitle',        en ? 'Restore Data' : '데이터 복원');
+  _setText('restoreDesc',         en ? 'Enter your ID code to restore your backup data.' : '내 식별 코드를 입력하면 백업 데이터가 복원됩니다.');
   _setText('restoreCancelBtn',    en ? 'Cancel' : '취소');
   _setText('restoreOkBtn',        en ? 'Restore' : '복원');
   _setText('shareReqDescText',    en ? ' sent you a share request.' : '님이 공유 대상으로 지정했습니다.');
@@ -3935,6 +4232,22 @@ function applyLang() {
   _setText('autoLockDesc', en ? 'Auto-lock chat when leaving screen' : '화면 이탈 시 채팅 자동 잠금');
   _setText('myCodeLabel', en ? 'My Code :' : '내 코드 :');
   _setText('changeCodeTitle', en ? 'Change ID Code' : '식별 코드 변경');
+  _setText('changeCodeDesc',  en ? 'Enter a new ID code' : '새 식별 코드를 입력하세요');
+  _setText('changeCodeCancelBtn', en ? 'Cancel' : '취소');
+  _setText('changeCodeConfirm', en ? 'OK' : '확인');
+  _setText('changeChoiceTitle', en ? 'Data Handling' : '데이터 처리');
+  _setText('changeChoiceDesc',  en ? 'What to do with existing data after code change?' : '코드 변경 후 기존 데이터를 어떻게 할까요?');
+  _setText('changeChoiceKeepBtn', en ? 'Keep Data' : '데이터 유지');
+  _setText('changeChoiceResetBtn', en ? 'Reset Data' : '데이터 초기화');
+  _setText('changeChoiceCancelBtn', en ? 'Cancel' : '취소');
+  var hintEl = document.getElementById('changeChoiceHint');
+  if (hintEl) {
+    var keep = en ? 'Keep' : '유지';
+    var reset = en ? 'Reset' : '초기화';
+    hintEl.innerHTML = en
+      ? '<b style="color:#f59e0b;">' + keep + '</b>: Memo/To-Do/Stats/Calendar/Settings preserved. Friends, chats, shared data removed.<br><b style="color:#ef4444;">' + reset + '</b>: All data permanently deleted from server and device.'
+      : '<b style="color:#f59e0b;">' + keep + '</b>: 메모/할일/통계/달력/설정은 보존하고, 친구·채팅·공유 데이터만 삭제됩니다.<br><b style="color:#ef4444;">' + reset + '</b>: 모든 데이터가 서버와 기기에서 영구 삭제됩니다.';
+  }
   _setText('changeCodeConfirm', en ? 'Confirm' : '변경 확인');
 
   // 패턴
@@ -3971,6 +4284,22 @@ function applyLang() {
   _setText('closeAddFriendBtn', en ? 'Cancel' : '취소');
   _setText('addFriendBtn', en ? 'Add' : '추가');
   _setText('changeCodeTitle', en ? 'Change ID Code' : '식별 코드 변경');
+  _setText('changeCodeDesc',  en ? 'Enter a new ID code' : '새 식별 코드를 입력하세요');
+  _setText('changeCodeCancelBtn', en ? 'Cancel' : '취소');
+  _setText('changeCodeConfirm', en ? 'OK' : '확인');
+  _setText('changeChoiceTitle', en ? 'Data Handling' : '데이터 처리');
+  _setText('changeChoiceDesc',  en ? 'What to do with existing data after code change?' : '코드 변경 후 기존 데이터를 어떻게 할까요?');
+  _setText('changeChoiceKeepBtn', en ? 'Keep Data' : '데이터 유지');
+  _setText('changeChoiceResetBtn', en ? 'Reset Data' : '데이터 초기화');
+  _setText('changeChoiceCancelBtn', en ? 'Cancel' : '취소');
+  var hintEl = document.getElementById('changeChoiceHint');
+  if (hintEl) {
+    var keep = en ? 'Keep' : '유지';
+    var reset = en ? 'Reset' : '초기화';
+    hintEl.innerHTML = en
+      ? '<b style="color:#f59e0b;">' + keep + '</b>: Memo/To-Do/Stats/Calendar/Settings preserved. Friends, chats, shared data removed.<br><b style="color:#ef4444;">' + reset + '</b>: All data permanently deleted from server and device.'
+      : '<b style="color:#f59e0b;">' + keep + '</b>: 메모/할일/통계/달력/설정은 보존하고, 친구·채팅·공유 데이터만 삭제됩니다.<br><b style="color:#ef4444;">' + reset + '</b>: 모든 데이터가 서버와 기기에서 영구 삭제됩니다.';
+  }
   _setText('changeCodeDesc', en ? '⚠️ All friends will be deleted on both sides' : '⚠️ 변경 시 모든 친구가 양측에서 삭제됩니다');
   _setText('changeCodeConfirm', en ? 'Confirm' : '변경 확인');
   _setText('changeCodeCancelBtn', en ? 'Cancel' : '취소');
@@ -3989,8 +4318,8 @@ function applyLang() {
   _setText('shareTargetBtn', en ? 'Change' : '변경');
   _setText('shareTargetModalTitle', en ? 'Select Share Target' : '공유 대상 선택');
   _setText('shareReqTitle',       en ? 'Share Request' : '공유 요청');
-  _setText('restoreTitle',        en ? 'Restore from Backup' : '백업에서 복원');
-  _setText('restoreDesc',         en ? 'Enter your existing code to restore data from cloud backup.' : '기존 코드를 입력하면 클라우드 백업에서 데이터를 복원합니다.');
+  _setText('restoreTitle',        en ? 'Restore Data' : '데이터 복원');
+  _setText('restoreDesc',         en ? 'Enter your ID code to restore your backup data.' : '내 식별 코드를 입력하면 백업 데이터가 복원됩니다.');
   _setText('restoreCancelBtn',    en ? 'Cancel' : '취소');
   _setText('restoreOkBtn',        en ? 'Restore' : '복원');
   _setText('shareReqDescText',    en ? ' sent you a share request.' : '님이 공유 대상으로 지정했습니다.');

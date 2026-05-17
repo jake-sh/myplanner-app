@@ -519,9 +519,9 @@
   <!-- Restore From Backup Modal -->
   <div id="restoreModal" class="modal" style="display:none">
     <div class="modal-box">
-      <div class="modal-title" id="restoreTitle">백업에서 복원</div>
-      <p class="modal-desc" id="restoreDesc">기존 코드를 입력하면 클라우드 백업에서 데이터를 복원합니다.</p>
-      <input type="text" id="restoreCodeInput" placeholder="ABC1234" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--chat-border);background:var(--chat-bg2);color:var(--chat-text);font-size:14px;text-align:center;text-transform:uppercase;margin:12px 0;">
+      <div class="modal-title" id="restoreTitle">데이터 복원</div>
+      <p class="modal-desc" id="restoreDesc">내 식별 코드를 입력하면 백업 데이터가 복원됩니다.</p>
+      <input type="text" id="restoreCodeInput" placeholder="내 코드 입력" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--chat-border);background:var(--chat-bg2);color:var(--chat-text);font-size:14px;text-align:center;text-transform:uppercase;margin:12px 0;">
       <p id="restoreWarn" style="font-size:11px;color:#f59e0b;margin:8px 0;display:none;"></p>
       <div style="display:flex;gap:10px;">
         <button class="modal-cancel-cancel" onclick="closeRestoreModal()" id="restoreCancelBtn">취소</button>
@@ -553,11 +553,28 @@
   <div id="changeCodeModal" class="modal" style="display:none">
     <div class="modal-box">
       <div class="modal-title" id="changeCodeTitle">식별 코드 변경</div>
-      <p class="modal-desc" id="changeCodeDesc">⚠️ 변경 시 모든 친구가 양측에서 삭제됩니다</p>
+      <p class="modal-desc" id="changeCodeDesc">새 식별 코드를 입력하세요</p>
       <input id="newCodeInput" class="chat-input-field" type="text" maxlength="20" placeholder="새 식별 코드 입력"/>
       <div style="display:flex;gap:10px;">
-        <button class="modal-cancel-cancel" onclick="closeChangeCode()" id="changeCodeCancelBtn">취소</button>
-        <button class="modal-confirm-ok" onclick="confirmChangeCode()" id="changeCodeConfirm">변경 확인</button>
+        <button class="modal-cancel-cancel" onclick="closeChangeCode()" id="changeCodeCancelBtn">Cancel</button>
+        <button class="modal-confirm-ok" onclick="confirmChangeCode()" id="changeCodeConfirm">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 코드 변경 후 데이터 처리 선택 -->
+  <div id="changeCodeChoiceModal" class="modal" style="display:none">
+    <div class="modal-box">
+      <div class="modal-title" id="changeChoiceTitle">데이터 처리</div>
+      <p class="modal-desc" id="changeChoiceDesc">코드 변경 후 기존 데이터를 어떻게 할까요?</p>
+      <p style="font-size:11px;color:var(--chat-text2);margin:8px 0;line-height:1.5;" id="changeChoiceHint">
+        <b style="color:#f59e0b;" id="changeChoiceKeepLabel">유지</b>: 메모/할일/통계/달력/설정은 보존하고, 친구·채팅·공유 데이터만 삭제됩니다.<br>
+        <b style="color:#ef4444;" id="changeChoiceResetLabel">초기화</b>: 모든 데이터가 서버와 기기에서 영구 삭제됩니다.
+      </p>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px;">
+        <button class="modal-confirm-ok" onclick="changeCodeAndKeep()" id="changeChoiceKeepBtn" style="width:100%;">데이터 유지</button>
+        <button class="modal-cancel-cancel" onclick="changeCodeAndPurge()" id="changeChoiceResetBtn" style="width:100%;background:#dc2626;color:#fff;">데이터 초기화</button>
+        <button class="modal-cancel-cancel" onclick="closeChangeCodeChoiceModal()" id="changeChoiceCancelBtn" style="width:100%;">취소</button>
       </div>
     </div>
   </div>
