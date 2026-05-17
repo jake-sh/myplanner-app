@@ -507,6 +507,25 @@
     </div>
   </div>
 
+  <!-- Share Request Modal (받은 공유 요청 승인/거절) -->
+  <div id="shareReqModal" class="modal" style="display:none">
+    <div class="modal-box">
+      <div class="modal-title" id="shareReqTitle">공유 요청</div>
+      <p class="modal-desc" id="shareReqDesc">
+        <span id="shareReqFromCode" style="color:#f59e0b;font-weight:700;"></span>
+        <span id="shareReqDescText">님이 공유 대상으로 지정했습니다.</span>
+      </p>
+      <p style="font-size:11px;color:var(--chat-text2);margin:6px 0;" id="shareReqHint">
+        승인하면 메모/할일/일정/통계를 함께 사용합니다.
+      </p>
+      <p id="shareReqWarn" style="font-size:11px;color:#f59e0b;margin:8px 0;display:none;"></p>
+      <div style="display:flex;gap:10px;margin-top:14px;">
+        <button class="modal-cancel-cancel" onclick="rejectShareRequest()" id="shareReqRejectBtn">거절</button>
+        <button class="modal-confirm-ok" onclick="acceptShareRequest()" id="shareReqAcceptBtn">승인</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Change Code Modal -->
   <div id="changeCodeModal" class="modal" style="display:none">
     <div class="modal-box">

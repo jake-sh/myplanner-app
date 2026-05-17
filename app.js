@@ -749,8 +749,10 @@ function getShareTarget() {
 // 1) 이전 대상의 모든 공유 문서를 비움 (메모/할일/달력/통계 sid 각각)
 // 2) shareTarget 갱신
 // 3) 새 대상에게 현재 로컬 데이터를 재배포 (단, 메모는 shared:true인 것만)
-async function setShareTarget(newTarget) {
+// opts.silent=true일 때 새 대상에게 승인 요청을 보내지 않음 (acceptShareRequest 경로)
+async function setShareTarget(newTarget, opts) {
   if (!myCode) return;
+  opts = opts || {};
   var oldTarget = localStorage.getItem('shareTarget');
   if (oldTarget === newTarget) return;
 
@@ -786,7 +788,170 @@ async function setShareTarget(newTarget) {
     // 할일: 현재 로컬 todos 전체 push
     try { await saveTodosToFirestore(); } catch(e) { console.log('[SHARE] todo push error:', e.message); }
     // 달력/통계: 기존 함수가 있으면 호출 (현재 코드엔 별도 push 함수가 없고 sync 시점에 set)
+
+    // 4) 상대에게 공유 요청 푸시 (silent=true면 건너뜀: 이미 상대가 요청을 보낸 응답으로 진입한 경로)
+    if (!opts.silent) {
+      try { await sendShareRequest(newTarget); } catch(e) { console.log('[SHARE_REQ] send fail:', e.message); }
+    }
   }
+}
+
+// ── 공유 요청/응답 ──────────────────────────────────────
+// 사용자 A가 B를 공유 대상으로 지정 → B에게 승인 요청 전송 → B 응답에 따라 쌍방 또는 일방.
+//
+// Firestore 구조:
+//   shareRequests/{toCode}_{fromCode}_req → {from, to, ts, status: 'pending'}
+//   shareRequests/{fromCode}_{toCode}_resp → {from, to, ts, status: 'accepted'|'rejected'}
+// (req와 resp를 분리해서 양방향 리스너 충돌 방지)
+//
+// 요청은 24시간 TTL.
+
+var REQ_TTL_MS = 24 * 60 * 60 * 1000;
+var shareReqListener = null;
+var shareRespListener = null;
+
+// A가 B를 공유 대상으로 지정한 직후 호출 (setShareTarget 내부에서 호출됨)
+async function sendShareRequest(toCode) {
+  if (!myCode || !toCode || toCode === myCode) return;
+  try {
+    var reqId = toCode + '_' + myCode + '_req';
+    await db.collection('shareRequests').doc(reqId).set({
+      from: myCode, to: toCode,
+      ts: firebase.firestore.Timestamp.now(),
+      status: 'pending'
+    });
+  } catch(e) { console.log('[SHARE_REQ] send error:', e.message); }
+}
+
+// B가 승인 또는 거절 시 응답 문서 작성 + 요청 문서 삭제
+async function sendShareResponse(fromCode, accepted) {
+  if (!myCode || !fromCode) return;
+  try {
+    // 응답 작성 (A가 구독 중)
+    var respId = fromCode + '_' + myCode + '_resp';
+    await db.collection('shareRequests').doc(respId).set({
+      from: myCode, to: fromCode,
+      ts: firebase.firestore.Timestamp.now(),
+      status: accepted ? 'accepted' : 'rejected'
+    });
+    // 원본 요청 삭제
+    var reqId = myCode + '_' + fromCode + '_req';
+    await db.collection('shareRequests').doc(reqId).delete().catch(function(){});
+  } catch(e) { console.log('[SHARE_REQ] resp error:', e.message); }
+}
+
+// B 측 리스너: 나에게 온 요청 감시
+function startShareRequestListener() {
+  if (shareReqListener) { try { shareReqListener(); } catch(e){} shareReqListener = null; }
+  if (!myCode) return;
+  // Firestore 보안 규칙이 if true라 단순 컬렉션 쿼리로 처리
+  shareReqListener = db.collection('shareRequests')
+    .where('to', '==', myCode)
+    .where('status', '==', 'pending')
+    .onSnapshot(function(snap) {
+      snap.docChanges().forEach(function(change) {
+        if (change.type !== 'added' && change.type !== 'modified') return;
+        var data = change.doc.data();
+        if (!data || data.status !== 'pending') return;
+
+        // TTL 검사: 24시간 초과면 무시 + 삭제
+        var reqTs = data.ts ? data.ts.toMillis() : 0;
+        if (Date.now() - reqTs > REQ_TTL_MS) {
+          change.doc.ref.delete().catch(function(){});
+          return;
+        }
+
+        // 친구가 아니면 무시
+        var f = [];
+        try { f = JSON.parse(localStorage.getItem('friends') || '[]'); } catch(e) {}
+        if (f.indexOf(data.from) < 0) return;
+
+        // 이미 모달 떠 있으면 무시 (스팸 방지)
+        if (document.getElementById('shareReqModal').style.display === 'flex') return;
+
+        showShareRequestModal(data.from);
+      });
+    }, function(err) { console.log('[SHARE_REQ] listener err:', err && err.message); });
+}
+
+// A 측 리스너: 내가 보낸 요청에 대한 응답 감시
+function startShareResponseListener() {
+  if (shareRespListener) { try { shareRespListener(); } catch(e){} shareRespListener = null; }
+  if (!myCode) return;
+  shareRespListener = db.collection('shareRequests')
+    .where('to', '==', myCode)
+    .where('status', 'in', ['accepted', 'rejected'])
+    .onSnapshot(function(snap) {
+      snap.docChanges().forEach(function(change) {
+        if (change.type !== 'added' && change.type !== 'modified') return;
+        var data = change.doc.data();
+        if (!data) return;
+        // 응답 도착 → 인앱 알림 표시 후 문서 삭제
+        var en = localStorage.getItem('lang') === 'en';
+        var msg;
+        if (data.status === 'accepted') {
+          msg = en
+            ? data.from + ' accepted your share request'
+            : data.from + '님이 공유 요청을 승인했습니다';
+        } else {
+          msg = en
+            ? data.from + ' rejected your share request'
+            : data.from + '님이 공유 요청을 거절했습니다';
+        }
+        try { showAlert(msg); } catch(e) {}
+        // 응답 문서 정리 (반복 트리거 방지)
+        change.doc.ref.delete().catch(function(){});
+      });
+    }, function(err) { console.log('[SHARE_RESP] listener err:', err && err.message); });
+}
+
+// 요청 받았을 때 표시되는 모달
+function showShareRequestModal(fromCode) {
+  var modal = document.getElementById('shareReqModal');
+  if (!modal) return;
+  document.getElementById('shareReqFromCode').textContent = fromCode;
+  // 현재 공유 대상이 있으면 경고 메시지 표시
+  var currentTarget = localStorage.getItem('shareTarget');
+  var warnEl = document.getElementById('shareReqWarn');
+  if (warnEl) {
+    if (currentTarget && currentTarget !== fromCode) {
+      warnEl.style.display = '';
+      var en = localStorage.getItem('lang') === 'en';
+      warnEl.textContent = en
+        ? 'Current share target (' + currentTarget + ') will be released.'
+        : '현재 공유 대상(' + currentTarget + ')은 자동 해제됩니다.';
+    } else {
+      warnEl.style.display = 'none';
+    }
+  }
+  modal.dataset.fromCode = fromCode;
+  modal.style.display = 'flex';
+}
+
+async function acceptShareRequest() {
+  var modal = document.getElementById('shareReqModal');
+  if (!modal) return;
+  var fromCode = modal.dataset.fromCode;
+  modal.style.display = 'none';
+  if (!fromCode) return;
+  try { showUploadStatus('공유 대상 변경 중...'); } catch(e) {}
+  try {
+    // setShareTarget이 회수+재배포 처리. 단 acceptShareRequest 경로에서는
+    // 다시 요청을 보내지 않도록 silent 옵션 전달
+    await setShareTarget(fromCode, { silent: true });
+  } catch(e) {}
+  try { await sendShareResponse(fromCode, true); } catch(e) {}
+  try { hideUploadStatus(); } catch(e) {}
+  try { updateShareTargetDisplay(); } catch(e) {}
+}
+
+async function rejectShareRequest() {
+  var modal = document.getElementById('shareReqModal');
+  if (!modal) return;
+  var fromCode = modal.dataset.fromCode;
+  modal.style.display = 'none';
+  if (!fromCode) return;
+  try { await sendShareResponse(fromCode, false); } catch(e) {}
 }
 
 // ── 할 일 ───────────────────────────────────────────
@@ -1763,6 +1928,10 @@ function listenFriendChanges() {
   var cached = localStorage.getItem('friends');
   if (cached) { try { friends = JSON.parse(cached); renderFriendList(); } catch(e){} }
 
+  // 공유 요청/응답 리스너 동시 시작
+  try { startShareRequestListener(); } catch(e) {}
+  try { startShareResponseListener(); } catch(e) {}
+
   friendsListener = db.collection('users').doc(myCode).onSnapshot(snap => {
     if (!snap.exists) return;
     var newFriends = snap.data().friends || [];
@@ -1827,6 +1996,14 @@ async function _doDeleteChat(friendCode) {
     if (cleaned.length !== memos.length) {
       localStorage.setItem('memos', JSON.stringify(cleaned));
     }
+  } catch(e) {}
+
+  // 5. 양방향 공유 요청/응답 문서 정리 (stale 방지)
+  try {
+    await db.collection('shareRequests').doc(friendCode + '_' + myCode + '_req').delete().catch(function(){});
+    await db.collection('shareRequests').doc(myCode + '_' + friendCode + '_req').delete().catch(function(){});
+    await db.collection('shareRequests').doc(friendCode + '_' + myCode + '_resp').delete().catch(function(){});
+    await db.collection('shareRequests').doc(myCode + '_' + friendCode + '_resp').delete().catch(function(){});
   } catch(e) {}
 
   renderFriendList();
@@ -3338,6 +3515,11 @@ function applyLang() {
   _setText('notifAppLabel', en ? 'App Alerts (Memo/Schedule/To-Do/Stats)' : '앱 알림 (메모/일정/할일/통계)');
   _setText('shareTargetBtn', en ? 'Change' : '변경');
   _setText('shareTargetModalTitle', en ? 'Select Share Target' : '공유 대상 선택');
+  _setText('shareReqTitle',       en ? 'Share Request' : '공유 요청');
+  _setText('shareReqDescText',    en ? ' sent you a share request.' : '님이 공유 대상으로 지정했습니다.');
+  _setText('shareReqHint',        en ? 'Accept to share Memo/To-Do/Schedule/Stats together.' : '승인하면 메모/할일/일정/통계를 함께 사용합니다.');
+  _setText('shareReqRejectBtn',   en ? 'Reject' : '거절');
+  _setText('shareReqAcceptBtn',   en ? 'Accept' : '승인');
   _setText('shareTargetModalDesc', en ? 'Choose a friend to share Memo/To-Do/Schedule/Stats with' : '메모/할일/일정/통계를 함께 사용할 친구를 선택하세요');
   _setText('shareTargetCancelBtn', en ? 'Cancel' : '취소');
   _setText('shareTargetClearBtn', en ? 'Clear' : '해제');
@@ -3442,6 +3624,11 @@ function applyLang() {
   _setText('notifAppLabel', en ? 'App Alerts (Memo/Schedule/To-Do/Stats)' : '앱 알림 (메모/일정/할일/통계)');
   _setText('shareTargetBtn', en ? 'Change' : '변경');
   _setText('shareTargetModalTitle', en ? 'Select Share Target' : '공유 대상 선택');
+  _setText('shareReqTitle',       en ? 'Share Request' : '공유 요청');
+  _setText('shareReqDescText',    en ? ' sent you a share request.' : '님이 공유 대상으로 지정했습니다.');
+  _setText('shareReqHint',        en ? 'Accept to share Memo/To-Do/Schedule/Stats together.' : '승인하면 메모/할일/일정/통계를 함께 사용합니다.');
+  _setText('shareReqRejectBtn',   en ? 'Reject' : '거절');
+  _setText('shareReqAcceptBtn',   en ? 'Accept' : '승인');
   _setText('shareTargetModalDesc', en ? 'Choose a friend to share Memo/To-Do/Schedule/Stats with' : '메모/할일/일정/통계를 함께 사용할 친구를 선택하세요');
   _setText('shareTargetCancelBtn', en ? 'Cancel' : '취소');
   _setText('shareTargetClearBtn', en ? 'Clear' : '해제');
