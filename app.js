@@ -2792,10 +2792,19 @@ function openTimerSetting() { document.getElementById('timerModal').style.displa
 function closeTimerModal() {
   document.getElementById('timerModal').style.display = 'none';
   var opts = document.querySelector('#timerModal .timer-options');
-  var btn = document.getElementById('closeTimerBtn');
-  var desc = document.querySelector('#timerModal .modal-desc');
+  var deleteBtn = document.getElementById('deleteNowBtn');
+  var closeBtn = document.getElementById('closeTimerBtn');
+  var desc = document.getElementById('timerModalDesc');
   if (opts) opts.style.display = 'grid';
-  if (btn) btn.style.display = 'block';
+  // Delete Now 복원
+  if (deleteBtn) deleteBtn.style.display = '';
+  // Close 버튼 원상태 복원 (어두운색 Cancel)
+  if (closeBtn) {
+    var en = localStorage.getItem('lang') === 'en';
+    closeBtn.textContent = en ? 'Cancel' : '취소';
+    closeBtn.classList.remove('timer-close-pending-btn');
+    closeBtn.classList.add('timer-cancel-btn');
+  }
   if (desc) { desc.textContent = '변경 시 상대방 동의가 필요합니다'; desc.style.color = '#94a3b8'; desc.style.fontSize = '12px'; }
 }
 async function setAutoDelete(min) {
@@ -2805,8 +2814,18 @@ async function setAutoDelete(min) {
   }
   // 모달 유지 - 대기 상태로 전환
   document.querySelector('#timerModal .timer-options').style.display = 'none';
-  var desc = document.querySelector('#timerModal .modal-desc');
+  var desc = document.getElementById('timerModalDesc');
   if (desc) { desc.textContent = '상대방 승인 대기 중...'; desc.style.color = 'var(--primary)'; desc.style.fontSize = '14px'; }
+  // 승인 대기 중: Delete Now 숨기기, Close만 밝게 표시
+  var deleteNowBtn = document.getElementById('deleteNowBtn');
+  var closeBtn = document.getElementById('closeTimerBtn');
+  if (deleteNowBtn) deleteNowBtn.style.display = 'none';
+  if (closeBtn) {
+    var en = localStorage.getItem('lang') === 'en';
+    closeBtn.textContent = en ? 'Close' : '닫기';
+    closeBtn.classList.remove('timer-cancel-btn');
+    closeBtn.classList.add('timer-close-pending-btn');
+  }
 
   const reqId = Date.now().toString();
   await db.collection('rooms').doc(chatRoomId).set({
@@ -3848,7 +3867,7 @@ function applyLang() {
   // 자동삭제
   _setText('autoDeleteTitle', en ? 'Auto-Delete Timer' : '자동삭제 시간');
   _setText('deleteNowBtn', en ? 'Delete Now' : '즉시삭제');
-  _setText('closeTimerBtn', en ? 'Close' : '닫기');
+  _setText('closeTimerBtn', en ? 'Cancel' : '취소');
 
   // 보안설정
   _setText('securityTitle', en ? 'Settings' : '설정');
@@ -3904,7 +3923,7 @@ function applyLang() {
   _setText('changeCodeCancelBtn', en ? 'Cancel' : '취소');
   var inp = document.getElementById('newCodeInput');
   if (inp) inp.placeholder = en ? 'Enter new ID code' : '새 식별 코드 입력';
-  _setText('closeTimerBtn', en ? 'Close' : '닫기');
+  _setText('closeTimerBtn', en ? 'Cancel' : '취소');
 
   // 달력 통계
   _setText('calAchievedLabel', en ? 'Achieved' : '달성일');
