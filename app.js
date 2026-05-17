@@ -3856,7 +3856,11 @@ function applyLang() {
   // 설정 라벨
   _setText('appNameLabel', en ? 'App Name' : '앱 이름');
   _setText('iconStyleLabel', en ? 'Icon Style' : '아이콘 스타일');
+  _setText('iconStyleEmoji', en ? 'Emoji' : '이모지');
+  _setText('iconStyleSvg',   en ? 'SVG Line' : 'SVG 라인');
   _setText('svgColorLabel', en ? 'SVG Line Color' : 'SVG 라인 색상');
+  _setText('svgColorOn',    en ? 'Individual' : '개별 색상');
+  _setText('svgColorOff',   en ? 'Theme Color' : '테마 색상');
   _setText('appTitleLabel', en ? 'App Title' : '앱 타이틀');
   _setText('titleApplyBtn', en ? 'Apply' : 'Apply');
   _setText('displayModeLabel', en ? 'Display Mode' : '화면 모드');
@@ -3865,8 +3869,8 @@ function applyLang() {
   _setText('notifSectionLabel', en ? 'Notifications' : '알림');
   _setText('langLabel', en ? 'Language' : '언어');
   _setText('infoLabel', en ? 'Info' : '정보');
-  _setText('notifEventLabel', en ? 'Event Alerts (Chat)' : '이벤트 알림 (채팅)');
-  _setText('notifAppLabel', en ? 'App Alerts (Memo/Schedule/To-Do/Stats)' : '앱 알림 (메모/일정/할일/통계)');
+  _setText('notifEventLabel', en ? 'Event Alerts' : '이벤트 알림');
+  _setText('notifAppLabel', en ? 'App Alerts' : '앱 알림');
   _setText('shareTargetBtn', en ? 'Change' : '변경');
   _setText('shareTargetModalTitle', en ? 'Select Share Target' : '공유 대상 선택');
   _setText('shareReqTitle',       en ? 'Share Request' : '공유 요청');
@@ -3980,8 +3984,8 @@ function applyLang() {
   _setText('calStreakLabel', en ? 'Streak' : '연속 달성');
 
   // 알림 토글
-  _setText('notifEventLabel', en ? 'Event Alerts (Chat)' : '이벤트 알림 (채팅)');
-  _setText('notifAppLabel', en ? 'App Alerts (Memo/Schedule/To-Do/Stats)' : '앱 알림 (메모/일정/할일/통계)');
+  _setText('notifEventLabel', en ? 'Event Alerts' : '이벤트 알림');
+  _setText('notifAppLabel', en ? 'App Alerts' : '앱 알림');
   _setText('shareTargetBtn', en ? 'Change' : '변경');
   _setText('shareTargetModalTitle', en ? 'Select Share Target' : '공유 대상 선택');
   _setText('shareReqTitle',       en ? 'Share Request' : '공유 요청');

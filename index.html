@@ -104,21 +104,21 @@
     <div class="settings-section">
       <div id="iconStyleLabel" class="settings-label">아이콘 스타일</div>
       <div style="display:flex;gap:8px;margin-bottom:12px;">
-        <button id="iconStyleEmoji" class="style-select-btn" onclick="setIconStyle('emoji')">이모지</button>
-        <button id="iconStyleSvg" class="style-select-btn" onclick="setIconStyle('svg')">SVG 라인</button>
+        <button id="iconStyleEmoji" class="style-select-btn" onclick="setIconStyle('emoji')">Emoji</button>
+        <button id="iconStyleSvg" class="style-select-btn" onclick="setIconStyle('svg')">SVG Line</button>
       </div>
       <div id="svgColorOption" style="display:none;">
         <div id="svgColorLabel" class="settings-desc" style="margin-bottom:8px;">SVG 라인 색상</div>
         <div style="display:flex;gap:8px;">
-          <button id="svgColorOn" class="style-select-btn" onclick="setSvgColor('on')">개별 색상</button>
-          <button id="svgColorOff" class="style-select-btn" onclick="setSvgColor('off')">테마 색상</button>
+          <button id="svgColorOn" class="style-select-btn" onclick="setSvgColor('on')">Individual</button>
+          <button id="svgColorOff" class="style-select-btn" onclick="setSvgColor('off')">Theme Color</button>
         </div>
       </div>
     </div>
     <div class="settings-section">
       <div id="notifSectionLabel" class="settings-label">알림</div>
-      <div class="settings-row"><span id="notifEventLabel">이벤트 알림 (채팅)</span><label class="toggle"><input type="checkbox" id="notifEvent" onchange="toggleSettingsNotif('event',this.checked)"/><span class="slider"></span></label></div>
-      <div class="settings-row"><span id="notifAppLabel">앱 알림 (메모/일정/할일/통계)</span><label class="toggle"><input type="checkbox" id="notifApp" onchange="toggleSettingsNotif('app',this.checked)"/><span class="slider"></span></label></div>
+      <div class="settings-row"><span id="notifEventLabel">Event Alerts</span><label class="toggle"><input type="checkbox" id="notifEvent" onchange="toggleSettingsNotif('event',this.checked)"/><span class="slider"></span></label></div>
+      <div class="settings-row"><span id="notifAppLabel">App Alerts</span><label class="toggle"><input type="checkbox" id="notifApp" onchange="toggleSettingsNotif('app',this.checked)"/><span class="slider"></span></label></div>
     </div>
     <div class="settings-section">
       <div id="langLabel" class="settings-label">언어</div>
