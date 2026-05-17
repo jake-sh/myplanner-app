@@ -482,12 +482,13 @@ input:checked+.slider:before{transform:translateX(20px);}
   font-size:16px;font-weight:800;text-align:center;letter-spacing:3px;
 }
 .timer-options{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-.timer-delete-now-btn{
+.timer-delete-now-btn{display:none;} /* 미사용 (하위 호환 방지) */
+.timer-submit-btn{
   flex:1;padding:12px;border:none;border-radius:12px;
   background:var(--primary,#6C63FF);color:#fff;
-  font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;width:100%;
+  font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;
 }
-.timer-delete-now-btn:active{opacity:.8;}
+.timer-submit-btn:active{opacity:.8;}
 .timer-cancel-btn{
   flex:1;padding:12px;border:none;border-radius:12px;
   background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.45);
@@ -500,13 +501,21 @@ input:checked+.slider:before{transform:translateX(20px);}
   font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;width:100%;
 }
 .timer-close-pending-btn:active{opacity:.8;}
+.timer-text-btn{
+  display:block;width:100%;padding:10px;margin-top:4px;
+  background:none;border:none;
+  color:rgba(255,255,255,0.35);font-size:13px;font-weight:500;
+  cursor:pointer;font-family:inherit;text-align:center;
+}
+.timer-text-btn:active{color:rgba(255,255,255,0.6);}
 .timer-opt{
   background:var(--chat-surface2);border:1.5px solid var(--chat-border);
   color:var(--chat-text);padding:12px;border-radius:12px;
   font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;
 }
 .timer-opt:active{background:var(--primary);border-color:var(--primary);color:#fff;}
-.secret-setting-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9.5px 0;width:100%;}
+.timer-opt-selected{background:var(--primary);border-color:var(--primary);color:#fff;}
+.secret-setting-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;width:100%;}
 #qrScannerWrap{width:100%;max-width:260px;margin:0 auto;border-radius:16px;overflow:hidden;}
 #myQrCode{display:flex;justify-content:center;}
 #myQrCode canvas,#myQrCode img{border-radius:16px;}
