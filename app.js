@@ -268,7 +268,7 @@ function savePattern() {
   if (setupPattern.length < 4) { cancelPatternSetup(); return; }
   savedPattern = [...setupPattern];
   localStorage.setItem('secPattern', JSON.stringify(savedPattern));
-  showAlert('패턴이 저장되었습니다!');
+  showAlert(localStorage.getItem('lang') === 'en' ? 'Pattern saved!' : '패턴이 저장되었습니다!');
   showScreen('chatApp');
 }
 
