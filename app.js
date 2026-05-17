@@ -935,12 +935,14 @@ function renderMemoList() {
     const thumb = imgMatch ? `<div class="memo-card-imgs"><img class="memo-card-img-thumb" src="${imgMatch[1]}"></div>` : '';
 
 
-    // 공유 상태 아이콘 (SVG, 라운드 코너)
-    // △ 라인 = 공유 안 함 / ▲ 채우기 = 공유 중 / ▼ 채우기 = 공유 받음
-    // 색상은 CSS currentColor 상속 (클래스에서 color 지정 안 함)
-    var SVG_TRIANGLE_LINE = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M8 2.5 L2 13.5 L14 13.5 Z"/></svg>';
-    var SVG_TRIANGLE_UP   = '<svg width="16" height="16" viewBox="0 0 16 16"><path d="M8 2.5 L2 13.5 L14 13.5 Z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/></svg>';
-    var SVG_TRIANGLE_DOWN = '<svg width="16" height="16" viewBox="0 0 16 16"><path d="M8 13.5 L2 2.5 L14 2.5 Z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+    // 공유 상태 아이콘 (SVG, 정R=1.5 arc 라운드, 바깥쪽 볼록)
+    // 꼭짓점: 위(8,2) 좌하(1.5,14) 우하(14.5,14) — sweep-flag=0
+    var _UP = 'M9.319 4.435 A1.5 1.5 0 0 0 6.681 4.435 L2.699 11.786 A1.5 1.5 0 0 0 4.018 14 L11.982 14 A1.5 1.5 0 0 0 13.301 11.786 L9.319 4.435 Z';
+    var _DN = 'M6.681 11.565 A1.5 1.5 0 0 0 9.319 11.565 L13.301 4.214 A1.5 1.5 0 0 0 11.982 2 L4.018 2 A1.5 1.5 0 0 0 2.699 4.214 L6.681 11.565 Z';
+
+    var SVG_TRIANGLE_LINE = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="' + _UP + '"/></svg>';
+    var SVG_TRIANGLE_UP   = '<svg width="16" height="16" viewBox="0 0 16 16"><path d="' + _UP + '" fill="currentColor"/></svg>';
+    var SVG_TRIANGLE_DOWN = '<svg width="16" height="16" viewBox="0 0 16 16"><path d="' + _DN + '" fill="currentColor"/></svg>';
 
     var isReceived = !!m.from;
     var shareIcon, shareCls, shareOnclick;
