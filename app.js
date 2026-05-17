@@ -2448,8 +2448,7 @@ function updateShareTargetDisplay() {
   var el = document.getElementById('shareTargetCurrent');
   if (!el) return;
   var t = localStorage.getItem('shareTarget');
-  var en = localStorage.getItem('lang') === 'en';
-  el.textContent = t || (en ? '(none)' : '(없음)');
+  el.textContent = t || '—';
 }
 
 // 공유 대상 선택 모달 열기
@@ -3337,8 +3336,6 @@ function applyLang() {
   _setText('infoLabel', en ? 'Info' : '정보');
   _setText('notifEventLabel', en ? 'Event Alerts (Chat)' : '이벤트 알림 (채팅)');
   _setText('notifAppLabel', en ? 'App Alerts (Memo/Schedule/To-Do/Stats)' : '앱 알림 (메모/일정/할일/통계)');
-  _setText('shareTargetLabel', en ? 'Share Target' : '공유 대상');
-  _setText('shareTargetDesc', en ? 'Friend to share Memo/To-Do/Schedule/Stats with:' : '메모/할일/일정/통계를 공유할 친구:');
   _setText('shareTargetBtn', en ? 'Change' : '변경');
   _setText('shareTargetModalTitle', en ? 'Select Share Target' : '공유 대상 선택');
   _setText('shareTargetModalDesc', en ? 'Choose a friend to share Memo/To-Do/Schedule/Stats with' : '메모/할일/일정/통계를 함께 사용할 친구를 선택하세요');
@@ -3443,8 +3440,6 @@ function applyLang() {
   // 알림 토글
   _setText('notifEventLabel', en ? 'Event Alerts (Chat)' : '이벤트 알림 (채팅)');
   _setText('notifAppLabel', en ? 'App Alerts (Memo/Schedule/To-Do/Stats)' : '앱 알림 (메모/일정/할일/통계)');
-  _setText('shareTargetLabel', en ? 'Share Target' : '공유 대상');
-  _setText('shareTargetDesc', en ? 'Friend to share Memo/To-Do/Schedule/Stats with:' : '메모/할일/일정/통계를 공유할 친구:');
   _setText('shareTargetBtn', en ? 'Change' : '변경');
   _setText('shareTargetModalTitle', en ? 'Select Share Target' : '공유 대상 선택');
   _setText('shareTargetModalDesc', en ? 'Choose a friend to share Memo/To-Do/Schedule/Stats with' : '메모/할일/일정/통계를 함께 사용할 친구를 선택하세요');
