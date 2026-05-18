@@ -153,7 +153,23 @@ window.addEventListener('DOMContentLoaded', () => {
     applyLang();
     loadWeather();
   }, 100);
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+    // 새 SW가 activate되면 자동으로 페이지 새로고침 (한 번만)
+    var _swReloaded = false;
+    navigator.serviceWorker.addEventListener('message', function(e) {
+      if (e.data && e.data.type === 'SW_ACTIVATED' && !_swReloaded) {
+        _swReloaded = true;
+        // 마지막 본 버전과 다를 때만 새로고침 (무한 루프 방지)
+        var lastVer = localStorage.getItem('_swVer');
+        if (lastVer !== e.data.version) {
+          localStorage.setItem('_swVer', e.data.version);
+          // 잠시 대기 후 새로고침 (현재 진행 중인 작업 보호)
+          setTimeout(function() { window.location.reload(); }, 500);
+        }
+      }
+    });
+  }
 });
 
 function updateFakeDate() {

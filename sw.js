@@ -1,4 +1,4 @@
-const CACHE = 'myplanner-v259';
+const CACHE = 'myplanner-v260';
 const PRECACHE = ['./', './index.html', './app.js', './style.css', './manifest.json'];
 
 self.addEventListener('install', e => {
@@ -10,6 +10,12 @@ self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
     .then(() => self.clients.claim())
+    .then(() => {
+      // 새 버전 활성 알림 → 클라이언트가 자동 새로고침
+      return self.clients.matchAll({ type: 'window' }).then(clients => {
+        clients.forEach(c => c.postMessage({ type: 'SW_ACTIVATED', version: CACHE }));
+      });
+    })
   );
 });
 
