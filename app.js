@@ -170,6 +170,15 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // 채팅 입력창 자동 높이 조절 (1줄 기본, 2줄 최대, 이후 스크롤)
+  var msgInput = document.getElementById('msgInput');
+  if (msgInput) {
+    msgInput.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 72) + 'px';
+    });
+  }
 });
 
 function updateFakeDate() {
@@ -3067,7 +3076,10 @@ async function handleFileSelect(e) {
 
 async function sendMessage() {
   const input = document.getElementById('msgInput'); const text = input.value.trim();
-  if (!text || !chatRoomId) return; input.value = '';
+  if (!text || !chatRoomId) return;
+  input.value = '';
+  // textarea 높이 초기화
+  input.style.height = 'auto';
   // 키패드 유지 - 포커스 즉시 복원
   input.focus();
   await db.collection('rooms').doc(chatRoomId).collection('messages').add({

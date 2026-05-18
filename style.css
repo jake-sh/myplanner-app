@@ -401,8 +401,15 @@ input:checked+.slider:before{transform:translateX(20px);}
   border:1.5px solid var(--chat-border);
   border-radius:22px;padding:10px 16px;
   color:var(--chat-text);font-size:14px;font-family:inherit;outline:none;
+  resize:none;overflow-y:auto;
+  line-height:1.4;
+  min-height:40px;     /* 1줄 */
+  max-height:72px;     /* 2줄 (1.4 × 14px × 2줄 + padding) */
+  box-sizing:border-box;
 }
 .msg-input:focus{border-color:var(--primary);}
+/* chat-input-bar 상하 정렬 — textarea 높이 변화에 대응 */
+.chat-input-bar{align-items:flex-end;}
 .send-btn{
   background:var(--primary);border:none;color:#fff;
   width:40px;height:40px;border-radius:50%;

@@ -318,7 +318,7 @@
         </svg>
       </button>
       <input type="file" id="fileInput" accept="image/*,video/*" multiple style="display:none" onchange="handleFileSelect(event)" onclick="_filePickerOpen=true"/>
-      <input id="msgInput" class="msg-input" type="text" placeholder="메시지 입력..." id="msgInputEl" onkeydown="if(event.key==='Enter')sendMessage()"/>
+      <textarea id="msgInput" class="msg-input" placeholder="메시지 입력..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}"></textarea>
       <button class="send-btn" onmousedown="event.preventDefault()" onclick="sendMessage()">➤</button>
     </div>
   </div>
