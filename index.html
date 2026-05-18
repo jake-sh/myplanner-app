@@ -512,13 +512,13 @@
   <!-- Restore From Backup Modal -->
   <div id="restoreModal" class="modal" style="display:none">
     <div class="modal-box">
-      <div class="modal-title" id="restoreTitle">데이터 복원</div>
-      <p class="modal-desc" id="restoreDesc">내 식별 코드를 입력하면 백업 데이터가 복원됩니다.</p>
-      <input type="text" id="restoreCodeInput" placeholder="내 코드 입력" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--chat-border);background:var(--chat-bg2);color:var(--chat-text);font-size:14px;text-align:center;text-transform:uppercase;margin:12px 0;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true">
+      <div class="modal-title" id="restoreTitle">내 코드 입력</div>
+      <p class="modal-desc" id="restoreDesc">사용하실 코드를 입력하세요</p>
+      <input type="text" id="restoreCodeInput" placeholder="코드 입력" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--chat-border);background:var(--chat-bg2);color:var(--chat-text);font-size:14px;text-align:center;text-transform:uppercase;margin:12px 0;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true">
       <p id="restoreWarn" style="font-size:11px;color:#f59e0b;margin:8px 0;display:none;"></p>
       <div style="display:flex;gap:10px;">
         <button class="modal-cancel-cancel" onclick="closeRestoreModal()" id="restoreCancelBtn">취소</button>
-        <button class="modal-confirm-ok" onclick="performRestore()" id="restoreOkBtn">복원</button>
+        <button class="modal-confirm-ok" onclick="performRestore()" id="restoreOkBtn">확인</button>
       </div>
     </div>
   </div>

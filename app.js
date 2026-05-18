@@ -117,14 +117,15 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // 백업 v2 마이그레이션: 옛 백업 위치(users/{myCode}/backup/data) 자동 정리
   // 첫 실행 시 한 번만 실행. 옛 데이터 삭제 + 새 구조로 자동 백업 트리거.
-  if (!localStorage.getItem('_backupV2Migrated')) {
-    setTimeout(function() {
+  if (!localStorage.getItem('_backupV2Migrated') && myCode) {
+    // 앱 초기화가 충분히 끝난 뒤 (Firebase auth 완료 대기)
+    setTimeout(async function() {
       if (!myCode || typeof db === 'undefined') return;
       // 옛 백업 문서 삭제
       db.collection('users').doc(myCode).collection('backup').doc('data')
         .delete().catch(function(){});
-      // 새 구조로 즉시 백업 (현재 패턴으로 patternIndex 등록 + backups/{myCode} 생성)
-      try { performBackup(); } catch(e) {}
+      // 새 구조로 즉시 백업 (backups/{myCode} + patternIndex 등록)
+      try { await performBackup(); } catch(e) {}
       localStorage.setItem('_backupV2Migrated', '1');
     }, 3000);  // 앱 초기화가 충분히 끝난 뒤
   }
@@ -2186,9 +2187,21 @@ async function tryAutoRestore(inputPattern) {
     if (!codes.length) return { action: 'silent' };
 
     if (codes.length === 1) {
-      // 후보 단독 → 조용히 복원
+      // 후보 단독 → 조용히 복원 시도
       var ok = await _restoreCode(codes[0], hash);
       if (ok) return { action: 'enter', restored: true };
+      // backups 문서가 없거나 해시 불일치 (마이그레이션 미완료 케이스)
+      // → users 문서 존재 여부로 합법 사용자 확인 후 진입 허용
+      try {
+        var userSnap = await db.collection('users').doc(codes[0]).get();
+        if (userSnap.exists) {
+          // users 문서에 myCode 복원 (데이터는 없지만 코드는 살아있음)
+          localStorage.setItem('myCode', codes[0]);
+          // 다음 진입 시 정상 백업되도록 즉시 백업 트리거
+          setTimeout(function() { try { performBackup(); } catch(e){} }, 1000);
+          return { action: 'enter', restored: true };
+        }
+      } catch(e) {}
       return { action: 'silent' };
     }
     // 후보 여러 명 → 코드 입력 모달
@@ -4204,10 +4217,10 @@ function applyLang() {
   _setText('shareTargetBtn', en ? 'Change' : '변경');
   _setText('shareTargetModalTitle', en ? 'Select Share Target' : '공유 대상 선택');
   _setText('shareReqTitle',       en ? 'Share Request' : '공유 요청');
-  _setText('restoreTitle',        en ? 'Restore Data' : '데이터 복원');
-  _setText('restoreDesc',         en ? 'Enter your ID code to restore your backup data.' : '내 식별 코드를 입력하면 백업 데이터가 복원됩니다.');
+  _setText('restoreTitle',        en ? 'Enter Your Code' : '내 코드 입력');
+  _setText('restoreDesc',         en ? 'Enter your code' : '사용하실 코드를 입력하세요');
   _setText('restoreCancelBtn',    en ? 'Cancel' : '취소');
-  _setText('restoreOkBtn',        en ? 'Restore' : '복원');
+  _setText('restoreOkBtn',        en ? 'OK' : '확인');
   _setText('shareReqDescText',    en ? ' sent you a share request.' : '님이 공유 대상으로 지정했습니다.');
   _setText('shareReqHint',        en ? 'Accept to share Memo/To-Do/Schedule/Stats together.' : '승인하면 메모/할일/일정/통계를 함께 사용합니다.');
   _setText('shareReqRejectBtn',   en ? 'Reject' : '거절');
@@ -4350,10 +4363,10 @@ function applyLang() {
   _setText('shareTargetBtn', en ? 'Change' : '변경');
   _setText('shareTargetModalTitle', en ? 'Select Share Target' : '공유 대상 선택');
   _setText('shareReqTitle',       en ? 'Share Request' : '공유 요청');
-  _setText('restoreTitle',        en ? 'Restore Data' : '데이터 복원');
-  _setText('restoreDesc',         en ? 'Enter your ID code to restore your backup data.' : '내 식별 코드를 입력하면 백업 데이터가 복원됩니다.');
+  _setText('restoreTitle',        en ? 'Enter Your Code' : '내 코드 입력');
+  _setText('restoreDesc',         en ? 'Enter your code' : '사용하실 코드를 입력하세요');
   _setText('restoreCancelBtn',    en ? 'Cancel' : '취소');
-  _setText('restoreOkBtn',        en ? 'Restore' : '복원');
+  _setText('restoreOkBtn',        en ? 'OK' : '확인');
   _setText('shareReqDescText',    en ? ' sent you a share request.' : '님이 공유 대상으로 지정했습니다.');
   _setText('shareReqHint',        en ? 'Accept to share Memo/To-Do/Schedule/Stats together.' : '승인하면 메모/할일/일정/통계를 함께 사용합니다.');
   _setText('shareReqRejectBtn',   en ? 'Reject' : '거절');
