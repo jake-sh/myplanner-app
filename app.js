@@ -753,18 +753,21 @@ function previewTitle() {
 }
 
 function applyTitleChange() {
-  var myVal = document.getElementById('titleMyInput').value.trim();
-  var plannerVal = document.getElementById('titlePlannerInput').value.trim();
-  if (myVal) localStorage.setItem('titleMy', myVal);
-  if (plannerVal) localStorage.setItem('titlePlanner', plannerVal);
+  var myVal = document.getElementById('titleMyInput').value;
+  var plannerVal = document.getElementById('titlePlannerInput').value;
+  localStorage.setItem('titleMy', myVal);
+  localStorage.setItem('titlePlanner', plannerVal);
   applyTitle();
 }
 
 function applyTitle() {
   var myEl = document.getElementById('titleMy');
   var plannerEl = document.getElementById('titlePlanner');
-  var myVal = localStorage.getItem('titleMy') || 'my';
-  var plannerVal = localStorage.getItem('titlePlanner') || 'planner';
+  var myVal = localStorage.getItem('titleMy');
+  var plannerVal = localStorage.getItem('titlePlanner');
+  // 저장된 값이 없을 때만 기본값 사용 (빈 문자열은 빈 문자열로 표시)
+  if (myVal === null) myVal = 'my';
+  if (plannerVal === null) plannerVal = 'planner';
   if (myEl) myEl.textContent = myVal;
   if (plannerEl) plannerEl.textContent = plannerVal;
 }
