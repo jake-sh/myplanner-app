@@ -140,7 +140,7 @@
   </div>
   <div id="todoSyncStatus" style="text-align:center;font-size:12px;color:#94a3b8;padding:4px 0;"></div>
   <div class="todo-add-bar">
-    <input id="todoInput" class="todo-add-input" type="text" id="todoInputEl" placeholder="새 할 일 추가..." onkeydown="if(event.key==='Enter')addTodo()"/>
+    <input id="todoInput" class="todo-add-input" type="text" id="todoInputEl" placeholder="새 할 일 추가..." onkeydown="if(event.key==='Enter')addTodo()" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true"/>
     <button class="todo-add-btn" onclick="addTodo()">+</button>
   </div>
   <div id="todoList" class="todo-list"></div>
@@ -166,7 +166,7 @@
   </div>
   <div class="memo-editor-wrap">
     <div class="memo-title-wrap">
-      <input id="memoTitleInput" class="memo-title-input" type="text" placeholder="제목"/>
+      <input id="memoTitleInput" class="memo-title-input" type="text" placeholder="제목" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true"/>
       <button id="memoTitleClear" class="memo-title-clear" onclick="clearMemoTitle()" tabindex="-1">×</button>
     </div>
     <div id="memoContentInput" class="memo-content-input" contenteditable="true" data-placeholder="내용을 입력하세요..."></div>
@@ -250,7 +250,7 @@
   <!-- Setup -->
   <div id="chatSetup" class="chat-setup">
     <p id="nicknameLabel" class="chat-setup-desc" style="font-size:22px;font-weight:700;color:#f1f5f9;">닉네임을 설정하세요</p>
-    <input id="myCodeInput" class="chat-input-field" type="text" maxlength="20" id="nicknameInput" placeholder="닉네임 입력"/>
+    <input id="myCodeInput" class="chat-input-field" type="text" maxlength="20" id="nicknameInput" placeholder="닉네임 입력" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true"/>
     <button class="chat-action-btn" onclick="saveMyCode()" id="nicknameSetBtn">설정</button>
     <button id="exitChatBtn" class="chat-exit-btn" onclick="exitChat()">← 나가기</button>
   </div>
@@ -318,7 +318,7 @@
         </svg>
       </button>
       <input type="file" id="fileInput" accept="image/*,video/*" multiple style="display:none" onchange="handleFileSelect(event)" onclick="_filePickerOpen=true"/>
-      <textarea id="msgInput" class="msg-input" placeholder="메시지 입력..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}"></textarea>
+      <textarea id="msgInput" class="msg-input" placeholder="메시지 입력..." rows="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true" name="chat-message" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}"></textarea>
       <button class="send-btn" onmousedown="event.preventDefault()" onclick="sendMessage()">➤</button>
     </div>
   </div>
@@ -364,11 +364,11 @@
     </div>
     <div style="margin-bottom:12px;">
       <div style="font-size:12px;color:#94a3b8;margin-bottom:6px;" id="statValLabel">수치</div>
-      <input id="statValueInput" type="number" step="0.1" placeholder="수치 입력" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:16px;box-sizing:border-box;"/>
+      <input id="statValueInput" type="number" step="0.1" placeholder="수치 입력" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:16px;box-sizing:border-box;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true"/>
     </div>
     <div style="margin-bottom:16px;">
       <div style="font-size:12px;color:#94a3b8;margin-bottom:6px;" id="statDateLabel">날짜</div>
-      <input id="statDateInput" type="date" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;box-sizing:border-box;"/>
+      <input id="statDateInput" type="date" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;box-sizing:border-box;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true"/>
     </div>
     <button class="chat-action-btn" onclick="saveStatEntry()">저장</button>
     <button class="modal-cancel" onclick="closeAddStatModal()">취소</button>
@@ -386,7 +386,7 @@
       </div>
       <div id="addTabCode" style="margin-bottom:14px;">
         <p id="friendCodeDesc" class="modal-desc" style="margin-bottom:14px;">친구의 식별 코드를 입력하세요</p>
-        <input id="friendCodeInput" class="chat-input-field" type="text" id="friendCodeInput2" placeholder="친구 코드 입력" style="display:block;margin-bottom:14px;"/>
+        <input id="friendCodeInput" class="chat-input-field" type="text" id="friendCodeInput2" placeholder="친구 코드 입력" style="display:block;margin-bottom:14px;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true"/>
         <button class="modal-confirm-ok" onclick="addFriendByCode()" id="addFriendBtn">추가</button>
       </div>
       <div id="addTabQr" style="display:none">
@@ -433,8 +433,8 @@
       <div class="secret-setting-item" style="flex-direction:column;align-items:flex-start;gap:8px;">
         <div class="ss-label" id="appTitleLabel">앱 타이틀</div>
         <div style="display:flex;gap:6px;align-items:stretch;width:100%;box-sizing:border-box;">
-          <input id="titleMyInput" type="text" maxlength="10" placeholder="my" oninput="previewTitle()" class="ss-input" style="width:52px;flex-shrink:0;font-size:17px;font-weight:700;"/>
-          <input id="titlePlannerInput" type="text" maxlength="10" placeholder="planner" oninput="previewTitle()" class="ss-input" style="flex:1;min-width:0;font-size:13px;"/>
+          <input id="titleMyInput" type="text" maxlength="10" placeholder="my" oninput="previewTitle()" class="ss-input" style="width:52px;flex-shrink:0;font-size:17px;font-weight:700;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true"/>
+          <input id="titlePlannerInput" type="text" maxlength="10" placeholder="planner" oninput="previewTitle()" class="ss-input" style="flex:1;min-width:0;font-size:13px;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true"/>
           <button onclick="applyTitleChange()" class="ss-btn ss-btn-primary" id="titleApplyBtn">Apply</button>
         </div>
       </div>
@@ -514,7 +514,7 @@
     <div class="modal-box">
       <div class="modal-title" id="restoreTitle">데이터 복원</div>
       <p class="modal-desc" id="restoreDesc">내 식별 코드를 입력하면 백업 데이터가 복원됩니다.</p>
-      <input type="text" id="restoreCodeInput" placeholder="내 코드 입력" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--chat-border);background:var(--chat-bg2);color:var(--chat-text);font-size:14px;text-align:center;text-transform:uppercase;margin:12px 0;">
+      <input type="text" id="restoreCodeInput" placeholder="내 코드 입력" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--chat-border);background:var(--chat-bg2);color:var(--chat-text);font-size:14px;text-align:center;text-transform:uppercase;margin:12px 0;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true">
       <p id="restoreWarn" style="font-size:11px;color:#f59e0b;margin:8px 0;display:none;"></p>
       <div style="display:flex;gap:10px;">
         <button class="modal-cancel-cancel" onclick="closeRestoreModal()" id="restoreCancelBtn">취소</button>
@@ -547,7 +547,7 @@
     <div class="modal-box">
       <div class="modal-title" id="changeCodeTitle">식별 코드 변경</div>
       <p class="modal-desc" id="changeCodeDesc">새 식별 코드를 입력하세요</p>
-      <input id="newCodeInput" class="chat-input-field" type="text" maxlength="20" placeholder="새 식별 코드 입력"/>
+      <input id="newCodeInput" class="chat-input-field" type="text" maxlength="20" placeholder="새 식별 코드 입력" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true"/>
       <div style="display:flex;gap:10px;">
         <button class="modal-cancel-cancel" onclick="closeChangeCode()" id="changeCodeCancelBtn">Cancel</button>
         <button class="modal-confirm-ok" onclick="confirmChangeCode()" id="changeCodeConfirm">OK</button>
