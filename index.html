@@ -318,7 +318,7 @@
         </svg>
       </button>
       <input type="file" id="fileInput" accept="image/*,video/*" multiple style="display:none" onchange="handleFileSelect(event)" onclick="_filePickerOpen=true"/>
-      <textarea id="msgInput" class="msg-input" placeholder="메시지 입력..." rows="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true" name="chat-message" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}"></textarea>
+      <textarea id="msgInput" class="msg-input" placeholder="메시지 입력..." rows="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true" name="chat-message"></textarea>
       <button class="send-btn" onmousedown="event.preventDefault()" onclick="sendMessage()">➤</button>
     </div>
   </div>

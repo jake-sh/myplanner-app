@@ -177,7 +177,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if (msgInput) {
     msgInput.addEventListener('input', function() {
       this.style.height = 'auto';
-      this.style.height = Math.min(this.scrollHeight, 72) + 'px';
+      this.style.height = Math.min(this.scrollHeight, 136) + 'px';
     });
   }
 });

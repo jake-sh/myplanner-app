@@ -399,14 +399,16 @@ input:checked+.slider:before{transform:translateX(20px);}
 .msg-input{
   flex:1;background:var(--chat-surface2);
   border:1.5px solid var(--chat-border);
-  border-radius:22px;padding:10px 16px;
+  border-radius:22px;padding:12px 18px;
   color:var(--chat-text);font-size:14px;font-family:inherit;outline:none;
   resize:none;overflow-y:auto;
   line-height:1.4;
-  min-height:40px;     /* 1줄 */
-  max-height:72px;     /* 2줄 (1.4 × 14px × 2줄 + padding) */
+  min-height:44px;
+  max-height:136px;    /* 4줄 (14px × 1.4 × 4줄 + padding 24px) */
   box-sizing:border-box;
+  scrollbar-width:none;
 }
+.msg-input::-webkit-scrollbar{display:none;}
 .msg-input:focus{border-color:var(--primary);}
 /* chat-input-bar 상하 정렬 — textarea 높이 변화에 대응 */
 .chat-input-bar{align-items:flex-end;}
