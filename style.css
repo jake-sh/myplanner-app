@@ -177,11 +177,11 @@ body:not(.dark-mode) .fake-title{color:var(--primary) !important;}
   padding:0;border-radius:10px;
   font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
   width:100px;height:37px;text-align:center;flex-shrink:0;
-  background:rgba(255,255,255,0.08);color:var(--text,#f1f5f9);
-  border:none;
+  background:var(--chat-surface2);color:var(--chat-text2);
+  border:1.5px solid var(--chat-border);
 }
 .ss-onoff-btn.ss-onoff-on{
-  background:var(--primary,#6C63FF);color:#fff;border:none;
+  background:var(--primary,#6C63FF);color:#fff;border:1.5px solid var(--primary,#6C63FF);
 }
 .settings-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;font-size:14px;font-weight:600;}
 .settings-select{
