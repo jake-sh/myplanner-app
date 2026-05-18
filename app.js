@@ -3263,8 +3263,9 @@ function toggleAutoLock(enabled) {
 }
 function toggleAutoLockBtn(btn) {
   var isOn = btn.dataset.on !== 'true';
+  var en = localStorage.getItem('lang') === 'en';
   btn.dataset.on = isOn ? 'true' : 'false';
-  btn.textContent = isOn ? 'On' : 'Off';
+  btn.textContent = isOn ? (en ? 'On' : '켜짐') : (en ? 'Off' : '꺼짐');
   btn.classList.toggle('ss-onoff-on', isOn);
   localStorage.setItem('autoLock', isOn ? 'true' : 'false');
 }
@@ -3279,8 +3280,9 @@ function openSecretSettings() {
   var autoLockEl = document.getElementById('autoLockToggle');
   if (autoLockEl) {
     var isOn = localStorage.getItem('autoLock') !== 'false';
+    var en = localStorage.getItem('lang') === 'en';
     autoLockEl.dataset.on = isOn ? 'true' : 'false';
-    autoLockEl.textContent = isOn ? 'On' : 'Off';
+    autoLockEl.textContent = isOn ? (en ? 'On' : '켜짐') : (en ? 'Off' : '꺼짐');
     autoLockEl.classList.toggle('ss-onoff-on', isOn);
   }
   document.getElementById('secretSettingsModal').style.display = 'flex';
@@ -4175,7 +4177,7 @@ function applyLang() {
   _setText('svgColorOn',    en ? 'Individual' : '개별 색상');
   _setText('svgColorOff',   en ? 'Theme Color' : '테마 색상');
   _setText('appTitleLabel', en ? 'App Title' : '앱 타이틀');
-  _setText('titleApplyBtn', en ? 'Apply' : 'Apply');
+  _setText('titleApplyBtn', en ? 'Apply' : '확인');
   _setText('displayModeLabel', en ? 'Display Mode' : '화면 모드');
   _setText('darkModeText', en ? 'Dark Mode' : '다크 모드');
   _setText('themeColorLabel', en ? 'Theme Color' : '테마 색상');
@@ -4184,6 +4186,7 @@ function applyLang() {
   _setText('infoLabel', en ? 'Info' : '정보');
   _setText('notifEventLabel', en ? 'Event Alerts' : '이벤트 알림');
   _setText('notifAppLabel', en ? 'App Alerts' : '앱 알림');
+  _setText('shareTargetLabel', en ? 'Share Target :' : '공유 대상 :');
   _setText('shareTargetBtn', en ? 'Change' : '변경');
   _setText('shareTargetModalTitle', en ? 'Select Share Target' : '공유 대상 선택');
   _setText('shareReqTitle',       en ? 'Share Request' : '공유 요청');
@@ -4240,7 +4243,7 @@ function applyLang() {
   _setText('themeLabel2', en ? 'Theme' : '테마');
   _setText('fontSizeLabel', en ? 'Font Size' : '폰트 크기');
   _setText('lockPatternLabel', en ? 'Lock Pattern' : '잠금 패턴');
-  _setText('patternChangeBtn', en ? 'New Pattern' : 'New Pattern');
+  _setText('patternChangeBtn', en ? 'New Pattern' : '변경');
   _setText('patternSetupTitle', en ? 'Change Pattern' : '패턴 변경');
   _setText('patternGuide', en ? 'Drag to draw a new pattern (min. 4)' : '메뉴를 드래그해서 새 패턴 입력 (최소 4개)');
   _setPatternBtn(false);
@@ -4295,8 +4298,8 @@ function applyLang() {
   _setText('fontSmLabel', en ? 'S' : '소');
   _setText('fontMdLabel', en ? 'M' : '중');
   _setText('fontLgLabel', en ? 'L' : '대');
-  _setText('changeCodeBtn', en ? 'New Code' : 'New Code');
-  _setText('closeSecretBtn', en ? 'OK' : 'OK');
+  _setText('changeCodeBtn', en ? 'New Code' : '변경');
+  _setText('closeSecretBtn', en ? 'OK' : '확인');
   _setText('closeAddFriendBtn', en ? 'Cancel' : '취소');
   _setText('addFriendBtn', en ? 'Add' : '추가');
   _setText('changeCodeTitle', en ? 'Change ID Code' : '식별 코드 변경');
@@ -4331,6 +4334,7 @@ function applyLang() {
   // 알림 토글
   _setText('notifEventLabel', en ? 'Event Alerts' : '이벤트 알림');
   _setText('notifAppLabel', en ? 'App Alerts' : '앱 알림');
+  _setText('shareTargetLabel', en ? 'Share Target :' : '공유 대상 :');
   _setText('shareTargetBtn', en ? 'Change' : '변경');
   _setText('shareTargetModalTitle', en ? 'Select Share Target' : '공유 대상 선택');
   _setText('shareReqTitle',       en ? 'Share Request' : '공유 요청');
