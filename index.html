@@ -417,17 +417,10 @@
         <button class="timer-opt" onclick="selectTimerOpt(this,7)">7분</button>
         <button class="timer-opt" onclick="selectTimerOpt(this,10)">10분</button>
       </div>
-      <!-- Cancel / Submit 횡배열 (선택 후 표시) -->
-      <div id="timerActionRow" style="display:none;flex-direction:row;gap:8px;margin-top:12px;">
+      <div style="display:flex;flex-direction:column;gap:8px;">
         <button class="timer-cancel-btn" id="closeTimerBtn" onclick="closeTimerModal()">Cancel</button>
-        <button class="timer-submit-btn" id="timerSubmitBtn" onclick="submitTimerSelection()">Submit</button>
+        <button class="timer-action-btn timer-action-delete" id="deleteNowBtn" onclick="closeTimerModal();deleteAllNow()">Delete Now</button>
       </div>
-      <!-- 선택 전 Cancel -->
-      <div id="timerCancelRow" style="display:flex;margin-top:12px;">
-        <button class="timer-cancel-btn" id="closeTimerBtn2" onclick="closeTimerModal()">Cancel</button>
-      </div>
-      <!-- Delete Now: 텍스트 버튼 -->
-      <button class="timer-text-btn" id="deleteNowBtn" onclick="closeTimerModal();deleteAllNow()">Delete Now</button>
     </div>
   </div>
 

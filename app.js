@@ -3109,35 +3109,39 @@ function closeTimerModal() {
 
 function _resetTimerModal() {
   var opts = document.getElementById('timerOptions');
-  var actionRow = document.getElementById('timerActionRow');
-  var cancelRow = document.getElementById('timerCancelRow');
-  var deleteBtn = document.getElementById('deleteNowBtn');
+  var actionBtn = document.getElementById('deleteNowBtn');
   var closeBtn = document.getElementById('closeTimerBtn');
   var desc = document.getElementById('timerModalDesc');
+  var en = localStorage.getItem('lang') === 'en';
 
   if (opts) {
     opts.style.display = 'grid';
-    // 선택 하이라이트 초기화
     opts.querySelectorAll('.timer-opt').forEach(function(b) {
       b.classList.remove('timer-opt-selected');
     });
   }
-  if (actionRow) actionRow.style.display = 'none';
-  if (cancelRow) cancelRow.style.display = 'flex';
-  if (deleteBtn) deleteBtn.style.display = '';
-  if (closeBtn) {
-    var en = localStorage.getItem('lang') === 'en';
-    closeBtn.textContent = en ? 'Cancel' : '취소';
-    closeBtn.classList.remove('timer-close-pending-btn');
-    closeBtn.classList.add('timer-cancel-btn');
+  // 하단 버튼 → Delete Now (빨간색)
+  if (actionBtn) {
+    actionBtn.style.display = '';
+    actionBtn.textContent = en ? 'Delete Now' : '즉시삭제';
+    actionBtn.className = 'timer-action-btn timer-action-delete';
+    actionBtn.setAttribute('onclick', 'closeTimerModal();deleteAllNow()');
   }
-  if (desc) { desc.textContent = '변경 시 상대방 동의가 필요합니다'; desc.style.color = '#94a3b8'; desc.style.fontSize = '12px'; }
+  // Cancel 복원
+  if (closeBtn) {
+    closeBtn.textContent = en ? 'Cancel' : '취소';
+    closeBtn.className = 'timer-cancel-btn';
+    closeBtn.setAttribute('onclick', 'closeTimerModal()');
+  }
+  if (desc) {
+    desc.textContent = en ? 'Requires partner approval to change' : '변경 시 상대방 동의가 필요합니다';
+    desc.style.color = '#94a3b8'; desc.style.fontSize = '12px';
+  }
   window._selectedTimerMin = null;
 }
 
-// 시간 버튼 클릭 → 선택 상태만 표시 (즉시 전송 X)
+// 시간 버튼 클릭 → 선택 하이라이트 + 하단 버튼 Delete Now → Submit 교체
 function selectTimerOpt(btn, min) {
-  // 선택 하이라이트
   var opts = document.getElementById('timerOptions');
   if (opts) {
     opts.querySelectorAll('.timer-opt').forEach(function(b) {
@@ -3147,14 +3151,17 @@ function selectTimerOpt(btn, min) {
   btn.classList.add('timer-opt-selected');
   window._selectedTimerMin = min;
 
-  // Cancel/Submit 행 표시, 단독 Cancel 숨김
-  var actionRow = document.getElementById('timerActionRow');
-  var cancelRow = document.getElementById('timerCancelRow');
-  if (actionRow) actionRow.style.display = 'flex';
-  if (cancelRow) cancelRow.style.display = 'none';
+  // 하단 버튼 → Submit (primary 밝은색)
+  var actionBtn = document.getElementById('deleteNowBtn');
+  var en = localStorage.getItem('lang') === 'en';
+  if (actionBtn) {
+    actionBtn.textContent = en ? 'Submit' : '확인';
+    actionBtn.className = 'timer-action-btn timer-action-submit';
+    actionBtn.setAttribute('onclick', 'submitTimerSelection()');
+  }
 }
 
-// Submit 버튼 클릭 → 실제 전송
+// Submit 클릭 → 실제 전송
 async function submitTimerSelection() {
   var min = window._selectedTimerMin;
   if (!min) return;
@@ -3166,25 +3173,20 @@ async function setAutoDelete(min) {
     autoDeleteMinutes = min; localStorage.setItem('autoDeleteMin', min); updateAutoDeleteLabel();
     closeTimerModal(); return;
   }
-  // 모달 유지 - 승인 대기 상태로 전환
+  // 승인 대기 상태로 전환
   var opts = document.getElementById('timerOptions');
-  var actionRow = document.getElementById('timerActionRow');
-  var cancelRow = document.getElementById('timerCancelRow');
-  var deleteBtn = document.getElementById('deleteNowBtn');
+  var actionBtn = document.getElementById('deleteNowBtn');
   var closeBtn = document.getElementById('closeTimerBtn');
   var desc = document.getElementById('timerModalDesc');
+  var en = localStorage.getItem('lang') === 'en';
 
   if (opts) opts.style.display = 'none';
-  if (actionRow) actionRow.style.display = 'none';
-  if (cancelRow) cancelRow.style.display = 'flex';
-  if (deleteBtn) deleteBtn.style.display = 'none';
-  if (desc) { desc.textContent = '상대방 승인 대기 중...'; desc.style.color = 'var(--primary)'; desc.style.fontSize = '14px'; }
+  if (actionBtn) actionBtn.style.display = 'none';
+  if (desc) { desc.textContent = en ? 'Waiting for partner approval...' : '상대방 승인 대기 중...'; desc.style.color = 'var(--primary)'; desc.style.fontSize = '14px'; }
   if (closeBtn) {
-    var en = localStorage.getItem('lang') === 'en';
     closeBtn.textContent = en ? 'Close' : '닫기';
-    closeBtn.classList.remove('timer-cancel-btn');
-    closeBtn.classList.add('timer-close-pending-btn');
-    closeBtn.style.width = '100%';
+    closeBtn.className = 'timer-close-pending-btn';
+    closeBtn.setAttribute('onclick', 'closeTimerModal()');
   }
 
   const reqId = Date.now().toString();
@@ -4233,10 +4235,8 @@ function applyLang() {
 
   // 자동삭제
   _setText('autoDeleteTitle', en ? 'Auto-Delete Timer' : '자동삭제 시간');
-  _setText('deleteNowBtn', en ? 'Delete Now' : '즉시삭제');
   _setText('closeTimerBtn', en ? 'Cancel' : '취소');
-  _setText('closeTimerBtn2', en ? 'Cancel' : '취소');
-  _setText('timerSubmitBtn', en ? 'Submit' : '확인');
+  // deleteNowBtn 텍스트는 _resetTimerModal에서 lang 기준으로 동적 처리
 
   // 보안설정
   _setText('securityTitle', en ? 'Settings' : '설정');

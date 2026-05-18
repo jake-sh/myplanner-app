@@ -482,32 +482,31 @@ input:checked+.slider:before{transform:translateX(20px);}
   font-size:16px;font-weight:800;text-align:center;letter-spacing:3px;
 }
 .timer-options{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-.timer-delete-now-btn{display:none;} /* 미사용 (하위 호환 방지) */
-.timer-submit-btn{
-  flex:1;padding:12px;border:none;border-radius:12px;
-  background:var(--primary,#6C63FF);color:#fff;
+.timer-delete-now-btn{display:none;}
+.timer-submit-btn{display:none;}  /* 미사용, 하위 호환 */
+/* 타이머 하단 액션 버튼 공통 */
+.timer-action-btn{
+  width:100%;padding:12px;border:none;border-radius:12px;
   font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;
 }
-.timer-submit-btn:active{opacity:.8;}
+/* Delete Now — 빨간색 */
+.timer-action-delete{background:#dc2626;color:#fff;}
+.timer-action-delete:active{opacity:.8;}
+/* Submit — primary 밝은색 */
+.timer-action-submit{background:var(--primary,#6C63FF);color:#fff;}
+.timer-action-submit:active{opacity:.8;}
 .timer-cancel-btn{
-  flex:1;padding:12px;border:none;border-radius:12px;
+  width:100%;padding:12px;border:none;border-radius:12px;
   background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.45);
-  font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;width:100%;
+  font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;
 }
 .timer-cancel-btn:active{background:rgba(255,255,255,0.1);}
 .timer-close-pending-btn{
-  flex:1;padding:12px;border:none;border-radius:12px;
+  width:100%;padding:12px;border:none;border-radius:12px;
   background:var(--primary,#6C63FF);color:#fff;
-  font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;width:100%;
+  font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;
 }
 .timer-close-pending-btn:active{opacity:.8;}
-.timer-text-btn{
-  display:block;width:100%;padding:10px;margin-top:4px;
-  background:none;border:none;
-  color:rgba(255,255,255,0.35);font-size:13px;font-weight:500;
-  cursor:pointer;font-family:inherit;text-align:center;
-}
-.timer-text-btn:active{color:rgba(255,255,255,0.6);}
 .timer-opt{
   background:var(--chat-surface2);border:1.5px solid var(--chat-border);
   color:var(--chat-text);padding:12px;border-radius:12px;
