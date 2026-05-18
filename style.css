@@ -1,6 +1,6 @@
 @font-face {
-  font-family: 'Wilzten';
-  src: url('Wilzten.ttf') format('truetype');
+  font-family: 'CherryBombOne';
+  src: url('CherryBombOne-Regular.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
@@ -44,7 +44,7 @@ html,body{height:100%;font-family:'Open Sans',sans-serif;font-weight:400;backgro
   background:var(--card);
   border-bottom:1px solid #F0F1F8;
 }
-.fake-title{font-size:28px;font-family:'Wilzten',cursive;color:var(--primary);letter-spacing:0;font-weight:normal;}
+.fake-title{font-size:28px;font-family:'CherryBombOne',cursive;color:var(--primary);letter-spacing:0;font-weight:normal;}
 body:not(.dark-mode) .fake-title{color:var(--primary) !important;}
 .icon-btn{
   width:40px;height:40px;
