@@ -430,7 +430,7 @@
       <div class="modal-title" style="color:var(--chat-text);margin-bottom:8px;" id="securityTitle">설정</div>
 
       <!-- App Title -->
-      <div class="secret-setting-item" style="flex-direction:column;align-items:flex-start;gap:6px;padding-bottom:0;">
+      <div class="secret-setting-item" style="flex-direction:column;align-items:flex-start;gap:3px;padding-bottom:0;">
         <div class="ss-label" id="appTitleLabel">앱 타이틀</div>
         <div style="display:flex;gap:6px;align-items:stretch;width:100%;box-sizing:border-box;">
           <input id="titleMyInput" type="text" maxlength="10" placeholder="my" oninput="previewTitle()" class="ss-input" style="flex:1;min-width:0;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true"/>
@@ -438,11 +438,11 @@
           <button onclick="applyTitleChange()" class="ss-btn ss-btn-primary" id="titleApplyBtn">Apply</button>
         </div>
         <!-- 타이틀 프리뷰 — 각 텍스트 롱프레스로 색상/크기 선택 -->
-        <div style="width:100%;text-align:center;padding:4px 0 0;">
+        <div style="width:100%;text-align:center;padding:2px 0 0;">
           <span id="titlePreviewMy" style="font-size:27px;font-weight:800;font-family:'CherryBombOne',cursive;cursor:pointer;user-select:none;-webkit-user-select:none;"></span>
           <span id="titlePreviewPlanner" style="font-size:18px;font-weight:500;margin-left:3px;font-family:'CherryBombOne',cursive;cursor:pointer;user-select:none;-webkit-user-select:none;"></span>
         </div>
-        <div style="width:100%;font-size:10px;color:var(--chat-text2);text-align:center;margin-top:2px;" id="titleColorHint">롱프레스로 색상·크기 선택</div>
+        <div style="width:100%;font-size:10px;color:var(--chat-text2);text-align:center;" id="titleColorHint">롱프레스로 색상·크기 선택</div>
       </div>
 
       <!-- 색상+크기 팔레트 팝업 -->
@@ -461,7 +461,7 @@
       </div>
 
       <!-- Theme -->
-      <div class="secret-setting-item" style="padding-top:8px;">
+      <div class="secret-setting-item" style="padding-top:4px;">
         <div class="ss-label" id="themeLabel2">테마</div>
         <div style="display:flex;gap:6px;">
           <button class="chat-theme-btn" id="themeDarkBtn" onclick="setChatTheme('dark')">다크</button>
