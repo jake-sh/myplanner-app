@@ -693,9 +693,10 @@ function setIconStyle(style) {
 }
 
 function setSvgColor(mode) {
+  var curMode = localStorage.getItem('svgColorMode') || 'on';
   localStorage.setItem('svgColorMode', mode);
   if (mode === 'on') {
-    // Individual 선택 시 자동 랜덤 배정
+    // Individual 선택/재클릭 시 랜덤 재배정
     randomizeSvgColors(true);
   }
   applyIconStyle();
@@ -750,7 +751,7 @@ function _randomSimilarColor(baseHex) {
   // H: ±30° (색상 계열 약간 변화)
   // S: ±20% (채도 유사)
   // L: ±12% (명도 유사)
-  return _hslToHex(h + rnd(30), s + rnd(20), l + rnd(12));
+  return _hslToHex(h + rnd(60), s + rnd(35), l + rnd(25));
 }
 
 function randomizeSvgColors(silent) {
@@ -777,8 +778,6 @@ function updateSvgColorBtns() {
   var mode = localStorage.getItem('svgColorMode') || 'on';
   document.getElementById('svgColorOn')?.classList.toggle('active', mode === 'on');
   document.getElementById('svgColorOff')?.classList.toggle('active', mode === 'off');
-  var randBtn = document.getElementById('svgColorRandomBtn');
-  if (randBtn) randBtn.style.display = mode === 'on' ? 'block' : 'none';
 }
 
 function applyIconStyle() {
@@ -4561,7 +4560,7 @@ function applyLang() {
   _setText('iconStyleEmoji', en ? 'Emoji' : '이모지');
   _setText('iconStyleSvg',   en ? 'SVG Line' : 'SVG 라인');
   _setText('svgColorLabel', en ? 'SVG Line Color' : 'SVG 라인 색상');
-  _setText('svgColorOn',    en ? 'Individual' : '개별 색상');
+  _setText('svgColorOn', en ? '🎲 Individual' : '🎲 개별 색상');
   _setText('svgColorOff',   en ? 'Theme Color' : '테마 색상');
   _setText('appTitleLabel', en ? 'App Title' : '앱 타이틀');
   _setText('titleColorHint', en ? 'Long-press to pick color & size' : '롱프레스로 색상·크기 선택');
