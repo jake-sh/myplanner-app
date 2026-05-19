@@ -504,12 +504,12 @@
       </div>
 
       <!-- Enhanced Security -->
-      <div class="secret-setting-item" style="flex-direction:column;align-items:flex-start;gap:2px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+      <div class="secret-setting-item">
+        <div style="display:flex;flex-direction:column;gap:2px;flex:1;">
           <div class="ss-label" id="enhancedSecLabel">강화 보안</div>
-          <button class="ss-onoff-btn ss-onoff-on" id="autoLockToggle" onclick="toggleAutoLockBtn(this)">ON</button>
+          <div style="font-size:11px;color:var(--chat-text2);" id="autoLockDesc">화면 이탈 시 채팅 자동 잠금</div>
         </div>
-        <div style="font-size:11px;color:var(--chat-text2);margin-top:1px;" id="autoLockDesc">화면 이탈 시 채팅 자동 잠금</div>
+        <button class="ss-onoff-btn ss-onoff-on" id="autoLockToggle" onclick="toggleAutoLockBtn(this)">ON</button>
       </div>
 
       <!-- Close / OK -->
