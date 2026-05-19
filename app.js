@@ -857,7 +857,7 @@ function updateTitlePreview() {
   var myColor = localStorage.getItem('titleMyColor') || 'var(--primary)';
   var plannerColor = localStorage.getItem('titlePlannerColor') || 'var(--chat-text)';
   var mySize = parseInt(localStorage.getItem('titleMySize') || '32');
-  var plannerSize = parseInt(localStorage.getItem('titlePlannerSize') || '28');
+  var plannerSize = parseInt(localStorage.getItem('titlePlannerSize') || '24');
 
   function resolveVal(inputEl, storageKey, defaultVal) {
     if (inputEl) return inputEl.value;
@@ -909,20 +909,25 @@ function applyTitle() {
   var plannerVal = localStorage.getItem('titlePlanner');
   if (myVal === null) myVal = 'my';
   if (plannerVal === null) plannerVal = 'planner';
+
+  // 프리뷰 크기(32/28/24) + 4 = 실제 크기(36/32/28)
+  // 기본값: 첫째=대(32+4=36), 둘째=소(24+4=28)
+  var mySizePrev    = parseInt(localStorage.getItem('titleMySize')      || '32');
+  var plannerSizePrev = parseInt(localStorage.getItem('titlePlannerSize') || '24');
+  var myActual      = mySizePrev + 4;
+  var plannerActual = plannerSizePrev + 4;
+
   if (myEl) {
     myEl.textContent = myVal;
+    myEl.setAttribute('style', 'font-size:' + myActual + 'px;');
     var myColor = localStorage.getItem('titleMyColor');
     if (myColor) myEl.style.color = myColor;
-    // 프리뷰 크기(32/28/24) + 4 = 실제 크기(36/32/28)
-    var mySize = parseInt(localStorage.getItem('titleMySize') || '32');
-    myEl.style.fontSize = (mySize + 4) + 'px';
   }
   if (plannerEl) {
     plannerEl.textContent = plannerVal;
+    plannerEl.setAttribute('style', 'font-size:' + plannerActual + 'px;');
     var plannerColor = localStorage.getItem('titlePlannerColor');
     if (plannerColor) plannerEl.style.color = plannerColor;
-    var plannerSize = parseInt(localStorage.getItem('titlePlannerSize') || '28');
-    plannerEl.style.fontSize = (plannerSize + 4) + 'px';
   }
 }
 
