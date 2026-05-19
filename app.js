@@ -825,18 +825,16 @@ function updateTitlePreview() {
   var myColor = localStorage.getItem('titleMyColor') || 'var(--primary)';
   var plannerColor = localStorage.getItem('titlePlannerColor') || 'var(--chat-text)';
 
-  // 입력창에 값이 있으면 그 값, 없으면 저장된 값, 저장값도 없으면(null) 기본값
-  // 빈 문자열('')은 공란 그대로 표시
-  var myVal = myInput ? myInput.value : null;
-  var plannerVal = plannerInput ? plannerInput.value : null;
-  if (myVal === null) {
-    var saved = localStorage.getItem('titleMy');
-    myVal = saved !== null ? saved : 'my';
+  // 입력창 value 우선. 입력창 없으면 localStorage. 둘 다 null이면 기본값.
+  // 빈 문자열('')은 공란 그대로 표시 (저장된 값도 ''이면 의도적 공란)
+  function resolveVal(inputEl, storageKey, defaultVal) {
+    if (inputEl) return inputEl.value; // 입력창 값 그대로 ('' 포함)
+    var saved = localStorage.getItem(storageKey);
+    return saved !== null ? saved : defaultVal;
   }
-  if (plannerVal === null) {
-    var saved2 = localStorage.getItem('titlePlanner');
-    plannerVal = saved2 !== null ? saved2 : 'planner';
-  }
+
+  var myVal = resolveVal(myInput, 'titleMy', 'my');
+  var plannerVal = resolveVal(plannerInput, 'titlePlanner', 'planner');
 
   if (previewMy) { previewMy.textContent = myVal; previewMy.style.color = myColor; }
   if (previewPlanner) { previewPlanner.textContent = plannerVal; previewPlanner.style.color = plannerColor; }
