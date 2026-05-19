@@ -460,7 +460,7 @@ input:checked+.slider:before{transform:translateX(20px);}
   background:var(--chat-surface);border-radius:24px;
   padding:24px;width:calc(100vw - 40px);max-width:360px;
   display:flex;flex-direction:column;gap:14px;
-  max-height:85vh;overflow-y:auto;box-sizing:border-box;
+  max-height:95vh;overflow-y:auto;box-sizing:border-box;
   border:1px solid var(--chat-border);
   text-align:center;
 }
@@ -530,7 +530,7 @@ input:checked+.slider:before{transform:translateX(20px);}
 .timer-opt:active{background:var(--primary);border-color:var(--primary);color:#fff;}
 .timer-opt-selected{background:var(--primary);border-color:var(--primary);color:#fff;}
 .secret-setting-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;width:100%;}
-.settings-box{gap:0;display:flex;flex-direction:column;}
+.settings-box{gap:0;display:flex;flex-direction:column;overflow-y:hidden;}
 #qrScannerWrap{width:100%;max-width:260px;margin:0 auto;border-radius:16px;overflow:hidden;}
 #myQrCode{display:flex;justify-content:center;}
 #myQrCode canvas,#myQrCode img{border-radius:16px;}
