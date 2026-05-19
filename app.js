@@ -771,23 +771,69 @@ function initTitleColorPalette() {
   });
 }
 
-function openTitleColorPalette(target, inputEl) {
+function applyTitleFontSize(size) {
+  if (!_paletteTarget) return;
+  var key = _paletteTarget === 'my' ? 'titleMySize' : 'titlePlannerSize';
+  localStorage.setItem(key, String(size));
+  [32, 27, 22].forEach(function(s) {
+    var btn = document.getElementById('fontSizeBtn' + s);
+    if (btn) {
+      btn.style.background = (s === size) ? 'var(--primary)' : 'var(--chat-surface2)';
+      btn.style.color = (s === size) ? '#fff' : 'var(--chat-text)';
+      btn.style.borderColor = (s === size) ? 'var(--primary)' : 'var(--chat-border)';
+    }
+  });
+  updateTitlePreview();
+}
+
+function _updateFontSizeBtns(target) {
+  var key = target === 'my' ? 'titleMySize' : 'titlePlannerSize';
+  var cur = parseInt(localStorage.getItem(key) || (target === 'my' ? '27' : '18'));
+  [32, 27, 22].forEach(function(s) {
+    var btn = document.getElementById('fontSizeBtn' + s);
+    if (btn) {
+      var active = (s === cur);
+      btn.style.background = active ? 'var(--primary)' : 'var(--chat-surface2)';
+      btn.style.color = active ? '#fff' : 'var(--chat-text)';
+      btn.style.borderColor = active ? 'var(--primary)' : 'var(--chat-border)';
+    }
+  });
+}
+
+function openTitleColorPalette(target, el) {
   _paletteTarget = target;
   initTitleColorPalette();
   var palette = document.getElementById('titleColorPalette');
   var label = document.getElementById('paletteLabel');
   var en = localStorage.getItem('lang') === 'en';
   if (label) label.textContent = en
-    ? (target === 'my' ? 'Color for 1st text' : 'Color for 2nd text')
-    : (target === 'my' ? '첫 번째 텍스트 색상' : '두 번째 텍스트 색상');
-
-  // 입력창 위치 기준으로 팔레트 위치 결정
-  var rect = inputEl.getBoundingClientRect();
+    ? (target === 'my' ? '1st: color & size' : '2nd: color & size')
+    : (target === 'my' ? '첫 번째: 색상·크기' : '두 번째: 색상·크기');
+  _updateFontSizeBtns(target);
+  var rect = el.getBoundingClientRect();
   var top = rect.bottom + 8;
-  if (top + 220 > window.innerHeight) top = rect.top - 228;
+  if (top + 260 > window.innerHeight) top = rect.top - 268;
   palette.style.top = top + 'px';
   palette.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - 276)) + 'px';
   palette.style.display = 'block';
+}
+
+// 프리뷰 span 롱프레스 바인딩 (입력창은 제거)
+function _bindPreviewLongPress(spanEl, target) {
+  if (spanEl._colorBound) return;
+  spanEl._colorBound = true;
+  var timer = null;
+  spanEl.addEventListener('touchstart', function() {
+    timer = setTimeout(function() { timer = null; openTitleColorPalette(target, spanEl); }, 500);
+  }, { passive: true });
+  spanEl.addEventListener('touchend', function() { if (timer) { clearTimeout(timer); timer = null; } });
+  spanEl.addEventListener('touchmove', function() { if (timer) { clearTimeout(timer); timer = null; } });
+  spanEl.addEventListener('mousedown', function(e) {
+    if (e.button !== 0) return;
+    timer = setTimeout(function() { timer = null; openTitleColorPalette(target, spanEl); }, 600);
+  });
+  spanEl.addEventListener('mouseup', function() { if (timer) { clearTimeout(timer); timer = null; } });
+  spanEl.addEventListener('contextmenu', function(e) { e.preventDefault(); });
 }
 
 function closeTitleColorPalette() {
@@ -798,23 +844,9 @@ function closeTitleColorPalette() {
 
 function applyTitleColor(hex) {
   if (!_paletteTarget) return;
-  if (_paletteTarget === 'my') {
-    localStorage.setItem('titleMyColor', hex);
-  } else {
-    localStorage.setItem('titlePlannerColor', hex);
-  }
+  localStorage.setItem(_paletteTarget === 'my' ? 'titleMyColor' : 'titlePlannerColor', hex);
   closeTitleColorPalette();
-  updateTitleInputColors();
   updateTitlePreview();
-}
-
-function updateTitleInputColors() {
-  var myColor = localStorage.getItem('titleMyColor') || 'var(--chat-text)';
-  var plannerColor = localStorage.getItem('titlePlannerColor') || 'var(--chat-text)';
-  var myInput = document.getElementById('titleMyInput');
-  var plannerInput = document.getElementById('titlePlannerInput');
-  if (myInput) myInput.style.color = myColor;
-  if (plannerInput) plannerInput.style.color = plannerColor;
 }
 
 function updateTitlePreview() {
@@ -824,46 +856,27 @@ function updateTitlePreview() {
   var previewPlanner = document.getElementById('titlePreviewPlanner');
   var myColor = localStorage.getItem('titleMyColor') || 'var(--primary)';
   var plannerColor = localStorage.getItem('titlePlannerColor') || 'var(--chat-text)';
+  var mySize = parseInt(localStorage.getItem('titleMySize') || '27');
+  var plannerSize = parseInt(localStorage.getItem('titlePlannerSize') || '18');
 
-  // 입력창 value 우선. 입력창 없으면 localStorage. 둘 다 null이면 기본값.
-  // 빈 문자열('')은 공란 그대로 표시 (저장된 값도 ''이면 의도적 공란)
   function resolveVal(inputEl, storageKey, defaultVal) {
-    if (inputEl) return inputEl.value; // 입력창 값 그대로 ('' 포함)
+    if (inputEl) return inputEl.value;
     var saved = localStorage.getItem(storageKey);
     return saved !== null ? saved : defaultVal;
   }
-
   var myVal = resolveVal(myInput, 'titleMy', 'my');
   var plannerVal = resolveVal(plannerInput, 'titlePlanner', 'planner');
 
-  if (previewMy) { previewMy.textContent = myVal; previewMy.style.color = myColor; }
-  if (previewPlanner) { previewPlanner.textContent = plannerVal; previewPlanner.style.color = plannerColor; }
-}
-
-function _bindTitleLongPress(inputEl, target) {
-  inputEl.addEventListener('contextmenu', function(e) { e.preventDefault(); });
-  inputEl.addEventListener('touchstart', function(e) {
-    _longPressTimer = setTimeout(function() {
-      e.preventDefault();
-      openTitleColorPalette(target, inputEl);
-    }, 500);
-  }, { passive: false });
-  inputEl.addEventListener('touchend', function() {
-    if (_longPressTimer) { clearTimeout(_longPressTimer); _longPressTimer = null; }
-  });
-  inputEl.addEventListener('touchmove', function() {
-    if (_longPressTimer) { clearTimeout(_longPressTimer); _longPressTimer = null; }
-  });
-  // 데스크탑 우클릭
-  inputEl.addEventListener('mousedown', function(e) {
-    if (e.button === 2) return; // 우클릭은 contextmenu에서 처리
-    _longPressTimer = setTimeout(function() {
-      openTitleColorPalette(target, inputEl);
-    }, 600);
-  });
-  inputEl.addEventListener('mouseup', function() {
-    if (_longPressTimer) { clearTimeout(_longPressTimer); _longPressTimer = null; }
-  });
+  if (previewMy) {
+    previewMy.textContent = myVal;
+    previewMy.style.color = myColor;
+    previewMy.style.fontSize = mySize + 'px';
+  }
+  if (previewPlanner) {
+    previewPlanner.textContent = plannerVal;
+    previewPlanner.style.color = plannerColor;
+    previewPlanner.style.fontSize = plannerSize + 'px';
+  }
 }
 
 function previewTitle() {
@@ -919,17 +932,12 @@ function initTitleInputs() {
   var plannerInput = document.getElementById('titlePlannerInput');
   if (myInput) myInput.value = myVal;
   if (plannerInput) plannerInput.value = plannerVal;
-  // 색상 적용 + 롱프레스 바인딩
-  updateTitleInputColors();
+  // 색상 적용 + 프리뷰 span 롱프레스 바인딩 (입력창 롱프레스 제거)
   updateTitlePreview();
-  if (myInput && !myInput._colorBound) {
-    _bindTitleLongPress(myInput, 'my');
-    myInput._colorBound = true;
-  }
-  if (plannerInput && !plannerInput._colorBound) {
-    _bindTitleLongPress(plannerInput, 'planner');
-    plannerInput._colorBound = true;
-  }
+  var previewMy = document.getElementById('titlePreviewMy');
+  var previewPlanner = document.getElementById('titlePreviewPlanner');
+  if (previewMy) _bindPreviewLongPress(previewMy, 'my');
+  if (previewPlanner) _bindPreviewLongPress(previewPlanner, 'planner');
   // 팔레트 바깥 클릭 시 닫기
   document.addEventListener('click', function(e) {
     var palette = document.getElementById('titleColorPalette');
@@ -2260,7 +2268,7 @@ var BACKUP_KEYS = [
   'notifApp', 'notifEvent',
   'autoLock', 'autoDeleteMin',
   'shareTarget', 'friends',
-  '_titleMain', '_titleSub', 'titleMyColor', 'titlePlannerColor'
+  '_titleMain', '_titleSub', 'titleMyColor', 'titlePlannerColor', 'titleMySize', 'titlePlannerSize'
 ];
 
 var _backupTimer = null;

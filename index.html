@@ -433,29 +433,35 @@
       <div class="secret-setting-item" style="flex-direction:column;align-items:flex-start;gap:6px;padding-bottom:0;">
         <div class="ss-label" id="appTitleLabel">앱 타이틀</div>
         <div style="display:flex;gap:6px;align-items:stretch;width:100%;box-sizing:border-box;">
-          <input id="titleMyInput" type="text" maxlength="10" placeholder="my" oninput="previewTitle()" class="ss-input" style="flex:1;min-width:0;font-size:17px;font-weight:700;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true"/>
-          <input id="titlePlannerInput" type="text" maxlength="10" placeholder="planner" oninput="previewTitle()" class="ss-input" style="flex:1;min-width:0;font-size:13px;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true"/>
+          <input id="titleMyInput" type="text" maxlength="10" placeholder="my" oninput="previewTitle()" class="ss-input" style="flex:1;min-width:0;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true"/>
+          <input id="titlePlannerInput" type="text" maxlength="10" placeholder="planner" oninput="previewTitle()" class="ss-input" style="flex:1;min-width:0;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true"/>
           <button onclick="applyTitleChange()" class="ss-btn ss-btn-primary" id="titleApplyBtn">Apply</button>
         </div>
-        <!-- 타이틀 프리뷰 -->
+        <!-- 타이틀 프리뷰 — 각 텍스트 롱프레스로 색상/크기 선택 -->
         <div style="width:100%;text-align:center;padding:4px 0 0;">
-          <span id="titlePreviewMy" style="font-size:32px;font-weight:800;font-family:'CherryBombOne',cursive;"></span>
-          <span id="titlePreviewPlanner" style="font-size:22px;font-weight:500;margin-left:3px;font-family:'CherryBombOne',cursive;"></span>
+          <span id="titlePreviewMy" style="font-size:27px;font-weight:800;font-family:'CherryBombOne',cursive;cursor:pointer;user-select:none;-webkit-user-select:none;"></span>
+          <span id="titlePreviewPlanner" style="font-size:18px;font-weight:500;margin-left:3px;font-family:'CherryBombOne',cursive;cursor:pointer;user-select:none;-webkit-user-select:none;"></span>
         </div>
-        <div style="width:100%;font-size:10px;color:var(--chat-text2);text-align:center;margin-top:2px;" id="titleColorHint">롱프레스로 색상 선택</div>
+        <div style="width:100%;font-size:10px;color:var(--chat-text2);text-align:center;margin-top:2px;" id="titleColorHint">롱프레스로 색상·크기 선택</div>
       </div>
 
-      <!-- 색상 팔레트 팝업 -->
+      <!-- 색상+크기 팔레트 팝업 -->
       <div id="titleColorPalette" style="display:none;position:fixed;z-index:9999;background:var(--chat-surface);border:1px solid var(--chat-border);border-radius:16px;padding:14px;box-shadow:0 8px 32px rgba(0,0,0,0.4);width:260px;">
-        <div style="font-size:11px;color:var(--chat-text2);margin-bottom:10px;" id="paletteLabel">색상 선택</div>
+        <div style="font-size:11px;color:var(--chat-text2);margin-bottom:8px;" id="paletteLabel">색상·크기 선택</div>
+        <!-- 폰트 크기 버튼 -->
+        <div style="display:flex;gap:6px;margin-bottom:10px;">
+          <button onclick="applyTitleFontSize(32)" id="fontSizeBtn32" style="flex:1;padding:6px;border-radius:8px;border:1.5px solid var(--chat-border);background:var(--chat-surface2);color:var(--chat-text);font-size:13px;font-weight:700;cursor:pointer;">대</button>
+          <button onclick="applyTitleFontSize(27)" id="fontSizeBtn27" style="flex:1;padding:6px;border-radius:8px;border:1.5px solid var(--chat-border);background:var(--chat-surface2);color:var(--chat-text);font-size:12px;font-weight:700;cursor:pointer;">중</button>
+          <button onclick="applyTitleFontSize(22)" id="fontSizeBtn22" style="flex:1;padding:6px;border-radius:8px;border:1.5px solid var(--chat-border);background:var(--chat-surface2);color:var(--chat-text);font-size:11px;font-weight:700;cursor:pointer;">소</button>
+        </div>
         <div id="paletteGrid" style="display:grid;grid-template-columns:repeat(10,1fr);gap:5px;"></div>
         <div style="display:flex;justify-content:flex-end;margin-top:10px;">
-          <button onclick="closeTitleColorPalette()" style="background:none;border:none;color:var(--chat-text2);font-size:12px;cursor:pointer;padding:4px 8px;">닫기</button>
+          <button onclick="closeTitleColorPalette()" style="background:none;border:none;color:var(--chat-text2);font-size:12px;cursor:pointer;padding:4px 8px;" id="paletteCancelBtn">닫기</button>
         </div>
       </div>
 
       <!-- Theme -->
-      <div class="secret-setting-item" style="padding-top:6px;">
+      <div class="secret-setting-item" style="padding-top:8px;">
         <div class="ss-label" id="themeLabel2">테마</div>
         <div style="display:flex;gap:6px;">
           <button class="chat-theme-btn" id="themeDarkBtn" onclick="setChatTheme('dark')">다크</button>
