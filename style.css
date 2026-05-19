@@ -459,6 +459,7 @@ input:checked+.slider:before{transform:translateX(20px);}
   border:1px solid var(--chat-border);
   text-align:center;
 }
+.modal-box.settings-box{gap:0;}
 .modal-title{font-size:18px;font-weight:800;color:var(--chat-text);}
 .modal-desc{font-size:13px;color:var(--chat-text2);font-weight:500;}
 .modal-cancel{
