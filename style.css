@@ -529,7 +529,7 @@ input:checked+.slider:before{transform:translateX(20px);}
 }
 .timer-opt:active{background:var(--primary);border-color:var(--primary);color:#fff;}
 .timer-opt-selected{background:var(--primary);border-color:var(--primary);color:#fff;}
-.secret-setting-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 0;width:100%;}
+.secret-setting-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;width:100%;}
 .settings-box{gap:0;display:flex;flex-direction:column;}
 #qrScannerWrap{width:100%;max-width:260px;margin:0 auto;border-radius:16px;overflow:hidden;}
 #myQrCode{display:flex;justify-content:center;}
