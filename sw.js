@@ -1,5 +1,5 @@
-const CACHE = 'myplanner-v311';
-const PRECACHE = ['./', './index.html', './app.js', './style.css', './manifest.json'];
+const CACHE = 'myplanner-v312';
+const PRECACHE = ['./', './index.html', './app.js', './style.css', './manifest.json', './GamjaFlower-Regular.ttf', './ZCOOLKuaiLe-Regular.ttf'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(PRECACHE).catch(() => {})));

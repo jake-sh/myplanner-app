@@ -4,6 +4,44 @@
   font-weight: normal;
   font-style: normal;
 }
+@font-face {
+  font-family: 'GamjaFlower';
+  src: url('GamjaFlower-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'ZCOOLKuaiLe';
+  src: url('ZCOOLKuaiLe-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* 일본어: GamjaFlower */
+:lang(ja) body, :lang(ja) input, :lang(ja) textarea,
+:lang(ja) button, :lang(ja) select, :lang(ja) .menu-label,
+:lang(ja) .sub-title, :lang(ja) .settings-label,
+:lang(ja) .memo-card-title, :lang(ja) .msg-bubble,
+:lang(ja) .todo-text, :lang(ja) .tag-time,
+:lang(ja) .modal-title, :lang(ja) .drb-text {
+  font-family: 'GamjaFlower', sans-serif;
+}
+
+/* 중국어: ZCOOLKuaiLe */
+:lang(zh) body, :lang(zh) input, :lang(zh) textarea,
+:lang(zh) button, :lang(zh) select, :lang(zh) .menu-label,
+:lang(zh) .sub-title, :lang(zh) .settings-label,
+:lang(zh) .memo-card-title, :lang(zh) .msg-bubble,
+:lang(zh) .todo-text, :lang(zh) .tag-time,
+:lang(zh) .modal-title, :lang(zh) .drb-text {
+  font-family: 'ZCOOLKuaiLe', sans-serif;
+}
+
+/* 앱 타이틀은 언어 무관 항상 CherryBombOne */
+:lang(ja) .fake-title, :lang(zh) .fake-title,
+:lang(en) .fake-title, :lang(ko) .fake-title {
+  font-family: 'CherryBombOne', cursive !important;
+}
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 
