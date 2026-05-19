@@ -93,7 +93,7 @@
     </div>
     <div class="settings-section">
       <div id="themeColorLabel" class="settings-label">테마 색상</div>
-      <div id="themeRecentColors" style="display:flex;gap:8px;align-items:center;"></div>
+      <div id="themeRecentColors" style="display:flex;gap:8px;align-items:center;justify-content:center;"></div>
       <!-- 테마 색상 팔레트 팝업 -->
       <div id="themeColorPalette" style="display:none;position:fixed;z-index:9999;background:var(--chat-surface);border:1px solid var(--chat-border);border-radius:16px;padding:14px;box-shadow:0 8px 32px rgba(0,0,0,0.4);width:260px;">
         <div style="font-size:11px;color:var(--chat-text2);margin-bottom:8px;" id="themeColorPaletteLabel">테마 색상 선택</div>
@@ -111,9 +111,10 @@
       </div>
       <div id="svgColorOption" style="display:none;">
         <div id="svgColorLabel" class="settings-desc" style="margin-bottom:8px;">SVG 라인 색상</div>
-        <div style="display:flex;gap:8px;">
+        <div style="display:flex;gap:8px;align-items:center;">
           <button id="svgColorOn" class="style-select-btn" onclick="setSvgColor('on')">Individual</button>
           <button id="svgColorOff" class="style-select-btn" onclick="setSvgColor('off')">Theme Color</button>
+          <button id="svgColorRandomBtn" onclick="randomizeSvgColors()" style="display:none;padding:6px 10px;border-radius:8px;border:1.5px solid var(--chat-border);background:var(--chat-surface2);color:var(--chat-text);font-size:13px;cursor:pointer;">🎲</button>
         </div>
       </div>
     </div>

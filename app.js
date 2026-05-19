@@ -664,7 +664,13 @@ var SVG_ICONS = {
   8: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="36" height="36"><rect width="24" height="24" fill="transparent" stroke="none"/><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="7" y1="15" x2="17" y2="15"/><line x1="7" y1="18" x2="13" y2="18"/></svg>',
 };
 var EMOJI_ICONS = ['📋','📅','⏰','📝','🎯','📊','🗂️','🏷️','📆'];
-var SVG_COLORS = ['#10B981','#3B82F6','#F43F5E','#F59E0B','#F97316','#22C55E','#8B5CF6','#A855F7','#38BDF8'];
+var SVG_COLORS = (function() {
+  try {
+    var saved = JSON.parse(localStorage.getItem('svgColorsCustom') || 'null');
+    if (Array.isArray(saved) && saved.length > 0) return saved;
+  } catch(e) {}
+  return ['#10B981','#3B82F6','#F43F5E','#F59E0B','#F97316','#22C55E','#8B5CF6','#A855F7','#38BDF8'];
+})();
 
 function applyClothesIcon(en) {
   var isEn = (en !== undefined) ? en : (localStorage.getItem('lang') === 'en');
@@ -688,8 +694,75 @@ function setIconStyle(style) {
 
 function setSvgColor(mode) {
   localStorage.setItem('svgColorMode', mode);
+  if (mode === 'on') {
+    // Individual 선택 시 자동 랜덤 배정
+    randomizeSvgColors(true);
+  }
   applyIconStyle();
   updateSvgColorBtns();
+}
+
+// HEX → HSL
+function _hexToHsl(hex) {
+  var r = parseInt(hex.slice(1,3),16)/255;
+  var g = parseInt(hex.slice(3,5),16)/255;
+  var b = parseInt(hex.slice(5,7),16)/255;
+  var max = Math.max(r,g,b), min = Math.min(r,g,b);
+  var h, s, l = (max+min)/2;
+  if (max === min) { h = s = 0; }
+  else {
+    var d = max - min;
+    s = l > 0.5 ? d/(2-max-min) : d/(max+min);
+    switch(max) {
+      case r: h = ((g-b)/d + (g<b?6:0))/6; break;
+      case g: h = ((b-r)/d + 2)/6; break;
+      case b: h = ((r-g)/d + 4)/6; break;
+    }
+  }
+  return [h*360, s*100, l*100];
+}
+
+// HSL → HEX
+function _hslToHex(h, s, l) {
+  h = ((h % 360) + 360) % 360;
+  s = Math.max(0, Math.min(100, s));
+  l = Math.max(10, Math.min(90, l));
+  var s1 = s/100, l1 = l/100;
+  var c = (1 - Math.abs(2*l1-1)) * s1;
+  var x = c * (1 - Math.abs((h/60)%2-1));
+  var m = l1 - c/2;
+  var r,g,b;
+  if      (h<60)  { r=c;g=x;b=0; }
+  else if (h<120) { r=x;g=c;b=0; }
+  else if (h<180) { r=0;g=c;b=x; }
+  else if (h<240) { r=0;g=x;b=c; }
+  else if (h<300) { r=x;g=0;b=c; }
+  else            { r=c;g=0;b=x; }
+  var toHex = function(v) { return Math.round((v+m)*255).toString(16).padStart(2,'0'); };
+  return '#' + toHex(r) + toHex(g) + toHex(b);
+}
+
+// 유사 명도/채도 랜덤 색상 생성
+function _randomSimilarColor(baseHex) {
+  var hsl = _hexToHsl(baseHex);
+  var h = hsl[0], s = hsl[1], l = hsl[2];
+  var rnd = function(range) { return (Math.random()-0.5)*2*range; };
+  // H: ±30° (색상 계열 약간 변화)
+  // S: ±20% (채도 유사)
+  // L: ±12% (명도 유사)
+  return _hslToHex(h + rnd(30), s + rnd(20), l + rnd(12));
+}
+
+function randomizeSvgColors(silent) {
+  var theme = localStorage.getItem('themeColor') || '#6C63FF';
+  var count = SVG_COLORS.length;
+  var newColors = [];
+  for (var i = 0; i < count; i++) {
+    newColors.push(_randomSimilarColor(theme));
+  }
+  SVG_COLORS = newColors;
+  localStorage.setItem('svgColorsCustom', JSON.stringify(newColors));
+  if (!silent) applyIconStyle();
 }
 
 function updateIconStyleBtns() {
@@ -704,6 +777,8 @@ function updateSvgColorBtns() {
   var mode = localStorage.getItem('svgColorMode') || 'on';
   document.getElementById('svgColorOn')?.classList.toggle('active', mode === 'on');
   document.getElementById('svgColorOff')?.classList.toggle('active', mode === 'off');
+  var randBtn = document.getElementById('svgColorRandomBtn');
+  if (randBtn) randBtn.style.display = mode === 'on' ? 'block' : 'none';
 }
 
 function applyIconStyle() {
@@ -2375,7 +2450,7 @@ function renderFriendList() {
 
 var BACKUP_KEYS = [
   'memos', 'todos', 'habits', 'hStats',
-  'appName', 'lang', 'darkMode', 'themeColor', 'iconStyle', 'svgColorMode',
+  'appName', 'lang', 'darkMode', 'themeColor', 'iconStyle', 'svgColorMode', 'svgColorsCustom',
   'chatTheme', 'chatFontSize',
   'notifApp', 'notifEvent',
   'autoLock', 'autoDeleteMin',
