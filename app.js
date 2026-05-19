@@ -3341,7 +3341,8 @@ function openShareTargetPicker() {
     listEl.innerHTML = friends.map(function(code) {
       var isCurrent = code === current;
       return '<button class="ss-btn ' + (isCurrent ? 'ss-btn-primary' : '') + '" ' +
-             'style="padding:14px;text-align:left;font-size:14px;font-weight:600;border-radius:10px;' +
+             'style="padding:12px 14px;text-align:left;font-size:14px;font-weight:600;border-radius:10px;' +
+             'display:flex;align-items:center;width:100%;' +
              (isCurrent ? '' : 'background:var(--chat-bg2);color:var(--chat-text);') + '" ' +
              'onclick="pickShareTarget(\'' + esc(code) + '\')">' +
              esc(code) + (isCurrent ? ' ✓' : '') + '</button>';
