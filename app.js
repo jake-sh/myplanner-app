@@ -4387,6 +4387,7 @@ function applyLang() {
   _setText('svgColorOn',    en ? 'Individual' : '개별 색상');
   _setText('svgColorOff',   en ? 'Theme Color' : '테마 색상');
   _setText('appTitleLabel', en ? 'App Title' : '앱 타이틀');
+  _setText('titleColorHint', en ? 'Long-press to pick color & size' : '롱프레스로 색상·크기 선택');
   _setText('displayModeLabel', en ? 'Display Mode' : '화면 모드');
   _setText('darkModeText', en ? 'Dark Mode' : '다크 모드');
   _setText('themeColorLabel', en ? 'Theme Color' : '테마 색상');
