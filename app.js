@@ -743,6 +743,123 @@ function applyIconStyle() {
 
 
 // ── 앱 타이틀 ──────────────────────────────────────────
+// Tailwind 기반 웹 컬러 팔레트
+var TITLE_COLORS = [
+  '#fca5a5','#f87171','#ef4444','#dc2626','#b91c1c',
+  '#fdba74','#fb923c','#f97316','#ea580c','#c2410c',
+  '#fde047','#facc15','#eab308','#ca8a04','#a16207',
+  '#86efac','#4ade80','#22c55e','#16a34a','#15803d',
+  '#5eead4','#2dd4bf','#14b8a6','#0d9488','#0f766e',
+  '#93c5fd','#60a5fa','#3b82f6','#2563eb','#1d4ed8',
+  '#a5b4fc','#818cf8','#6366f1','#4f46e5','#4338ca',
+  '#d8b4fe','#c084fc','#a855f7','#9333ea','#7e22ce',
+  '#f9a8d4','#f472b6','#ec4899','#db2777','#be185d',
+  '#f1f5f9','#cbd5e1','#94a3b8','#64748b','#334155',
+];
+
+var _paletteTarget = null; // 'my' or 'planner'
+var _longPressTimer = null;
+
+function initTitleColorPalette() {
+  var grid = document.getElementById('paletteGrid');
+  if (!grid || grid.children.length > 0) return;
+  TITLE_COLORS.forEach(function(hex) {
+    var sw = document.createElement('div');
+    sw.style.cssText = 'width:100%;aspect-ratio:1;border-radius:5px;cursor:pointer;border:1.5px solid rgba(128,128,128,0.15);background:' + hex;
+    sw.onclick = function() { applyTitleColor(hex); };
+    grid.appendChild(sw);
+  });
+}
+
+function openTitleColorPalette(target, inputEl) {
+  _paletteTarget = target;
+  initTitleColorPalette();
+  var palette = document.getElementById('titleColorPalette');
+  var label = document.getElementById('paletteLabel');
+  var en = localStorage.getItem('lang') === 'en';
+  if (label) label.textContent = en
+    ? (target === 'my' ? 'Color for 1st text' : 'Color for 2nd text')
+    : (target === 'my' ? '첫 번째 텍스트 색상' : '두 번째 텍스트 색상');
+
+  // 입력창 위치 기준으로 팔레트 위치 결정
+  var rect = inputEl.getBoundingClientRect();
+  var top = rect.bottom + 8;
+  if (top + 220 > window.innerHeight) top = rect.top - 228;
+  palette.style.top = top + 'px';
+  palette.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - 276)) + 'px';
+  palette.style.display = 'block';
+}
+
+function closeTitleColorPalette() {
+  var palette = document.getElementById('titleColorPalette');
+  if (palette) palette.style.display = 'none';
+  _paletteTarget = null;
+}
+
+function applyTitleColor(hex) {
+  if (!_paletteTarget) return;
+  if (_paletteTarget === 'my') {
+    localStorage.setItem('titleMyColor', hex);
+  } else {
+    localStorage.setItem('titlePlannerColor', hex);
+  }
+  closeTitleColorPalette();
+  updateTitleInputColors();
+  updateTitlePreview();
+}
+
+function updateTitleInputColors() {
+  var myColor = localStorage.getItem('titleMyColor') || 'var(--chat-text)';
+  var plannerColor = localStorage.getItem('titlePlannerColor') || 'var(--chat-text)';
+  var myInput = document.getElementById('titleMyInput');
+  var plannerInput = document.getElementById('titlePlannerInput');
+  if (myInput) myInput.style.color = myColor;
+  if (plannerInput) plannerInput.style.color = plannerColor;
+}
+
+function updateTitlePreview() {
+  var myVal = document.getElementById('titleMyInput');
+  var plannerVal = document.getElementById('titlePlannerInput');
+  var previewMy = document.getElementById('titlePreviewMy');
+  var previewPlanner = document.getElementById('titlePreviewPlanner');
+  var myColor = localStorage.getItem('titleMyColor') || 'var(--primary)';
+  var plannerColor = localStorage.getItem('titlePlannerColor') || 'var(--chat-text)';
+  if (previewMy) {
+    previewMy.textContent = (myVal && myVal.value) || localStorage.getItem('titleMy') || 'my';
+    previewMy.style.color = myColor;
+  }
+  if (previewPlanner) {
+    previewPlanner.textContent = (plannerVal && plannerVal.value) || localStorage.getItem('titlePlanner') || 'planner';
+    previewPlanner.style.color = plannerColor;
+  }
+}
+
+function _bindTitleLongPress(inputEl, target) {
+  inputEl.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+  inputEl.addEventListener('touchstart', function(e) {
+    _longPressTimer = setTimeout(function() {
+      e.preventDefault();
+      openTitleColorPalette(target, inputEl);
+    }, 500);
+  }, { passive: false });
+  inputEl.addEventListener('touchend', function() {
+    if (_longPressTimer) { clearTimeout(_longPressTimer); _longPressTimer = null; }
+  });
+  inputEl.addEventListener('touchmove', function() {
+    if (_longPressTimer) { clearTimeout(_longPressTimer); _longPressTimer = null; }
+  });
+  // 데스크탑 우클릭
+  inputEl.addEventListener('mousedown', function(e) {
+    if (e.button === 2) return; // 우클릭은 contextmenu에서 처리
+    _longPressTimer = setTimeout(function() {
+      openTitleColorPalette(target, inputEl);
+    }, 600);
+  });
+  inputEl.addEventListener('mouseup', function() {
+    if (_longPressTimer) { clearTimeout(_longPressTimer); _longPressTimer = null; }
+  });
+}
+
 function previewTitle() {
   var myVal = document.getElementById('titleMyInput').value;
   var plannerVal = document.getElementById('titlePlannerInput').value;
@@ -750,13 +867,19 @@ function previewTitle() {
   var plannerEl = document.getElementById('titlePlanner');
   if (myEl && myVal) myEl.textContent = myVal;
   if (plannerEl && plannerVal) plannerEl.textContent = plannerVal;
+  updateTitlePreview();
 }
 
 function applyTitleChange() {
   var myVal = document.getElementById('titleMyInput').value;
   var plannerVal = document.getElementById('titlePlannerInput').value;
-  localStorage.setItem('titleMy', myVal);
-  localStorage.setItem('titlePlanner', plannerVal);
+  if (myVal === '' && plannerVal === '') {
+    localStorage.removeItem('titleMy');
+    localStorage.removeItem('titlePlanner');
+  } else {
+    localStorage.setItem('titleMy', myVal);
+    localStorage.setItem('titlePlanner', plannerVal);
+  }
   applyTitle();
 }
 
@@ -765,20 +888,52 @@ function applyTitle() {
   var plannerEl = document.getElementById('titlePlanner');
   var myVal = localStorage.getItem('titleMy');
   var plannerVal = localStorage.getItem('titlePlanner');
-  // 저장된 값이 없을 때만 기본값 사용 (빈 문자열은 빈 문자열로 표시)
   if (myVal === null) myVal = 'my';
   if (plannerVal === null) plannerVal = 'planner';
-  if (myEl) myEl.textContent = myVal;
-  if (plannerEl) plannerEl.textContent = plannerVal;
+  if (myEl) {
+    myEl.textContent = myVal;
+    var myColor = localStorage.getItem('titleMyColor');
+    if (myColor) myEl.style.color = myColor;
+  }
+  if (plannerEl) {
+    plannerEl.textContent = plannerVal;
+    var plannerColor = localStorage.getItem('titlePlannerColor');
+    if (plannerColor) plannerEl.style.color = plannerColor;
+  }
 }
 
 function initTitleInputs() {
-  var myVal = localStorage.getItem('titleMy') || 'my';
-  var plannerVal = localStorage.getItem('titlePlanner') || 'planner';
+  // null = 한 번도 설정 안 함 → 기본값 사용
+  // '' = 사용자가 의도적으로 공란 설정 → 공란 유지
+  var myVal = localStorage.getItem('titleMy');
+  var plannerVal = localStorage.getItem('titlePlanner');
+  if (myVal === null) myVal = 'my';
+  if (plannerVal === null) plannerVal = 'planner';
   var myInput = document.getElementById('titleMyInput');
   var plannerInput = document.getElementById('titlePlannerInput');
   if (myInput) myInput.value = myVal;
   if (plannerInput) plannerInput.value = plannerVal;
+  // 색상 적용 + 롱프레스 바인딩
+  updateTitleInputColors();
+  updateTitlePreview();
+  if (myInput && !myInput._colorBound) {
+    _bindTitleLongPress(myInput, 'my');
+    myInput._colorBound = true;
+  }
+  if (plannerInput && !plannerInput._colorBound) {
+    _bindTitleLongPress(plannerInput, 'planner');
+    plannerInput._colorBound = true;
+  }
+  // 팔레트 바깥 클릭 시 닫기
+  document.addEventListener('click', function(e) {
+    var palette = document.getElementById('titleColorPalette');
+    if (palette && palette.style.display !== 'none' &&
+        !palette.contains(e.target) &&
+        e.target.id !== 'titleMyInput' &&
+        e.target.id !== 'titlePlannerInput') {
+      closeTitleColorPalette();
+    }
+  });
 }
 
 // ── 다크 모드 ──────────────────────────────────────────
@@ -2099,7 +2254,7 @@ var BACKUP_KEYS = [
   'notifApp', 'notifEvent',
   'autoLock', 'autoDeleteMin',
   'shareTarget', 'friends',
-  '_titleMain', '_titleSub'
+  '_titleMain', '_titleSub', 'titleMyColor', 'titlePlannerColor'
 ];
 
 var _backupTimer = null;
@@ -4209,6 +4364,7 @@ function applyLang() {
   _setText('svgColorOff',   en ? 'Theme Color' : '테마 색상');
   _setText('appTitleLabel', en ? 'App Title' : '앱 타이틀');
   _setText('titleApplyBtn', en ? 'Apply' : '적용');
+  _setText('titleColorHint', en ? 'Long-press to pick color' : '롱프레스로 색상 선택');
   _setText('displayModeLabel', en ? 'Display Mode' : '화면 모드');
   _setText('darkModeText', en ? 'Dark Mode' : '다크 모드');
   _setText('themeColorLabel', en ? 'Theme Color' : '테마 색상');
