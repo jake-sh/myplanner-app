@@ -818,20 +818,28 @@ function updateTitleInputColors() {
 }
 
 function updateTitlePreview() {
-  var myVal = document.getElementById('titleMyInput');
-  var plannerVal = document.getElementById('titlePlannerInput');
+  var myInput = document.getElementById('titleMyInput');
+  var plannerInput = document.getElementById('titlePlannerInput');
   var previewMy = document.getElementById('titlePreviewMy');
   var previewPlanner = document.getElementById('titlePreviewPlanner');
   var myColor = localStorage.getItem('titleMyColor') || 'var(--primary)';
   var plannerColor = localStorage.getItem('titlePlannerColor') || 'var(--chat-text)';
-  if (previewMy) {
-    previewMy.textContent = (myVal && myVal.value) || localStorage.getItem('titleMy') || 'my';
-    previewMy.style.color = myColor;
+
+  // 입력창에 값이 있으면 그 값, 없으면 저장된 값, 저장값도 없으면(null) 기본값
+  // 빈 문자열('')은 공란 그대로 표시
+  var myVal = myInput ? myInput.value : null;
+  var plannerVal = plannerInput ? plannerInput.value : null;
+  if (myVal === null) {
+    var saved = localStorage.getItem('titleMy');
+    myVal = saved !== null ? saved : 'my';
   }
-  if (previewPlanner) {
-    previewPlanner.textContent = (plannerVal && plannerVal.value) || localStorage.getItem('titlePlanner') || 'planner';
-    previewPlanner.style.color = plannerColor;
+  if (plannerVal === null) {
+    var saved2 = localStorage.getItem('titlePlanner');
+    plannerVal = saved2 !== null ? saved2 : 'planner';
   }
+
+  if (previewMy) { previewMy.textContent = myVal; previewMy.style.color = myColor; }
+  if (previewPlanner) { previewPlanner.textContent = plannerVal; previewPlanner.style.color = plannerColor; }
 }
 
 function _bindTitleLongPress(inputEl, target) {
