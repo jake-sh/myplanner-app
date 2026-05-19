@@ -427,17 +427,20 @@
   <!-- Secret Settings Modal -->
   <div id="secretSettingsModal" class="modal" style="display:none">
     <div class="modal-box settings-box">
-      <div class="modal-title" style="color:var(--chat-text);margin-bottom:8px;" id="securityTitle">설정</div>
+      <!-- 고정 헤더 -->
+      <div class="modal-title" style="color:var(--chat-text);margin-bottom:4px;flex-shrink:0;" id="securityTitle">설정</div>
+
+      <!-- 스크롤 영역 -->
+      <div style="overflow-y:auto;flex:1;min-height:0;">
 
       <!-- App Title -->
-      <div class="secret-setting-item" style="flex-direction:column;align-items:flex-start;gap:2px;padding-bottom:0;">
+      <div class="secret-setting-item" style="flex-direction:column;align-items:flex-start;gap:8px;padding-bottom:0;">
         <div class="ss-label" id="appTitleLabel">앱 타이틀</div>
         <div style="display:flex;gap:6px;align-items:stretch;width:100%;box-sizing:border-box;">
           <input id="titleMyInput" type="text" maxlength="10" placeholder="my" oninput="previewTitle()" class="ss-input" style="flex:1;min-width:0;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true"/>
           <input id="titlePlannerInput" type="text" maxlength="10" placeholder="planner" oninput="previewTitle()" class="ss-input" style="flex:1;min-width:0;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true"/>
-          <button onclick="applyTitleChange()" class="ss-btn ss-btn-primary" id="titleApplyBtn">Apply</button>
         </div>
-        <!-- 타이틀 프리뷰 — 각 텍스트 롱프레스로 색상/크기 선택 -->
+        <!-- 타이틀 프리뷰 -->
         <div style="width:100%;text-align:center;padding:2px 0 0;">
           <span id="titlePreviewMy" style="font-size:27px;font-weight:800;font-family:'CherryBombOne',cursive;cursor:pointer;user-select:none;-webkit-user-select:none;"></span>
           <span id="titlePreviewPlanner" style="font-size:18px;font-weight:500;margin-left:3px;font-family:'CherryBombOne',cursive;cursor:pointer;user-select:none;-webkit-user-select:none;"></span>
@@ -448,7 +451,6 @@
       <!-- 색상+크기 팔레트 팝업 -->
       <div id="titleColorPalette" style="display:none;position:fixed;z-index:9999;background:var(--chat-surface);border:1px solid var(--chat-border);border-radius:16px;padding:14px;box-shadow:0 8px 32px rgba(0,0,0,0.4);width:260px;">
         <div style="font-size:11px;color:var(--chat-text2);margin-bottom:8px;" id="paletteLabel">색상·크기 선택</div>
-        <!-- 폰트 크기 버튼 -->
         <div style="display:flex;gap:6px;margin-bottom:10px;">
           <button onclick="applyTitleFontSize(32)" id="fontSizeBtn32" style="flex:1;padding:6px;border-radius:8px;border:1.5px solid var(--chat-border);background:var(--chat-surface2);color:var(--chat-text);font-size:13px;font-weight:700;cursor:pointer;">대</button>
           <button onclick="applyTitleFontSize(27)" id="fontSizeBtn28" style="flex:1;padding:6px;border-radius:8px;border:1.5px solid var(--chat-border);background:var(--chat-surface2);color:var(--chat-text);font-size:12px;font-weight:700;cursor:pointer;">중</button>
@@ -512,8 +514,10 @@
         <button class="ss-onoff-btn ss-onoff-on" id="autoLockToggle" onclick="toggleAutoLockBtn(this)">ON</button>
       </div>
 
-      <!-- Close / OK -->
-      <button class="modal-cancel" id="closeSecretBtn" onclick="closeSecretSettings()">OK</button>
+      </div><!-- 스크롤 영역 끝 -->
+
+      <!-- 고정 하단 OK -->
+      <button class="modal-cancel" id="closeSecretBtn" onclick="applyTitleChange();closeSecretSettings()">OK</button>
     </div>
   </div>
 
