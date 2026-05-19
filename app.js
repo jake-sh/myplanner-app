@@ -751,7 +751,7 @@ function _randomSimilarColor(baseHex) {
   // H: ±30° (색상 계열 약간 변화)
   // S: ±20% (채도 유사)
   // L: ±12% (명도 유사)
-  return _hslToHex(h + rnd(60), s + rnd(35), l + rnd(25));
+  return _hslToHex(h + rnd(40), s + rnd(30), l + rnd(20));
 }
 
 function randomizeSvgColors(silent) {
