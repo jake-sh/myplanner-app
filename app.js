@@ -1008,18 +1008,71 @@ function setTheme(c) {
   applyThemeBtnBorder(c);
 }
 
+function openThemeColorPalette(btnEl) {
+  initThemeColorGrid();
+  var palette = document.getElementById('themeColorPalette');
+  var rect = btnEl.getBoundingClientRect();
+  var top = rect.bottom + 8;
+  if (top + 260 > window.innerHeight) top = rect.top - 268;
+  palette.style.top = top + 'px';
+  palette.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - 276)) + 'px';
+  palette.style.display = 'block';
+  // 팔레트 바깥 클릭 시 닫기
+  setTimeout(function() {
+    document.addEventListener('click', _themeColorOutsideClick);
+  }, 50);
+}
+
+function _themeColorOutsideClick(e) {
+  var palette = document.getElementById('themeColorPalette');
+  var btn = document.getElementById('themeColorPickerBtn');
+  if (palette && !palette.contains(e.target) && e.target !== btn) {
+    closeThemeColorPalette();
+  }
+}
+
+function closeThemeColorPalette() {
+  var palette = document.getElementById('themeColorPalette');
+  if (palette) palette.style.display = 'none';
+  document.removeEventListener('click', _themeColorOutsideClick);
+}
+
 function applyThemeBtnBorder(c) {
-  var ids = ['themeBlue','themeGreen','themePurple','themeYellow','themeGray'];
-  var colors = {'themeBlue':'#4A90D9','themeGreen':'#22c55e','themePurple':'#8b5cf6','themeYellow':'#f59e0b','themeGray':'#6b7280'};
-  ids.forEach(function(id) {
-    var btn = document.getElementById(id);
-    if (!btn) return;
-    if (colors[id] === c) {
-      btn.classList.add('selected');
-    } else {
-      btn.classList.remove('selected');
-    }
+  // 원형 버튼 색상 업데이트
+  var btn = document.getElementById('themeColorPickerBtn');
+  if (btn) btn.style.background = c;
+  // 팔레트 내 선택 표시
+  var grid = document.getElementById('themeColorGrid');
+  if (!grid) return;
+  grid.querySelectorAll('.theme-palette-swatch').forEach(function(sw) {
+    var isSelected = sw.dataset.color === c;
+    sw.style.outline = isSelected ? '2.5px solid var(--chat-text)' : 'none';
+    sw.style.outlineOffset = isSelected ? '2px' : '0';
+    sw.style.transform = isSelected ? 'scale(1.15)' : 'scale(1)';
   });
+}
+
+function initThemeColorGrid() {
+  var grid = document.getElementById('themeColorGrid');
+  if (!grid || grid.children.length > 0) {
+    // 이미 만들어져 있으면 선택 상태만 갱신
+    var cur = localStorage.getItem('themeColor') || '#6C63FF';
+    applyThemeBtnBorder(cur);
+    return;
+  }
+  TITLE_COLORS.forEach(function(hex) {
+    var sw = document.createElement('button');
+    sw.className = 'theme-palette-swatch';
+    sw.dataset.color = hex;
+    sw.style.cssText = 'width:100%;aspect-ratio:1;border-radius:5px;cursor:pointer;border:none;background:' + hex + ';transition:transform 0.1s;';
+    sw.onclick = function() {
+      setTheme(hex);
+      closeThemeColorPalette();
+    };
+    grid.appendChild(sw);
+  });
+  var cur = localStorage.getItem('themeColor') || '#6C63FF';
+  applyThemeBtnBorder(cur);
 }
 
 function applyMenuTheme(c) {
@@ -4391,6 +4444,8 @@ function applyLang() {
   _setText('displayModeLabel', en ? 'Display Mode' : '화면 모드');
   _setText('darkModeText', en ? 'Dark Mode' : '다크 모드');
   _setText('themeColorLabel', en ? 'Theme Color' : '테마 색상');
+  _setText('themeColorPaletteLabel', en ? 'Select theme color' : '테마 색상 선택');
+  _setText('themeColorPaletteCancelBtn', en ? 'Close' : '닫기');
   _setText('notifSectionLabel', en ? 'Notifications' : '알림');
   _setText('langLabel', en ? 'Language' : '언어');
   _setText('infoLabel', en ? 'Info' : '정보');

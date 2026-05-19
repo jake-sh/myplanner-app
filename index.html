@@ -93,12 +93,14 @@
     </div>
     <div class="settings-section">
       <div id="themeColorLabel" class="settings-label">테마 색상</div>
-      <div class="theme-options">
-        <button class="theme-btn" style="background:#4A90D9" onclick="setTheme('#4A90D9')" id="themeBlue"></button>
-        <button class="theme-btn" style="background:#22c55e" onclick="setTheme('#22c55e')" id="themeGreen"></button>
-        <button class="theme-btn" style="background:#8b5cf6" onclick="setTheme('#8b5cf6')" id="themePurple"></button>
-        <button class="theme-btn" style="background:#f59e0b" onclick="setTheme('#f59e0b')" id="themeYellow"></button>
-        <button class="theme-btn" style="background:#6b7280" onclick="setTheme('#6b7280')" id="themeGray"></button>
+      <button id="themeColorPickerBtn" onclick="openThemeColorPalette(this)" style="width:36px;height:36px;border-radius:50%;border:3px solid var(--chat-border);cursor:pointer;display:block;"></button>
+      <!-- 테마 색상 팔레트 팝업 -->
+      <div id="themeColorPalette" style="display:none;position:fixed;z-index:9999;background:var(--chat-surface);border:1px solid var(--chat-border);border-radius:16px;padding:14px;box-shadow:0 8px 32px rgba(0,0,0,0.4);width:260px;">
+        <div style="font-size:11px;color:var(--chat-text2);margin-bottom:8px;" id="themeColorPaletteLabel">테마 색상 선택</div>
+        <div id="themeColorGrid" style="display:grid;grid-template-columns:repeat(10,1fr);gap:5px;"></div>
+        <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+          <button onclick="closeThemeColorPalette()" style="background:none;border:none;color:var(--chat-text2);font-size:12px;cursor:pointer;padding:4px 8px;" id="themeColorPaletteCancelBtn">닫기</button>
+        </div>
       </div>
     </div>
     <div class="settings-section">
