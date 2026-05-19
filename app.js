@@ -775,7 +775,7 @@ function applyTitleFontSize(size) {
   if (!_paletteTarget) return;
   var key = _paletteTarget === 'my' ? 'titleMySize' : 'titlePlannerSize';
   localStorage.setItem(key, String(size));
-  [32, 27, 22].forEach(function(s) {
+  [32, 28, 24].forEach(function(s) {
     var btn = document.getElementById('fontSizeBtn' + s);
     if (btn) {
       btn.style.background = (s === size) ? 'var(--primary)' : 'var(--chat-surface2)';
@@ -789,7 +789,7 @@ function applyTitleFontSize(size) {
 function _updateFontSizeBtns(target) {
   var key = target === 'my' ? 'titleMySize' : 'titlePlannerSize';
   var cur = parseInt(localStorage.getItem(key) || (target === 'my' ? '27' : '18'));
-  [32, 27, 22].forEach(function(s) {
+  [32, 28, 24].forEach(function(s) {
     var btn = document.getElementById('fontSizeBtn' + s);
     if (btn) {
       var active = (s === cur);
@@ -856,8 +856,8 @@ function updateTitlePreview() {
   var previewPlanner = document.getElementById('titlePreviewPlanner');
   var myColor = localStorage.getItem('titleMyColor') || 'var(--primary)';
   var plannerColor = localStorage.getItem('titlePlannerColor') || 'var(--chat-text)';
-  var mySize = parseInt(localStorage.getItem('titleMySize') || '27');
-  var plannerSize = parseInt(localStorage.getItem('titlePlannerSize') || '18');
+  var mySize = parseInt(localStorage.getItem('titleMySize') || '32');
+  var plannerSize = parseInt(localStorage.getItem('titlePlannerSize') || '28');
 
   function resolveVal(inputEl, storageKey, defaultVal) {
     if (inputEl) return inputEl.value;
@@ -913,11 +913,16 @@ function applyTitle() {
     myEl.textContent = myVal;
     var myColor = localStorage.getItem('titleMyColor');
     if (myColor) myEl.style.color = myColor;
+    // 프리뷰 크기(32/28/24) + 4 = 실제 크기(36/32/28)
+    var mySize = parseInt(localStorage.getItem('titleMySize') || '32');
+    myEl.style.fontSize = (mySize + 4) + 'px';
   }
   if (plannerEl) {
     plannerEl.textContent = plannerVal;
     var plannerColor = localStorage.getItem('titlePlannerColor');
     if (plannerColor) plannerEl.style.color = plannerColor;
+    var plannerSize = parseInt(localStorage.getItem('titlePlannerSize') || '28');
+    plannerEl.style.fontSize = (plannerSize + 4) + 'px';
   }
 }
 
