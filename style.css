@@ -25,7 +25,7 @@
 :lang(ja) .memo-card-title, :lang(ja) .msg-bubble,
 :lang(ja) .todo-text, :lang(ja) .tag-time,
 :lang(ja) .modal-title, :lang(ja) .drb-text {
-  font-family: 'GamjaFlower', sans-serif;
+  font-family: 'KoreanInJa', 'GamjaFlower', sans-serif;
 }
 /* 일본어 폰트 크기 전체 스케일 */
 :lang(ja) body { font-size: 118%; }
@@ -37,10 +37,36 @@
 :lang(zh) .memo-card-title, :lang(zh) .msg-bubble,
 :lang(zh) .todo-text, :lang(zh) .tag-time,
 :lang(zh) .modal-title, :lang(zh) .drb-text {
-  font-family: 'ZCOOLKuaiLe', sans-serif;
+  font-family: 'KoreanInZh', 'ZCOOLKuaiLe', sans-serif;
 }
 /* 중국어 폰트 크기 전체 스케일 */
 :lang(zh) body { font-size: 118%; }
+
+/*
+ * 한글 전용 가상 폰트 — 중국어/일본어 설정에서도
+ * 한글(U+AC00-D7A3, 자모 U+3131-318E, U+1100-11FF) 글자는
+ * 시스템 폰트로 렌더링하고 크기를 원래(100%)로 보정
+ */
+@font-face {
+  font-family: 'KoreanInZh';
+  src: local('Apple SD Gothic Neo'), local('Noto Sans KR'),
+       local('Malgun Gothic'), local('sans-serif');
+  unicode-range:
+    U+AC00-D7A3,   /* 한글 음절 */
+    U+3131-318E,   /* 한글 자모 */
+    U+1100-11FF;   /* 한글 자모 확장 */
+  size-adjust: 85%; /* 118% 스케일 상쇄 → 원래 크기 */
+}
+@font-face {
+  font-family: 'KoreanInJa';
+  src: local('Apple SD Gothic Neo'), local('Noto Sans KR'),
+       local('Malgun Gothic'), local('sans-serif');
+  unicode-range:
+    U+AC00-D7A3,
+    U+3131-318E,
+    U+1100-11FF;
+  size-adjust: 85%;
+}
 
 /* 앱 타이틀은 언어 무관 항상 CherryBombOne — 크기도 고정 */
 :lang(ja) .fake-title, :lang(zh) .fake-title,
