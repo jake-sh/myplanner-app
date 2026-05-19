@@ -93,7 +93,7 @@
     </div>
     <div class="settings-section">
       <div id="themeColorLabel" class="settings-label">테마 색상</div>
-      <button id="themeColorPickerBtn" onclick="openThemeColorPalette(this)" style="width:36px;height:36px;border-radius:50%;border:3px solid var(--chat-border);cursor:pointer;display:block;"></button>
+      <div id="themeRecentColors" style="display:flex;gap:8px;align-items:center;"></div>
       <!-- 테마 색상 팔레트 팝업 -->
       <div id="themeColorPalette" style="display:none;position:fixed;z-index:9999;background:var(--chat-surface);border:1px solid var(--chat-border);border-radius:16px;padding:14px;box-shadow:0 8px 32px rgba(0,0,0,0.4);width:260px;">
         <div style="font-size:11px;color:var(--chat-text2);margin-bottom:8px;" id="themeColorPaletteLabel">테마 색상 선택</div>

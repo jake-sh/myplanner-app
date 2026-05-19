@@ -640,7 +640,7 @@ function openSettings() {
   if (notifAppEl) notifAppEl.checked = localStorage.getItem('notifApp') === 'true';
   showScreen('settingsScreen');
   var t2 = localStorage.getItem('themeColor') || '#6C63FF';
-  setTimeout(function(){ applyThemeBtnBorder(t2); updateIconStyleBtns(); updateSvgColorBtns(); }, 200);
+  setTimeout(function(){ renderThemeRecentColors(); updateIconStyleBtns(); updateSvgColorBtns(); }, 200);
 }
 function saveAppName() {
   const n = document.getElementById('appNameInput').value.trim() || 'MyPlanner';
@@ -1005,7 +1005,56 @@ function setTheme(c) {
   localStorage.setItem('themeColor', c);
   applyMenuTheme(c);
   applyDarkMode();
-  applyThemeBtnBorder(c);
+  addRecentThemeColor(c);
+  renderThemeRecentColors();
+}
+
+// 최근 선택 색상 저장/불러오기 (최대 5개)
+function getRecentThemeColors() {
+  try {
+    var saved = JSON.parse(localStorage.getItem('themeRecentColors') || '[]');
+    if (saved.length >= 5) return saved.slice(0, 5);
+    // 부족하면 TITLE_COLORS에서 랜덤으로 채우기
+    var pool = TITLE_COLORS.filter(function(c) { return saved.indexOf(c) < 0; });
+    while (saved.length < 5 && pool.length > 0) {
+      var idx = Math.floor(Math.random() * pool.length);
+      saved.push(pool.splice(idx, 1)[0]);
+    }
+    return saved;
+  } catch(e) { return TITLE_COLORS.slice(0, 5); }
+}
+
+function addRecentThemeColor(hex) {
+  var recent = getRecentThemeColors();
+  // 이미 있으면 맨 앞으로
+  recent = recent.filter(function(c) { return c !== hex; });
+  recent.unshift(hex);
+  recent = recent.slice(0, 5);
+  localStorage.setItem('themeRecentColors', JSON.stringify(recent));
+}
+
+function renderThemeRecentColors() {
+  var wrap = document.getElementById('themeRecentColors');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  var recent = getRecentThemeColors();
+  var cur = localStorage.getItem('themeColor') || '#6C63FF';
+  recent.forEach(function(hex) {
+    var btn = document.createElement('button');
+    var isCur = hex === cur;
+    btn.style.cssText = 'width:36px;height:36px;border-radius:50%;border:' +
+      (isCur ? '3px solid var(--chat-text)' : '2px solid transparent') +
+      ';outline:' + (isCur ? '2px solid var(--chat-text)' : 'none') +
+      ';cursor:pointer;background:' + hex + ';flex-shrink:0;transition:transform 0.1s;';
+    btn.onclick = function() { setTheme(hex); };
+    wrap.appendChild(btn);
+  });
+  // + 버튼
+  var plusBtn = document.createElement('button');
+  plusBtn.style.cssText = 'width:36px;height:36px;border-radius:50%;border:2px solid var(--chat-border);background:var(--chat-surface2);color:var(--chat-text2);font-size:20px;line-height:1;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;';
+  plusBtn.innerHTML = '+';
+  plusBtn.onclick = function() { openThemeColorPalette(plusBtn); };
+  wrap.appendChild(plusBtn);
 }
 
 function openThemeColorPalette(btnEl) {
@@ -1017,7 +1066,6 @@ function openThemeColorPalette(btnEl) {
   palette.style.top = top + 'px';
   palette.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - 276)) + 'px';
   palette.style.display = 'block';
-  // 팔레트 바깥 클릭 시 닫기
   setTimeout(function() {
     document.addEventListener('click', _themeColorOutsideClick);
   }, 50);
@@ -1025,8 +1073,8 @@ function openThemeColorPalette(btnEl) {
 
 function _themeColorOutsideClick(e) {
   var palette = document.getElementById('themeColorPalette');
-  var btn = document.getElementById('themeColorPickerBtn');
-  if (palette && !palette.contains(e.target) && e.target !== btn) {
+  var wrap = document.getElementById('themeRecentColors');
+  if (palette && !palette.contains(e.target) && (!wrap || !wrap.contains(e.target))) {
     closeThemeColorPalette();
   }
 }
@@ -1038,26 +1086,20 @@ function closeThemeColorPalette() {
 }
 
 function applyThemeBtnBorder(c) {
-  // 원형 버튼 색상 업데이트
-  var btn = document.getElementById('themeColorPickerBtn');
-  if (btn) btn.style.background = c;
-  // 팔레트 내 선택 표시
-  var grid = document.getElementById('themeColorGrid');
-  if (!grid) return;
-  grid.querySelectorAll('.theme-palette-swatch').forEach(function(sw) {
-    var isSelected = sw.dataset.color === c;
-    sw.style.outline = isSelected ? '2.5px solid var(--chat-text)' : 'none';
-    sw.style.outlineOffset = isSelected ? '2px' : '0';
-    sw.style.transform = isSelected ? 'scale(1.15)' : 'scale(1)';
-  });
+  renderThemeRecentColors();
 }
 
 function initThemeColorGrid() {
   var grid = document.getElementById('themeColorGrid');
   if (!grid || grid.children.length > 0) {
-    // 이미 만들어져 있으면 선택 상태만 갱신
     var cur = localStorage.getItem('themeColor') || '#6C63FF';
-    applyThemeBtnBorder(cur);
+    // 팔레트 내 선택 표시
+    if (grid) grid.querySelectorAll('.theme-palette-swatch').forEach(function(sw) {
+      var isSelected = sw.dataset.color === cur;
+      sw.style.outline = isSelected ? '2.5px solid var(--chat-text)' : 'none';
+      sw.style.outlineOffset = isSelected ? '2px' : '0';
+      sw.style.transform = isSelected ? 'scale(1.15)' : 'scale(1)';
+    });
     return;
   }
   TITLE_COLORS.forEach(function(hex) {
@@ -1067,12 +1109,19 @@ function initThemeColorGrid() {
     sw.style.cssText = 'width:100%;aspect-ratio:1;border-radius:5px;cursor:pointer;border:none;background:' + hex + ';transition:transform 0.1s;';
     sw.onclick = function() {
       setTheme(hex);
+      addRecentThemeColor(hex);
+      renderThemeRecentColors();
       closeThemeColorPalette();
     };
     grid.appendChild(sw);
   });
   var cur = localStorage.getItem('themeColor') || '#6C63FF';
-  applyThemeBtnBorder(cur);
+  grid.querySelectorAll('.theme-palette-swatch').forEach(function(sw) {
+    var isSelected = sw.dataset.color === cur;
+    sw.style.outline = isSelected ? '2.5px solid var(--chat-text)' : 'none';
+    sw.style.outlineOffset = isSelected ? '2px' : '0';
+    sw.style.transform = isSelected ? 'scale(1.15)' : 'scale(1)';
+  });
 }
 
 function applyMenuTheme(c) {
