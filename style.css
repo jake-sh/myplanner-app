@@ -149,10 +149,15 @@ body:not(.dark-mode) .fake-title{color:var(--primary) !important;}
   padding:0 10px;border-radius:10px;
   border:1.5px solid var(--chat-border);
   background:var(--chat-surface2);color:var(--chat-text);
-  font-family:inherit;box-sizing:border-box;outline:none;
+  font-family:inherit;font-size:14px;box-sizing:border-box;outline:none;
   height:37px;
 }
 .ss-input:focus{border-color:var(--primary);}
+/* 프리뷰 텍스트 선택 방지 */
+#titlePreviewMy, #titlePreviewPlanner {
+  user-select:none;-webkit-user-select:none;
+  -webkit-touch-callout:none;touch-action:none;
+}
 .ss-btn{
   padding:0;border-radius:10px;border:none;
   font-size:13px;font-weight:700;cursor:pointer;

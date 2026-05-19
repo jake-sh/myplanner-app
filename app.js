@@ -812,7 +812,7 @@ function openTitleColorPalette(target, el) {
   _updateFontSizeBtns(target);
   var rect = el.getBoundingClientRect();
   var top = rect.bottom + 8;
-  if (top + 260 > window.innerHeight) top = rect.top - 268;
+  if (top + 320 > window.innerHeight) top = Math.max(8, rect.top - 328);
   palette.style.top = top + 'px';
   palette.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - 276)) + 'px';
   palette.style.display = 'block';
