@@ -4,58 +4,49 @@
   font-weight: normal;
   font-style: normal;
 }
-@font-face {
-  font-family: 'GamjaFlower';
-  src: url('GamjaFlower-Regular.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-}
-@font-face {
-  font-family: 'ZCOOLKuaiLe';
-  src: url('ZCOOLKuaiLe-Regular.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-}
 
 /* 일본어: GamjaFlower */
-/* 일본어: GamjaFlower + 폰트 크기 1.18배 */
+/* 한국어: Noto Sans KR */
+:lang(ko) body, :lang(ko) input, :lang(ko) textarea,
+:lang(ko) button, :lang(ko) select {
+  font-family: 'Noto Sans KR', 'Open Sans', sans-serif;
+}
+
+/* 일본어: Noto Sans JP */
 :lang(ja) body, :lang(ja) input, :lang(ja) textarea,
 :lang(ja) button, :lang(ja) select, :lang(ja) .menu-label,
 :lang(ja) .sub-title, :lang(ja) .settings-label,
 :lang(ja) .memo-card-title, :lang(ja) .msg-bubble,
 :lang(ja) .todo-text, :lang(ja) .tag-time,
 :lang(ja) .modal-title, :lang(ja) .drb-text {
-  font-family: 'KoreanInJa', 'GamjaFlower', sans-serif;
+  font-family: 'Noto Sans JP', sans-serif;
 }
-/* 일본어 폰트 크기 전체 스케일 */
 :lang(ja) body { font-size: 118%; }
 
-/* 중국어: ZCOOLKuaiLe + 폰트 크기 1.18배 */
+/* 중국어: Noto Sans SC */
 :lang(zh) body, :lang(zh) input, :lang(zh) textarea,
 :lang(zh) button, :lang(zh) select, :lang(zh) .menu-label,
 :lang(zh) .sub-title, :lang(zh) .settings-label,
 :lang(zh) .memo-card-title, :lang(zh) .msg-bubble,
 :lang(zh) .todo-text, :lang(zh) .tag-time,
 :lang(zh) .modal-title, :lang(zh) .drb-text {
-  font-family: 'KoreanInZh', 'ZCOOLKuaiLe', sans-serif;
+  font-family: 'Noto Sans SC', sans-serif;
 }
-/* 중국어 폰트 크기 전체 스케일 */
 :lang(zh) body { font-size: 118%; }
 
 /*
- * 한글 전용 가상 폰트 — 중국어/일본어 설정에서도
- * 한글(U+AC00-D7A3, 자모 U+3131-318E, U+1100-11FF) 글자는
- * 시스템 폰트로 렌더링하고 크기를 원래(100%)로 보정
+ * 중국어/일본어 설정에서 한글 입력 시
+ * Noto Sans KR로 fallback + 크기 보정 (118% 스케일 상쇄)
  */
 @font-face {
   font-family: 'KoreanInZh';
   src: local('Apple SD Gothic Neo'), local('Noto Sans KR'),
        local('Malgun Gothic'), local('sans-serif');
   unicode-range:
-    U+AC00-D7A3,   /* 한글 음절 */
-    U+3131-318E,   /* 한글 자모 */
-    U+1100-11FF;   /* 한글 자모 확장 */
-  size-adjust: 85%; /* 118% 스케일 상쇄 → 원래 크기 */
+    U+AC00-D7A3,
+    U+3131-318E,
+    U+1100-11FF;
+  size-adjust: 85%;
 }
 @font-face {
   font-family: 'KoreanInJa';
