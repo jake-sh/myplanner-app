@@ -12,50 +12,24 @@
   font-family: 'Noto Sans KR', 'Open Sans', sans-serif;
 }
 
-/* 일본어: Noto Sans JP + 한글은 KoreanInJa로 fallback */
+/* 일본어: 한글→KR, 히라가나/한자→JP */
 :lang(ja) body, :lang(ja) input, :lang(ja) textarea,
 :lang(ja) button, :lang(ja) select, :lang(ja) .menu-label,
 :lang(ja) .sub-title, :lang(ja) .settings-label,
 :lang(ja) .memo-card-title, :lang(ja) .msg-bubble,
 :lang(ja) .todo-text, :lang(ja) .tag-time,
 :lang(ja) .modal-title, :lang(ja) .drb-text {
-  font-family: 'KoreanInJa', 'Noto Sans JP', sans-serif;
+  font-family: 'Noto Sans KR', 'Noto Sans JP', sans-serif;
 }
 
-/* 중국어: Noto Sans SC + 한글은 KoreanInZh로 fallback */
+/* 중국어: 한글→KR, 한자→SC */
 :lang(zh) body, :lang(zh) input, :lang(zh) textarea,
 :lang(zh) button, :lang(zh) select, :lang(zh) .menu-label,
 :lang(zh) .sub-title, :lang(zh) .settings-label,
 :lang(zh) .memo-card-title, :lang(zh) .msg-bubble,
 :lang(zh) .todo-text, :lang(zh) .tag-time,
 :lang(zh) .modal-title, :lang(zh) .drb-text {
-  font-family: 'KoreanInZh', 'Noto Sans SC', sans-serif;
-}
-
-/*
- * 중국어/일본어 설정에서 한글 입력 시
- * unicode-range로 한글 범위만 Noto Sans KR로 렌더링
- * size-adjust 100% — 전체 18px 기준이므로 별도 보정 불필요
- */
-@font-face {
-  font-family: 'KoreanInZh';
-  src: local('Apple SD Gothic Neo'), local('Noto Sans KR'),
-       local('Malgun Gothic'), local('sans-serif');
-  unicode-range:
-    U+AC00-D7A3,
-    U+3131-318E,
-    U+1100-11FF;
-  size-adjust: 100%;
-}
-@font-face {
-  font-family: 'KoreanInJa';
-  src: local('Apple SD Gothic Neo'), local('Noto Sans KR'),
-       local('Malgun Gothic'), local('sans-serif');
-  unicode-range:
-    U+AC00-D7A3,
-    U+3131-318E,
-    U+1100-11FF;
-  size-adjust: 100%;
+  font-family: 'Noto Sans KR', 'Noto Sans SC', sans-serif;
 }
 
 /* 앱 타이틀은 언어 무관 항상 CherryBombOne — 크기도 고정 */
