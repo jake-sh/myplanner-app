@@ -133,7 +133,7 @@ body:not(.dark-mode) .fake-title{color:var(--primary) !important;}
 /* ══ HEADERS ══ */
 .sub-header{
   display:flex;align-items:center;gap:12px;
-  padding:52px 20px 16px;
+  padding:20px 20px 14px;
   background:var(--card);
   border-bottom:1px solid #F0F1F8;
   flex-shrink:0;
