@@ -396,7 +396,7 @@ input:checked+.slider:before{transform:translateX(20px);}
 }
 #chatApp{background:var(--chat-bg);flex-direction:column;}
 .chat-header{
-  display:flex;align-items:center;padding:48px 14px 14px;
+  display:flex;align-items:center;height:68px;padding:0 14px;
   background:var(--chat-surface);gap:8px;flex-shrink:0;
   position:relative;border-bottom:1px solid var(--chat-border);
 }
