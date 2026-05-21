@@ -18,7 +18,7 @@
 <!-- ===== FAKE HOME ===== -->
 <div id="fakeApp" class="screen active" style="display:flex;flex-direction:column;height:100%;position:relative;">
   <div class="fake-header">
-    <span class="fake-title" id="appTitle"><span id="titleMy">my</span><span id="titlePlanner">planner</span></span>
+    <span class="fake-title" id="appTitle"><span id="titleMy" style="user-select:none;-webkit-user-select:none;">my</span><span id="titlePlanner" style="user-select:none;-webkit-user-select:none;">planner</span></span>
     <button class="icon-btn" onclick="openSettings()" style="color:var(--primary);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
   </div>
   <div class="fake-date-banner" style="display:flex;justify-content:space-between;align-items:center;">
@@ -75,7 +75,7 @@
     </div>
   </div>
   <!-- 캐시버전 표기 (개발용) -->
-  <div style="text-align:center;font-size:10px;color:#aaa;opacity:0.35;pointer-events:none;margin-top:-22px;margin-bottom:8px;letter-spacing:0.5px;user-select:none;">v3.2.8</div>
+  <div style="text-align:center;font-size:10px;color:#aaa;opacity:0.35;pointer-events:none;margin-top:-22px;margin-bottom:8px;letter-spacing:0.5px;user-select:none;">v3.2.9</div>
 </div>
 
 <!-- ===== FAKE SETTINGS ===== -->
@@ -130,7 +130,7 @@
     </div>
     <div class="settings-section">
       <div class="settings-label" id="infoLabel">정보</div>
-      <div class="settings-desc">my planner v1.0.0</div>
+      <div class="settings-desc">my planner v1.0.0 <span style="opacity:0.4;font-size:11px;">(v3.2.9)</span></div>
     </div>
   </div>
 </div>
