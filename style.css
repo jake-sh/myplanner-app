@@ -74,9 +74,10 @@ html,body{height:100%;font-size:18px;font-family:'Open Sans',sans-serif;font-wei
 /* ══ FAKE HOME ══ */
 .fake-header{
   display:flex;align-items:center;justify-content:space-between;
-  padding:20px 20px 14px;
+  height:68px;padding:0 20px;
   background:var(--card);
   border-bottom:1px solid #F0F1F8;
+  flex-shrink:0;
 }
 .fake-title{font-size:28px;font-family:'CherryBombOne',cursive;color:var(--primary);letter-spacing:0;font-weight:normal;}
 body:not(.dark-mode) .fake-title{color:var(--primary) !important;}
@@ -133,7 +134,7 @@ body:not(.dark-mode) .fake-title{color:var(--primary) !important;}
 /* ══ HEADERS ══ */
 .sub-header{
   display:flex;align-items:center;gap:12px;
-  padding:20px 20px 14px;
+  height:68px;padding:0 20px;
   background:var(--card);
   border-bottom:1px solid #F0F1F8;
   flex-shrink:0;
