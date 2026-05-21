@@ -80,7 +80,7 @@ html,body{height:100%;font-size:18px;font-family:'Open Sans',sans-serif;font-wei
   border-bottom:1px solid #F0F1F8;
   flex-shrink:0;
 }
-.fake-title{font-size:28px;font-family:'CherryBombOne',cursive;color:var(--primary);letter-spacing:0;font-weight:normal;}
+.fake-title{font-size:28px;font-family:'CherryBombOne',cursive;color:var(--primary);letter-spacing:0;font-weight:normal;user-select:none;-webkit-user-select:none;}
 body:not(.dark-mode) .fake-title{color:var(--primary) !important;}
 .icon-btn{
   width:40px;height:40px;
