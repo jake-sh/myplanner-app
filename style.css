@@ -5,40 +5,6 @@
   font-style: normal;
 }
 
-/* 일본어: GamjaFlower */
-/* 한국어: Noto Sans KR */
-:lang(ko) body, :lang(ko) input, :lang(ko) textarea,
-:lang(ko) button, :lang(ko) select {
-  font-family: 'Noto Sans KR', 'Open Sans', sans-serif;
-}
-
-/* 일본어: 한글→KR, 히라가나/한자→JP */
-:lang(ja) body, :lang(ja) input, :lang(ja) textarea,
-:lang(ja) button, :lang(ja) select, :lang(ja) .menu-label,
-:lang(ja) .sub-title, :lang(ja) .settings-label,
-:lang(ja) .memo-card-title, :lang(ja) .msg-bubble,
-:lang(ja) .todo-text, :lang(ja) .tag-time,
-:lang(ja) .modal-title, :lang(ja) .drb-text {
-  font-family: 'Noto Sans KR', 'Noto Sans JP', sans-serif;
-}
-
-/* 중국어: 한글→KR, 한자→SC */
-:lang(zh) body, :lang(zh) input, :lang(zh) textarea,
-:lang(zh) button, :lang(zh) select, :lang(zh) .menu-label,
-:lang(zh) .sub-title, :lang(zh) .settings-label,
-:lang(zh) .memo-card-title, :lang(zh) .msg-bubble,
-:lang(zh) .todo-text, :lang(zh) .tag-time,
-:lang(zh) .modal-title, :lang(zh) .drb-text {
-  font-family: 'Noto Sans KR', 'Noto Sans SC', sans-serif;
-}
-
-/* 앱 타이틀은 언어 무관 항상 CherryBombOne — 크기도 고정 */
-:lang(ja) .fake-title, :lang(zh) .fake-title,
-:lang(en) .fake-title, :lang(ko) .fake-title {
-  font-family: 'CherryBombOne', cursive !important;
-  font-size: 28px !important;
-}
-
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 
 :root{
@@ -65,7 +31,7 @@
   --pastel-blue:#E8EEFF;
 }
 
-html,body{height:100%;font-size:18px;font-family:'Open Sans',sans-serif;font-weight:400;background:var(--bg);color:var(--text);overflow:hidden;} #widgetClock{font-family:'Open Sans',sans-serif;}
+html,body{height:100%;font-family:'Open Sans',sans-serif;font-weight:400;background:var(--bg);color:var(--text);overflow:hidden;} #widgetClock{font-family:'Open Sans',sans-serif;}
 
 .screen{position:fixed;inset:0;display:none;flex-direction:column;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;z-index:1;} #chatApp{overflow:hidden;}
 #fakeApp{overflow-y:hidden;}
@@ -74,13 +40,11 @@ html,body{height:100%;font-size:18px;font-family:'Open Sans',sans-serif;font-wei
 /* ══ FAKE HOME ══ */
 .fake-header{
   display:flex;align-items:center;justify-content:space-between;
-  height:calc(68px + env(safe-area-inset-top));
-  padding:env(safe-area-inset-top) 20px 0;
+  padding:20px 20px 14px;
   background:var(--card);
   border-bottom:1px solid #F0F1F8;
-  flex-shrink:0;
 }
-.fake-title{font-size:28px;font-family:'CherryBombOne',cursive;color:var(--primary);letter-spacing:0;font-weight:normal;user-select:none;-webkit-user-select:none;}
+.fake-title{font-size:28px;font-family:'CherryBombOne',cursive;color:var(--primary);letter-spacing:0;font-weight:normal;}
 body:not(.dark-mode) .fake-title{color:var(--primary) !important;}
 .icon-btn{
   width:40px;height:40px;
@@ -135,8 +99,7 @@ body:not(.dark-mode) .fake-title{color:var(--primary) !important;}
 /* ══ HEADERS ══ */
 .sub-header{
   display:flex;align-items:center;gap:12px;
-  height:calc(68px + env(safe-area-inset-top));
-  padding:env(safe-area-inset-top) 20px 0;
+  padding:52px 20px 16px;
   background:var(--card);
   border-bottom:1px solid #F0F1F8;
   flex-shrink:0;
@@ -398,9 +361,7 @@ input:checked+.slider:before{transform:translateX(20px);}
 }
 #chatApp{background:var(--chat-bg);flex-direction:column;}
 .chat-header{
-  display:flex;align-items:center;
-  height:calc(68px + env(safe-area-inset-top));
-  padding:env(safe-area-inset-top) 14px 0;
+  display:flex;align-items:center;padding:48px 14px 14px;
   background:var(--chat-surface);gap:8px;flex-shrink:0;
   position:relative;border-bottom:1px solid var(--chat-border);
 }
