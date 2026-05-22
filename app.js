@@ -867,7 +867,7 @@ function applyIconStyle() {
       if (svgEl) {
         if (isGray) {
           // 그레이 테마: SVG 라인 모두 화이트로 통일
-          svgEl.style.color = '#FFFFFF';
+          svgEl.style.color = '#94a3b8';
         } else {
           svgEl.style.color = colorMode === 'on' ? (SVG_COLORS[i] || '#6C63FF') : themeIconColor;
         }
