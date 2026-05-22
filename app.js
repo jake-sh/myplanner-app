@@ -80,7 +80,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // ── 최초 실행 시 디폴트값 설정 ──
   if (!localStorage.getItem('_defaultsSet')) {
     localStorage.setItem('darkMode', 'true');
-    localStorage.setItem('themeColor', '#6b7280');
+    localStorage.setItem('themeColor', '#334155');
     localStorage.setItem('iconStyle', 'svg');
     localStorage.setItem('svgColorMode', 'off');
     localStorage.setItem('lang', 'en');
@@ -189,6 +189,12 @@ function updateFakeDate() {
     var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     var daysEn = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
     document.getElementById('fakeDate').textContent = months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear() + ' (' + daysEn[d.getDay()] + ')';
+  } else if (lang === 'zh') {
+    var daysZh = ['日','一','二','三','四','五','六'];
+    document.getElementById('fakeDate').textContent = d.getFullYear() + '年' + (d.getMonth()+1) + '月' + d.getDate() + '日 (周' + daysZh[d.getDay()] + ')';
+  } else if (lang === 'ja') {
+    var daysJa = ['日','月','火','水','木','金','土'];
+    document.getElementById('fakeDate').textContent = d.getFullYear() + '年' + (d.getMonth()+1) + '月' + d.getDate() + '日 (' + daysJa[d.getDay()] + ')';
   } else {
     document.getElementById('fakeDate').textContent = d.getFullYear() + '년 ' + (d.getMonth()+1) + '월 ' + d.getDate() + '일 (' + days[d.getDay()] + ')';
   }
@@ -344,11 +350,17 @@ function onSetupDragEnd() {
   document.removeEventListener('mouseup', onSetupDragEnd);
   if (setupPattern.length < 4) {
     const isEn = localStorage.getItem('lang') === 'en';
-    document.getElementById('setupStatus').textContent = isEn ? 'Connect at least 4' : '최소 4개 이상 연결하세요';
+    document.getElementById('setupStatus').textContent = __T('Connect at least 4','최소 4개 이상 연결하세요','请至少连接4个','4個以上つなげてください');
     setTimeout(() => { clearSetupDots(); setupPattern = []; document.getElementById('setupStatus').textContent = ''; }, 1000);
   } else {
-    const isEn2 = localStorage.getItem('lang') === 'en';
-    document.getElementById('setupStatus').textContent = isEn2 ? `Pattern set (${setupPattern.length})` : `패턴 입력됨 (${setupPattern.length}개)`;
+    var _lang = localStorage.getItem('lang') || 'ko';
+    var _n = setupPattern.length;
+    var _msg;
+    if (_lang === 'en') _msg = 'Pattern set (' + _n + ')';
+    else if (_lang === 'zh') _msg = '已设置图案 (' + _n + '个)';
+    else if (_lang === 'ja') _msg = 'パターン入力済 (' + _n + '個)';
+    else _msg = '패턴 입력됨 (' + _n + '개)';
+    document.getElementById('setupStatus').textContent = _msg;
     _setPatternBtn(true);
   }
 }
@@ -398,7 +410,7 @@ async function savePattern() {
     } catch(e) { console.log('[PATTERN] save error:', e.message); }
   }
 
-  showAlert(isEn ? 'Pattern saved!' : '패턴이 저장되었습니다!');
+  showAlert(__T('Pattern saved!','패턴이 저장되었습니다!','图案已保存!','パターンが保存されました!'));
   showScreen('chatApp');
 }
 
@@ -424,7 +436,7 @@ function _setPatternBtn(confirmed) {
   btn.style.fontWeight = confirmed ? '700' : '600';
   btn.style.background = confirmed ? 'var(--primary,#6C63FF)' : 'rgba(255,255,255,0.08)';
   btn.style.color = confirmed ? '#fff' : 'var(--text,#f1f5f9)';
-  btn.textContent = confirmed ? (isEn ? 'Confirm' : '확인') : (isEn ? 'Cancel' : '취소');
+  btn.textContent = confirmed ? (__T('Confirm','확인','确认','確認')) : (__T('Cancel','취소','取消','キャンセル'));
 }
 
 function cancelPatternSetup() {
@@ -453,15 +465,55 @@ const fakeData = [
   ['🏷️ 업무 (24)','🏷️ 개인 (12)','🏷️ 중요 (8)'],
   null
 ];
+const fakeDataEn = [
+  null,
+  ['10:00 Team meeting','13:00 Lunch appointment','15:30 Submit report','18:00 Off work'],
+  ['⏰ 7:30 AM Wake up','⏰ 12:00 PM Lunch','⏰ 6:00 PM Off work'],
+  null,
+  ['🎯 Exercise 20x (12/20)','🎯 Read 2 books (1/2)','🎯 Savings goal achieved'],
+  ['✅ Done tasks: 18','📅 Schedule rate: 85%','🔥 Streak: 7 days'],
+  ['📁 Website renewal','📁 Marketing campaign','📁 Data analysis'],
+  ['🏷️ Work (24)','🏷️ Personal (12)','🏷️ Important (8)'],
+  null
+];
+const fakeDataZh = [
+  null,
+  ['10:00 团队会议','13:00 午餐约会','15:30 提交报告','18:00 下班'],
+  ['⏰ 上午7:30 起床','⏰ 下午12:00 午餐','⏰ 下午6:00 下班'],
+  null,
+  ['🎯 运动20次 (12/20)','🎯 阅读2本 (1/2)','🎯 储蓄目标达成'],
+  ['✅ 完成任务: 18个','📅 日程完成率: 85%','🔥 连续达成: 7天'],
+  ['📁 网站改版','📁 营销活动','📁 数据分析'],
+  ['🏷️ 工作 (24)','🏷️ 个人 (12)','🏷️ 重要 (8)'],
+  null
+];
+const fakeDataJa = [
+  null,
+  ['10:00 チーム会議','13:00 ランチ約束','15:30 レポート提出','18:00 退勤'],
+  ['⏰ 午前7:30 起床','⏰ 午後12:00 ランチ','⏰ 午後6:00 退勤'],
+  null,
+  ['🎯 運動20回 (12/20)','🎯 読書2冊 (1/2)','🎯 貯蓄目標達成'],
+  ['✅ 完了タスク: 18件','📅 予定消化率: 85%','🔥 連続達成: 7日'],
+  ['📁 ウェブサイトリニューアル','📁 マーケティングキャンペーン','📁 データ分析'],
+  ['🏷️ 仕事 (24)','🏷️ 個人 (12)','🏷️ 重要 (8)'],
+  null
+];
 const fakeTitles = ['할 일','일정표','알림','메모','목표','통계','프로젝트','태그','달력'];
 const fakeTitlesEn = ['To-Do','Schedule','Alarm','Memo','Goals','Stats','Projects','Tags','Calendar'];
+const fakeTitlesZh = ['待办','日程','闹钟','备忘','目标','统计','项目','标签','日历'];
+const fakeTitlesJa = ['タスク','予定','アラーム','メモ','目標','統計','プロジェクト','タグ','カレンダー'];
 
 function openFakeFeature(i) {
-  var _ft = localStorage.getItem('lang')==='en' ? fakeTitlesEn[i] : fakeTitles[i];
+  var _lang = localStorage.getItem('lang') || 'ko';
+  var _ft, _fd;
+  if (_lang === 'en') { _ft = fakeTitlesEn[i]; _fd = fakeDataEn[i]; }
+  else if (_lang === 'zh') { _ft = fakeTitlesZh[i]; _fd = fakeDataZh[i]; }
+  else if (_lang === 'ja') { _ft = fakeTitlesJa[i]; _fd = fakeDataJa[i]; }
+  else { _ft = fakeTitles[i]; _fd = fakeData[i]; }
   document.getElementById('featureTitle').textContent = _ft;
   document.getElementById('featureContent').innerHTML =
     `<div class="feature-placeholder"><h3>${_ft}</h3>` +
-    (fakeData[i]||[]).map(t=>`<div class="fake-item"><div class="fake-check"></div>${t}</div>`).join('') + '</div>';
+    (_fd||[]).map(t=>`<div class="fake-item"><div class="fake-check"></div>${t}</div>`).join('') + '</div>';
   showScreen('fakeFeature');
 }
 
@@ -530,18 +582,24 @@ window.addEventListener('focus', function() {
 });
 
 // ── TAG ──────────────────────────────────────────────
+function _locForLang(lang) {
+  if (lang === 'en') return 'en-US';
+  if (lang === 'zh') return 'zh-CN';
+  if (lang === 'ja') return 'ja-JP';
+  return 'ko-KR';
+}
 function addTagNow() {
   var now = new Date();
   var tags = getTagList();
-  var isEn = localStorage.getItem('lang') === 'en';
+  var lang = localStorage.getItem('lang') || 'ko';
+  var isEn = (lang === 'en');
+  var loc = _locForLang(lang);
   var entry = {
     id: Date.now(),
     date: isEn
       ? now.toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric',weekday:'short'})
-      : now.toLocaleDateString('ko-KR', {year:'numeric',month:'2-digit',day:'2-digit',weekday:'short'}),
-    time: isEn
-      ? now.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit'})
-      : now.toLocaleTimeString('ko-KR', {hour:'2-digit',minute:'2-digit',second:'2-digit'}),
+      : now.toLocaleDateString(loc, {year:'numeric',month:'2-digit',day:'2-digit',weekday:'short'}),
+    time: now.toLocaleTimeString(loc, {hour:'2-digit',minute:'2-digit',second:'2-digit'}),
     ts: now.getTime()
   };
   tags.unshift(entry);
@@ -586,11 +644,11 @@ function openTag() {
   setTimeout(function() {
     // tagBackBtn은 SVG 고정 - textContent 변경 안 함
     var t = document.getElementById('tagTitle');
-    if (t) t.textContent = en ? 'Tags' : '태그';
+    if (t) t.textContent = __T('Tags','태그','标签','タグ');
     var d = document.getElementById('tagDeleteAllBtn');
-    if (d) d.textContent = en ? 'Clear All' : '전체삭제';
+    if (d) d.textContent = __T('Clear All','전체삭제','全部清除','全て削除');
     var a = document.getElementById('tagAutoDeleteLabel');
-    if (a) a.textContent = en ? 'Auto Delete' : '자동삭제';
+    if (a) a.textContent = __T('Auto Delete','자동삭제','自动删除','自動削除');
   }, 50);
 }
 
@@ -599,7 +657,7 @@ function renderTagList(tags) {
   if (!list) return;
   var isEn = localStorage.getItem('lang') === 'en';
   if (!tags.length) {
-    list.innerHTML = '<div class="empty-state">' + (isEn ? 'No tags yet. Tap the clock to add.' : '시계를 탭해서 시간을 기록하세요.') + '</div>';
+    list.innerHTML = '<div class="empty-state">' + (__T('No tags yet. Tap the clock to add.','시계를 탭해서 시간을 기록하세요.','点击时钟记录时间。','時計をタップして時間を記録してください。')) + '</div>';
     return;
   }
   list.innerHTML = tags.map(function(t, idx) {
@@ -624,7 +682,7 @@ function deleteTag(id) {
 
 function deleteAllTags() {
   var isEn = localStorage.getItem('lang') === 'en';
-  var msg = isEn ? 'Delete all tags?' : '모든 태그를 삭제할까요?';
+  var msg = __T('Delete all tags?','모든 태그를 삭제할까요?','删除所有标签?','全てのタグを削除しますか?');
   showConfirm(msg, function() { _doDeleteAllTags(); }); return;
 }
 function _doDeleteAllTags() {
@@ -640,14 +698,14 @@ function openSettings() {
   if (notifAppEl) notifAppEl.checked = localStorage.getItem('notifApp') === 'true';
   showScreen('settingsScreen');
   var t2 = localStorage.getItem('themeColor') || '#6C63FF';
-  setTimeout(function(){ applyThemeBtnBorder(t2); updateIconStyleBtns(); updateSvgColorBtns(); }, 200);
+  setTimeout(function(){ renderThemeRecentColors(); updateIconStyleBtns(); updateSvgColorBtns(); }, 200);
 }
 function saveAppName() {
   const n = document.getElementById('appNameInput').value.trim() || 'MyPlanner';
   localStorage.setItem('appName', n);
   document.getElementById('appTitle').textContent = n;
   document.title = n;
-  showAlert('저장되었습니다');
+  showAlert(__T('Saved','저장되었습니다','已保存','保存しました'));
 }
 
 
@@ -664,14 +722,20 @@ var SVG_ICONS = {
   8: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="36" height="36"><rect width="24" height="24" fill="transparent" stroke="none"/><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="7" y1="15" x2="17" y2="15"/><line x1="7" y1="18" x2="13" y2="18"/></svg>',
 };
 var EMOJI_ICONS = ['📋','📅','⏰','📝','🎯','📊','🗂️','🏷️','📆'];
-var SVG_COLORS = ['#10B981','#3B82F6','#F43F5E','#F59E0B','#F97316','#22C55E','#8B5CF6','#A855F7','#38BDF8'];
+var SVG_COLORS = (function() {
+  try {
+    var saved = JSON.parse(localStorage.getItem('svgColorsCustom') || 'null');
+    if (Array.isArray(saved) && saved.length > 0) return saved;
+  } catch(e) {}
+  return ['#10B981','#3B82F6','#F43F5E','#F59E0B','#F97316','#22C55E','#8B5CF6','#A855F7','#38BDF8'];
+})();
 
 function applyClothesIcon(en) {
   var isEn = (en !== undefined) ? en : (localStorage.getItem('lang') === 'en');
   var style = localStorage.getItem('iconStyle') || 'svg';
   var label = document.getElementById('clothesLabel');
   if (!label) return;
-  var text = isEn ? 'Outfit' : '옷차림 추천';
+  var text = __T('Outfit','옷차림 추천','穿搭推荐','服装提案');
   if (style === 'emoji') {
     label.innerHTML = '👕 ' + text;
   } else {
@@ -688,8 +752,74 @@ function setIconStyle(style) {
 
 function setSvgColor(mode) {
   localStorage.setItem('svgColorMode', mode);
+  if (mode === 'on') {
+    randomizeSvgColors(true);
+  }
   applyIconStyle();
   updateSvgColorBtns();
+}
+
+// HEX → HSL
+function _hexToHsl(hex) {
+  var r = parseInt(hex.slice(1,3),16)/255;
+  var g = parseInt(hex.slice(3,5),16)/255;
+  var b = parseInt(hex.slice(5,7),16)/255;
+  var max = Math.max(r,g,b), min = Math.min(r,g,b);
+  var h, s, l = (max+min)/2;
+  if (max === min) { h = s = 0; }
+  else {
+    var d = max - min;
+    s = l > 0.5 ? d/(2-max-min) : d/(max+min);
+    switch(max) {
+      case r: h = ((g-b)/d + (g<b?6:0))/6; break;
+      case g: h = ((b-r)/d + 2)/6; break;
+      case b: h = ((r-g)/d + 4)/6; break;
+    }
+  }
+  return [h*360, s*100, l*100];
+}
+
+// HSL → HEX
+function _hslToHex(h, s, l) {
+  h = ((h % 360) + 360) % 360;
+  s = Math.max(0, Math.min(100, s));
+  l = Math.max(10, Math.min(90, l));
+  var s1 = s/100, l1 = l/100;
+  var c = (1 - Math.abs(2*l1-1)) * s1;
+  var x = c * (1 - Math.abs((h/60)%2-1));
+  var m = l1 - c/2;
+  var r,g,b;
+  if      (h<60)  { r=c;g=x;b=0; }
+  else if (h<120) { r=x;g=c;b=0; }
+  else if (h<180) { r=0;g=c;b=x; }
+  else if (h<240) { r=0;g=x;b=c; }
+  else if (h<300) { r=x;g=0;b=c; }
+  else            { r=c;g=0;b=x; }
+  var toHex = function(v) { return Math.round((v+m)*255).toString(16).padStart(2,'0'); };
+  return '#' + toHex(r) + toHex(g) + toHex(b);
+}
+
+// 유사 명도/채도 랜덤 색상 생성
+function _randomSimilarColor(baseHex) {
+  var hsl = _hexToHsl(baseHex);
+  var h = hsl[0], s = hsl[1], l = hsl[2];
+  var rnd = function(range) { return (Math.random()-0.5)*2*range; };
+  // H: ±30° (색상 계열 약간 변화)
+  // S: ±20% (채도 유사)
+  // L: ±12% (명도 유사)
+  return _hslToHex(h + rnd(25), s + rnd(20), l + rnd(8));
+}
+
+function randomizeSvgColors(silent) {
+  var theme = localStorage.getItem('themeColor') || '#6C63FF';
+  var count = SVG_COLORS.length;
+  var newColors = [];
+  for (var i = 0; i < count; i++) {
+    newColors.push(_randomSimilarColor(theme));
+  }
+  SVG_COLORS = newColors;
+  localStorage.setItem('svgColorsCustom', JSON.stringify(newColors));
+  if (!silent) applyIconStyle();
 }
 
 function updateIconStyleBtns() {
@@ -710,8 +840,8 @@ function applyIconStyle() {
   var style = localStorage.getItem('iconStyle') || 'svg';
   var colorMode = localStorage.getItem('svgColorMode') || 'on';
   var isDark = localStorage.getItem('darkMode') === 'true';
-  var themeColor = localStorage.getItem('themeColor') || '#6C63FF';
-  var isGray = themeColor === '#6b7280';
+  var themeColor = localStorage.getItem('themeColor') || '#334155';
+  var isGray = themeColor === '#334155';
 
   // 테마색 미적용시 적용할 색상
   var themeIconColor = (isDark && isGray) ? '#9ca3af' : themeColor;
@@ -735,7 +865,12 @@ function applyIconStyle() {
         svgEl = iconEl.querySelector('svg');
       }
       if (svgEl) {
-        svgEl.style.color = colorMode === 'on' ? (SVG_COLORS[i] || '#6C63FF') : themeIconColor;
+        if (isGray) {
+          // 그레이 테마: SVG 라인 모두 화이트로 통일
+          svgEl.style.color = '#94a3b8';
+        } else {
+          svgEl.style.color = colorMode === 'on' ? (SVG_COLORS[i] || '#6C63FF') : themeIconColor;
+        }
       }
     }
   });
@@ -805,10 +940,20 @@ function openTitleColorPalette(target, el) {
   initTitleColorPalette();
   var palette = document.getElementById('titleColorPalette');
   var label = document.getElementById('paletteLabel');
-  var en = localStorage.getItem('lang') === 'en';
-  if (label) label.textContent = en
-    ? (target === 'my' ? '1st: color & size' : '2nd: color & size')
-    : (target === 'my' ? '첫 번째: 색상·크기' : '두 번째: 색상·크기');
+  var lang = localStorage.getItem('lang') || 'ko';
+  var labelText;
+  if (target === 'my') {
+    if (lang === 'en') labelText = '1st: color & size';
+    else if (lang === 'zh') labelText = '第一个: 颜色和大小';
+    else if (lang === 'ja') labelText = '1番目: 色とサイズ';
+    else labelText = '첫 번째: 색상·크기';
+  } else {
+    if (lang === 'en') labelText = '2nd: color & size';
+    else if (lang === 'zh') labelText = '第二个: 颜色和大小';
+    else if (lang === 'ja') labelText = '2番目: 色とサイズ';
+    else labelText = '두 번째: 색상·크기';
+  }
+  if (label) label.textContent = labelText;
   _updateFontSizeBtns(target);
   var rect = el.getBoundingClientRect();
   var top = rect.bottom + 8;
@@ -983,7 +1128,7 @@ function applyDarkMode() {
   var titleColor;
   if (!enabled) {
     titleColor = ''; // 라이트모드: CSS 기본값
-  } else if (themeColor === '#6b7280') {
+  } else if (themeColor === '#334155') {
     titleColor = '#FFFFFF'; // 그레이+다크: 흰색
   } else {
     titleColor = themeColor; // 다른테마+다크: 테마색
@@ -1004,26 +1149,67 @@ function setTheme(c) {
   document.documentElement.style.setProperty('--primary', c);
   localStorage.setItem('themeColor', c);
   applyMenuTheme(c);
+  var svgMode = localStorage.getItem('svgColorMode') || 'on';
+  var isGray = c === '#334155';
+  if (isGray) {
+    // 그레이: 저장된 SVG 색상 초기화 (이전 랜덤값 제거)
+    localStorage.removeItem('svgColorsCustom');
+    SVG_COLORS = ['#94a3b8','#94a3b8','#94a3b8','#94a3b8','#94a3b8','#94a3b8','#94a3b8','#94a3b8','#94a3b8'];
+  } else if (svgMode === 'on') {
+    // Individual 모드: 테마 기반 SVG 색상 자동 랜덤 반영
+    randomizeSvgColors(true);
+  }
+  applyIconStyle();
   applyDarkMode();
-  applyThemeBtnBorder(c);
+  addRecentThemeColor(c);
+  renderThemeRecentColors();
 }
 
-function applyThemeBtnBorder(c) {
-  var ids = ['themeBlue','themeGreen','themePurple','themeYellow','themeGray'];
-  var colors = {'themeBlue':'#4A90D9','themeGreen':'#22c55e','themePurple':'#8b5cf6','themeYellow':'#f59e0b','themeGray':'#6b7280'};
-  ids.forEach(function(id) {
-    var btn = document.getElementById(id);
-    if (!btn) return;
-    if (colors[id] === c) {
-      btn.classList.add('selected');
-    } else {
-      btn.classList.remove('selected');
-    }
+// 6가지 고정 테마 색상
+var THEME_COLORS = [
+  '#334155', // gray (slate-700)
+  '#f87171', // rose
+  '#fb923c', // orange
+  '#7dd3c0', // mint/teal
+  '#93c5fd', // blue
+  '#c4b5fd'  // lavender
+];
+
+// 최근 선택 색상 — 6가지 고정 색상 그대로 반환
+function getRecentThemeColors() {
+  return THEME_COLORS.slice();
+}
+
+function addRecentThemeColor(hex) {
+  // 6개 고정이므로 별도 저장 불필요 (호환 위해 stub 유지)
+}
+
+function renderThemeRecentColors() {
+  var wrap = document.getElementById('themeRecentColors');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  var cur = localStorage.getItem('themeColor') || THEME_COLORS[0];
+  THEME_COLORS.forEach(function(hex) {
+    var btn = document.createElement('button');
+    var isCur = hex === cur;
+    btn.style.cssText = 'width:42px;height:42px;border-radius:50%;border:' +
+      (isCur ? '3px solid var(--chat-text)' : '2px solid transparent') +
+      ';outline:' + (isCur ? '2px solid var(--chat-text)' : 'none') +
+      ';cursor:pointer;background:' + hex + ';flex-shrink:0;transition:transform 0.1s;';
+    btn.onclick = function() { setTheme(hex); };
+    wrap.appendChild(btn);
   });
 }
 
+// 팔레트 팝업 관련 함수들 — 호환 stub (HTML이 제거되어 호출되지 않음)
+function openThemeColorPalette(btnEl) {}
+function _themeColorOutsideClick(e) {}
+function closeThemeColorPalette() {}
+function applyThemeBtnBorder(c) { renderThemeRecentColors(); }
+function initThemeColorGrid() {}
+
 function applyMenuTheme(c) {
-  var isGray = (c === '#6b7280');
+  var isGray = (c === '#334155');
   var items = document.querySelectorAll('.menu-item');
   var pastelColors = [
     '#E8F8F5','#E8F4FF','#FFE8EE','#FFF8E8',
@@ -1199,16 +1385,18 @@ function startShareResponseListener() {
         var data = change.doc.data();
         if (!data) return;
         // 응답 도착 → 인앱 알림 표시 후 문서 삭제
-        var en = localStorage.getItem('lang') === 'en';
+        var lang = localStorage.getItem('lang') || 'ko';
         var msg;
         if (data.status === 'accepted') {
-          msg = en
-            ? data.from + ' accepted your share request'
-            : data.from + '님이 공유 요청을 승인했습니다';
+          if (lang === 'en') msg = data.from + ' accepted your share request';
+          else if (lang === 'zh') msg = data.from + ' 已同意您的共享请求';
+          else if (lang === 'ja') msg = data.from + ' さんが共有リクエストを承認しました';
+          else msg = data.from + '님이 공유 요청을 승인했습니다';
         } else {
-          msg = en
-            ? data.from + ' rejected your share request'
-            : data.from + '님이 공유 요청을 거절했습니다';
+          if (lang === 'en') msg = data.from + ' rejected your share request';
+          else if (lang === 'zh') msg = data.from + ' 已拒绝您的共享请求';
+          else if (lang === 'ja') msg = data.from + ' さんが共有リクエストを拒否しました';
+          else msg = data.from + '님이 공유 요청을 거절했습니다';
         }
         try { showAlert(msg); } catch(e) {}
         // 응답 문서 정리 (반복 트리거 방지)
@@ -1228,10 +1416,11 @@ function showShareRequestModal(fromCode) {
   if (warnEl) {
     if (currentTarget && currentTarget !== fromCode) {
       warnEl.style.display = '';
-      var en = localStorage.getItem('lang') === 'en';
-      warnEl.textContent = en
-        ? 'Current share target (' + currentTarget + ') will be released.'
-        : '현재 공유 대상(' + currentTarget + ')은 자동 해제됩니다.';
+      var lang = localStorage.getItem('lang') || 'ko';
+      if (lang === 'en') warnEl.textContent = 'Current share target (' + currentTarget + ') will be released.';
+      else if (lang === 'zh') warnEl.textContent = '当前共享对象 (' + currentTarget + ') 将自动解除。';
+      else if (lang === 'ja') warnEl.textContent = '現在の共有相手 (' + currentTarget + ') は自動解除されます。';
+      else warnEl.textContent = '현재 공유 대상(' + currentTarget + ')은 자동 해제됩니다.';
     } else {
       warnEl.style.display = 'none';
     }
@@ -1246,7 +1435,7 @@ async function acceptShareRequest() {
   var fromCode = modal.dataset.fromCode;
   modal.style.display = 'none';
   if (!fromCode) return;
-  try { showUploadStatus('공유 대상 변경 중...'); } catch(e) {}
+  try { showUploadStatus(__T('Changing share target...','공유 대상 변경 중...','正在更改共享对象...','共有相手を変更中...')); } catch(e) {}
   try {
     // setShareTarget이 회수+재배포 처리. 단 acceptShareRequest 경로에서는
     // 다시 요청을 보내지 않도록 silent 옵션 전달
@@ -1286,7 +1475,7 @@ function openTodo() {
         const data = snap.data();
         localStorage.setItem('todos', JSON.stringify(data.todos || []));
         if (!firstLoad && data.updatedBy && data.updatedBy !== myCode) {
-          if (localStorage.getItem('notifApp') === 'true') sendNotification('할 일', '새로운 할 일이 있어요');
+          if (localStorage.getItem('notifApp') === 'true') sendNotification(__T('To-Do','할 일','待办','タスク'), __T('New task added','새로운 할 일이 있어요','有新的待办事项','新しいタスクがあります'));
         }
         firstLoad = false;
       }
@@ -1315,7 +1504,7 @@ function renderTodoList() {
   const todos = JSON.parse(localStorage.getItem('todos') || '[]');
   document.getElementById('todoCount').textContent = `${todos.filter(t=>t.done).length}/${todos.length}`;
   const el = document.getElementById('todoList');
-  if (!todos.length) { el.innerHTML = '<div class="empty-state">' + (localStorage.getItem("lang")==="en" ? 'No tasks yet' : '할 일이 없습니다') + '</div>'; return; }
+  if (!todos.length) { el.innerHTML = '<div class="empty-state">' + (__T('No tasks yet','할 일이 없습니다','暂无任务','タスクがありません')) + '</div>'; return; }
   el.innerHTML = todos.map((t,i) => `
     <div class="todo-item ${t.done?'todo-done':''}">
       <div class="todo-check ${t.done?'checked':''}" onclick="toggleTodo(${i})">${t.done?'✓':''}</div>
@@ -1401,7 +1590,7 @@ function renderMemoList() {
 
   const el = document.getElementById('memoList');
   var isEn = localStorage.getItem('lang') === 'en';
-  if (!memos.length) { el.innerHTML = '<div class="empty-state">' + (isEn ? 'No memos yet' : '메모가 없습니다') + '</div>'; return; }
+  if (!memos.length) { el.innerHTML = '<div class="empty-state">' + (__T('No memos yet','메모가 없습니다','暂无备忘录','メモがありません')) + '</div>'; return; }
   el.innerHTML = memos.map(function(m) {
     // 본문 미리보기: HTML에서 텍스트만 추출
     const tmp = document.createElement('div');
@@ -1439,7 +1628,7 @@ function renderMemoList() {
 
     return `
     <div class="memo-card" onclick="openEditMemo('${esc(m.id)}')">
-      <div class="memo-card-title">${esc(m.title||'제목 없음')}</div>
+      <div class="memo-card-title">${esc(m.title||__T('Untitled','제목 없음','无标题','タイトルなし'))}</div>
       <div class="memo-card-preview">${esc(preview)}</div>
       ${thumb}
       <div class="memo-card-footer">
@@ -1509,7 +1698,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // 업로드 시작 표시
-    try { showUploadStatus('이미지 업로드 중...'); } catch(err) {}
+    try { showUploadStatus(__T('Uploading image...','이미지 업로드 중...','正在上传图片...','画像をアップロード中...')); } catch(err) {}
     let pending = imageItems.length;
 
     imageItems.forEach(function(it) {
@@ -1554,8 +1743,8 @@ function openNewMemo() {
   editingMemoId = null;
   editingMemoIndex = null;
   const en = localStorage.getItem('lang') === 'en';
-  document.getElementById('memoEditorTitle').textContent = en ? 'New Memo' : '새 메모';
-  document.getElementById('memoEditorTitle').style.fontWeight = en ? '800' : '400';
+  document.getElementById('memoEditorTitle').textContent = __T('New Memo','새 메모','新建备忘','新規メモ');
+  document.getElementById('memoEditorTitle').style.fontWeight = __T('800','400','800','800');
   document.getElementById('memoTitleInput').value = '';
   document.getElementById('memoContentInput').innerHTML = '';
   // 새 메모는 항상 편집 가능 상태로 초기화
@@ -1588,7 +1777,7 @@ function applyMemoEditorReadonly(readonly) {
     // 저장 버튼을 Close로 변환 (같은 자리에 그대로 두고 텍스트/핸들러만 교체)
     if (saveBtn) {
       saveBtn.style.display = '';
-      saveBtn.textContent = en ? 'Close' : '닫기';
+      saveBtn.textContent = __T('Close','닫기','关闭','閉じる');
       saveBtn.setAttribute('onclick', 'closeMemoEditor()');
       saveBtn.dataset.mode = 'close';
     }
@@ -1604,7 +1793,7 @@ function applyMemoEditorReadonly(readonly) {
     // Close 버튼이었으면 다시 저장 버튼으로 복원
     if (saveBtn) {
       saveBtn.style.display = '';
-      saveBtn.textContent = en ? 'Save' : '저장';
+      saveBtn.textContent = __T('Save','저장','保存','保存');
       saveBtn.setAttribute('onclick', 'saveMemo()');
       saveBtn.dataset.mode = 'save';
     }
@@ -1630,10 +1819,10 @@ function openEditMemo(id) {
   var isReceived = !!memo.from;
   // 받은 메모: 뷰어 모드 / 내 메모: 편집 모드
   var headerText = isReceived
-    ? (en ? 'View Memo' : '메모 보기')
-    : (en ? 'Edit Memo' : '메모 편집');
+    ? (__T('View Memo','메모 보기','查看备忘','メモを表示'))
+    : (__T('Edit Memo','메모 편집','编辑备忘','メモを編集'));
   document.getElementById('memoEditorTitle').textContent = headerText;
-  document.getElementById('memoEditorTitle').style.fontWeight = en ? '800' : '400';
+  document.getElementById('memoEditorTitle').style.fontWeight = __T('800','400','800','800');
   document.getElementById('memoTitleInput').value = memo.title || '';
   // body(HTML) 우선, 없으면 구버전 content(텍스트) 폴백
   const body = memo.body || (memo.content ? memo.content.replace(/\n/g,'<br>') : '');
@@ -1653,10 +1842,19 @@ function saveMemo() {
   const title = document.getElementById('memoTitleInput').value.trim();
   const body = document.getElementById('memoContentInput').innerHTML.trim();
   const textOnly = (document.getElementById('memoContentInput').innerText || '').trim();
-  if (!title && !textOnly) { showAlert('내용을 입력하세요'); return; }
+  if (!title && !textOnly) {
+    var _ml = localStorage.getItem('lang') || 'ko';
+    var _mm;
+    if (_ml === 'en') _mm = 'Please enter content';
+    else if (_ml === 'zh') _mm = '请输入内容';
+    else if (_ml === 'ja') _mm = '内容を入力してください';
+    else _mm = '내용을 입력하세요';
+    showAlert(_mm);
+    return;
+  }
 
   var memos = loadMemos();
-  const date = new Date().toLocaleDateString('ko-KR');
+  const date = new Date().toLocaleDateString(_locForLang(localStorage.getItem('lang')||'ko'));
   var now = Date.now();
 
   if (editingMemoId) {
@@ -1691,7 +1889,7 @@ function saveMemo() {
 
 function deleteMemo(id) {
   // 호환성: 숫자 인덱스도 받아줌
-  showConfirm('메모를 삭제할까요?', function() {
+  showConfirm(__T('Delete memo?','메모를 삭제할까요?','删除备忘?','メモを削除しますか?'), function() {
     var memos = loadMemos();
     if (typeof id === 'number') {
       // 인덱스: 정렬된 화면 기준이므로 그 정렬을 한 번 더 적용해야 동일 항목
@@ -1808,7 +2006,7 @@ function startMemoListener() {
         applyIncomingSharedMemos(data.memos || [], data.updatedBy);
         if (!firstLoad) {
           if (localStorage.getItem('notifApp') === 'true') {
-            try { sendNotification('메모', '새로운 공유 메모가 있어요'); } catch(e) {}
+            try { sendNotification(__T('Memo','메모','备忘','メモ'), __T('New shared memo','새로운 공유 메모가 있어요','有新的共享备忘','新しい共有メモがあります')); } catch(e) {}
           }
         }
         renderMemoList();
@@ -1875,7 +2073,7 @@ function handleShareIntent() {
       .replace(/\n/g, '<br>');
 
     const memos = JSON.parse(localStorage.getItem('memos') || '[]');
-    const date = new Date().toLocaleDateString('ko-KR');
+    const date = new Date().toLocaleDateString(_locForLang(localStorage.getItem('lang')||'ko'));
     var now = Date.now();
     memos.unshift({
       id: now + '_' + Math.random().toString(36).slice(2,8),
@@ -1898,7 +2096,7 @@ function handleShareIntent() {
     setTimeout(function() {
       try { window.close(); } catch(e) {}
       // window.close()가 막힌 환경 대응: 작은 안내 토스트
-      try { showUploadStatus('메모에 저장됨'); } catch(e) {}
+      try { showUploadStatus(__T('Saved to memo','메모에 저장됨','已保存到备忘','メモに保存しました')); } catch(e) {}
       setTimeout(function() { try { hideUploadStatus(); } catch(e) {} }, 1500);
     }, 50);
 
@@ -1919,13 +2117,13 @@ async function uploadMemoImg(file) {
         setTimeout(() => { clearInterval(check); resolve(); }, 5000);
       });
     }
-    if (!currentUser) { showAlert('인증 실패 - 새로고침 후 다시 시도하세요'); return; }
+    if (!currentUser) { showAlert(__T('Auth failed - refresh and retry','인증 실패 - 새로고침 후 다시 시도하세요','认证失败 - 请刷新后重试','認証失敗 - 更新後再試行してください')); return; }
     const path = 'memo_images/' + Date.now() + '_' + Math.random().toString(36).substr(2,6);
     const snap = await storage.ref().child(path).put(file);
     const url = await snap.ref.getDownloadURL();
     insertImgAtCursor(url);
   } catch(err) {
-    showAlert('이미지 업로드 실패: ' + err.message);
+    showAlert(__T('Image upload failed: ','이미지 업로드 실패: ','图片上传失败: ','画像アップロード失敗: ') + err.message);
   }
 }
 
@@ -1940,7 +2138,7 @@ async function uploadMemoImgAtRange(file, savedRange) {
         setTimeout(() => { clearInterval(check); resolve(); }, 5000);
       });
     }
-    if (!currentUser) { showAlert('인증 실패 - 새로고침 후 다시 시도하세요'); return; }
+    if (!currentUser) { showAlert(__T('Auth failed - refresh and retry','인증 실패 - 새로고침 후 다시 시도하세요','认证失败 - 请刷新后重试','認証失敗 - 更新後再試行してください')); return; }
     const path = 'memo_images/' + Date.now() + '_' + Math.random().toString(36).substr(2,6);
     const snap = await storage.ref().child(path).put(file);
     const url = await snap.ref.getDownloadURL();
@@ -1957,7 +2155,7 @@ async function uploadMemoImgAtRange(file, savedRange) {
     }
     insertImgAtCursor(url);
   } catch(err) {
-    showAlert('이미지 업로드 실패: ' + err.message);
+    showAlert(__T('Image upload failed: ','이미지 업로드 실패: ','图片上传失败: ','画像アップロード失敗: ') + err.message);
   }
 }
 
@@ -2055,7 +2253,7 @@ function openCalendar() {
         localStorage.setItem('habits', JSON.stringify(data.habits || {}));
         // 상대방이 업데이트한 경우만 알림
         if (!firstCalLoad && data.updatedBy && data.updatedBy !== myCode) {
-          if (localStorage.getItem('notifApp') === 'true') sendNotification('달력', '새 일정이 있어요');
+          if (localStorage.getItem('notifApp') === 'true') sendNotification(__T('Calendar','달력','日历','カレンダー'), __T('New event','새 일정이 있어요','有新的日程','新しい予定があります'));
         }
         firstCalLoad = false;
       }
@@ -2080,6 +2278,10 @@ function renderCalendar() {
   if (calLang === 'en') {
     var enMonths = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     document.getElementById('calTitle').textContent = enMonths[calMonth] + ' ' + calYear;
+  } else if (calLang === 'zh') {
+    document.getElementById('calTitle').textContent = calYear + '年' + (calMonth+1) + '月';
+  } else if (calLang === 'ja') {
+    document.getElementById('calTitle').textContent = calYear + '年' + (calMonth+1) + '月';
   } else {
     document.getElementById('calTitle').textContent = calYear + '년 ' + months[calMonth];
   }
@@ -2194,7 +2396,7 @@ function exitChat() {
 async function saveMyCode() {
   const code = document.getElementById('myCodeInput').value.trim().toUpperCase();
   if (!code || code.length < 2) {
-    showAlert(localStorage.getItem('lang') === 'en' ? 'At least 2 chars required' : '2자 이상 입력하세요');
+    showAlert(__T('At least 2 chars required','2자 이상 입력하세요','请输入至少2个字符','2文字以上入力してください'));
     return;
   }
   // 코드 중복 검증: 이미 다른 사용자가 백업해둔 코드면 거부
@@ -2208,9 +2410,7 @@ async function saveMyCode() {
         var ok = await _restoreCode(code, myHash);
         if (ok) { window.location.reload(); return; }
       }
-      showAlert(localStorage.getItem('lang') === 'en'
-        ? 'Code already in use'
-        : '이미 등록된 코드입니다');
+      showAlert(__T('Code already in use','이미 등록된 코드입니다','此代码已被使用','既に登録されているコードです'));
       return;
     }
   } catch(e) { console.log('[saveMyCode] check error:', e.message); }
@@ -2240,7 +2440,7 @@ function renderFriendList() {
       '<circle cx="12" cy="8" r="4"/>' +
       '<path d="M5 21c0-4 3.1-7 7-7s7 3 7 7"/>' +
       '</svg>' +
-      '<div>' + (_en ? 'Add a friend to start chatting' : '친구를 추가하면 채팅이 시작됩니다') + '</div>' +
+      '<div>' + (__T('Add a friend to start chatting','친구를 추가하면 채팅이 시작됩니다','添加好友后可开始聊天','友達を追加するとチャットが始まります')) + '</div>' +
       '</div>';
     return;
   }
@@ -2273,7 +2473,7 @@ function renderFriendList() {
 
 var BACKUP_KEYS = [
   'memos', 'todos', 'habits', 'hStats',
-  'appName', 'lang', 'darkMode', 'themeColor', 'iconStyle', 'svgColorMode',
+  'appName', 'lang', 'darkMode', 'themeColor', 'iconStyle', 'svgColorMode', 'svgColorsCustom',
   'chatTheme', 'chatFontSize',
   'notifApp', 'notifEvent',
   'autoLock', 'autoDeleteMin',
@@ -2501,7 +2701,7 @@ async function performRestore() {
 
   var ctx = _pendingRestore;
   closeRestoreModal();
-  try { showUploadStatus('확인 중...'); } catch(e) {}
+  try { showUploadStatus(__T('Verifying...','확인 중...','正在确认...','確認中...')); } catch(e) {}
   var r = await applyCodeAfterPattern(code, ctx.source, ctx.candidates);
   try { hideUploadStatus(); } catch(e) {}
 
@@ -2512,9 +2712,9 @@ async function performRestore() {
   } else {
     var msg;
     if (r.error === 'duplicate') {
-      msg = en ? 'Code already in use' : '이미 등록된 코드입니다';
+      msg = __T('Code already in use','이미 등록된 코드입니다','此代码已被使用','既に登録されているコードです');
     } else {
-      msg = en ? 'No matching code registered' : '등록된 코드가 없습니다';
+      msg = __T('No matching code registered','등록된 코드가 없습니다','未找到该代码','登録されたコードがありません');
     }
     showAlert(msg);
   }
@@ -2582,7 +2782,13 @@ function listenFriendChanges() {
 }
 
 async function deleteChat(friendCode) {
-  showConfirm(friendCode + '와의 대화 및 친구를 삭제할까요?', function() { _doDeleteChat(friendCode); }); return;
+  var _dl = localStorage.getItem('lang') || 'ko';
+  var _dm;
+  if (_dl === 'en') _dm = 'Delete chat and friend ' + friendCode + '?';
+  else if (_dl === 'zh') _dm = '删除与 ' + friendCode + ' 的聊天和好友?';
+  else if (_dl === 'ja') _dm = friendCode + ' とのチャットと友達を削除しますか?';
+  else _dm = friendCode + '와의 대화 및 친구를 삭제할까요?';
+  showConfirm(_dm, function() { _doDeleteChat(friendCode); }); return;
 }
 async function _doDeleteChat(friendCode) {
   // 1. 대화내용 삭제
@@ -2621,7 +2827,7 @@ async function _doDeleteChat(friendCode) {
   } catch(e) {}
 
   renderFriendList();
-  showAlert('대화 및 친구가 삭제되었습니다');
+  showAlert(__T('Chat and friends deleted','대화 및 친구가 삭제되었습니다','聊天和好友已删除','チャットと友達が削除されました'));
 }
 
 // ── ADD FRIEND ──────────────────────────────────────
@@ -2644,18 +2850,34 @@ function switchAddTab(tab) {
 
 async function addFriendByCode() {
   const code = document.getElementById('friendCodeInput').value.trim().toUpperCase();
-  if (!code) { showAlert(localStorage.getItem('lang')==='en' ? 'Please enter a code' : '코드를 입력하세요'); return; }
-  if (code === myCode) { showAlert(localStorage.getItem('lang')==='en' ? 'You cannot add yourself' : '자신의 코드는 추가할 수 없습니다'); return; }
-  if (friends.includes(code)) { showAlert(localStorage.getItem('lang')==='en' ? 'Already added' : '이미 추가된 친구입니다'); return; }
+  if (!code) { showAlert(__T('Please enter a code','코드를 입력하세요','请输入代码','コードを入力してください')); return; }
+  if (code === myCode) { showAlert(__T('You cannot add yourself','자신의 코드는 추가할 수 없습니다','不能添加自己的代码','自分のコードは追加できません')); return; }
+  if (friends.includes(code)) { showAlert(__T('Already added','이미 추가된 친구입니다','已添加','既に追加された友達です')); return; }
 
   // 존재하는 사용자인지 확인
   const snap = await db.collection('users').doc(code).get();
-  if (!snap.exists) { showAlert('"' + code + '" 는 등록되지 않은 사용자예요'); return; }
+  if (!snap.exists) {
+    var _lang = localStorage.getItem('lang') || 'ko';
+    var _msg;
+    if (_lang === 'en') _msg = '"' + code + '" is not a registered user';
+    else if (_lang === 'zh') _msg = '"' + code + '" 是未注册的用户';
+    else if (_lang === 'ja') _msg = '"' + code + '" は登録されていないユーザーです';
+    else _msg = '"' + code + '" 는 등록되지 않은 사용자예요';
+    showAlert(_msg);
+    return;
+  }
 
   friends.push(code); localStorage.setItem('friends', JSON.stringify(friends));
   await db.collection('users').doc(myCode).set({ friends: firebase.firestore.FieldValue.arrayUnion(code) }, { merge: true });
   await db.collection('users').doc(code).set({ friends: firebase.firestore.FieldValue.arrayUnion(myCode) }, { merge: true });
-  renderFriendList(); closeAddFriend(); showAlert(localStorage.getItem('lang')==='en' ? code + ' has been added' : code + ' 추가되었습니다');
+  renderFriendList(); closeAddFriend();
+  var _lang2 = localStorage.getItem('lang') || 'ko';
+  var _addMsg;
+  if (_lang2 === 'en') _addMsg = code + ' has been added';
+  else if (_lang2 === 'zh') _addMsg = code + ' 已添加';
+  else if (_lang2 === 'ja') _addMsg = code + ' を追加しました';
+  else _addMsg = code + ' 추가되었습니다';
+  showAlert(_addMsg);
 }
 
 function renderMyQr() {
@@ -2666,7 +2888,16 @@ function renderMyQr() {
 
 function startQrScanner() {
   const wrap = document.getElementById('qrScannerWrap'); wrap.innerHTML = '';
-  if (typeof Html5Qrcode === 'undefined') { wrap.innerHTML = '<p style="color:#64748b;font-size:13px;text-align:center;">코드 직접 입력을 사용하세요.</p>'; return; }
+  if (typeof Html5Qrcode === 'undefined') {
+    var _qlbl = localStorage.getItem('lang') || 'ko';
+    var _qmsg;
+    if (_qlbl === 'en') _qmsg = 'Please use direct code input.';
+    else if (_qlbl === 'zh') _qmsg = '请直接输入代码。';
+    else if (_qlbl === 'ja') _qmsg = 'コードの直接入力をご利用ください。';
+    else _qmsg = '코드 직접 입력을 사용하세요.';
+    wrap.innerHTML = '<p style="color:#64748b;font-size:13px;text-align:center;">' + _qmsg + '</p>';
+    return;
+  }
   qrScanner = new Html5Qrcode('qrScannerWrap');
   qrScanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: 200 }, decoded => {
     if (decoded.startsWith('SECURECHAT:')) {
@@ -2675,18 +2906,31 @@ function startQrScanner() {
       friends.push(code); localStorage.setItem('friends', JSON.stringify(friends));
       db.collection('users').doc(myCode).set({ friends: firebase.firestore.FieldValue.arrayUnion(code) }, { merge: true });
       db.collection('users').doc(code).set({ friends: firebase.firestore.FieldValue.arrayUnion(myCode) }, { merge: true });
-      renderFriendList(); closeAddFriend(); showAlert(localStorage.getItem('lang')==='en' ? code + ' has been added' : code + ' 추가되었습니다');
+      renderFriendList(); closeAddFriend();
+      var _ql = localStorage.getItem('lang') || 'ko';
+      var _qm;
+      if (_ql === 'en') _qm = code + ' has been added';
+      else if (_ql === 'zh') _qm = code + ' 已添加';
+      else if (_ql === 'ja') _qm = code + ' を追加しました';
+      else _qm = code + ' 추가되었습니다';
+      showAlert(_qm);
     }
-  }, () => {}).catch(() => { wrap.innerHTML = '<p style="color:#64748b;font-size:13px;text-align:center;">카메라 권한이 필요합니다</p>'; });
+  }, () => {}).catch(() => {
+    var _cl = localStorage.getItem('lang') || 'ko';
+    var _cm;
+    if (_cl === 'en') _cm = '<p style="color:#64748b;font-size:13px;text-align:center;">Camera permission required</p>';
+    else if (_cl === 'zh') _cm = '<p style="color:#334155;font-size:13px;text-align:center;">需要相机权限</p>';
+    else if (_cl === 'ja') _cm = '<p style="color:#334155;font-size:13px;text-align:center;">カメラの権限が必要です</p>';
+    else _cm = '<p style="color:#334155;font-size:13px;text-align:center;">카메라 권한이 필요합니다</p>';
+    wrap.innerHTML = _cm;
+  });
 }
 
 function stopQrScanner() { if (qrScanner) { qrScanner.stop().catch(() => {}); qrScanner = null; } }
 
 async function regenerateCode() {
   var en = localStorage.getItem('lang') === 'en';
-  var msg = en
-    ? 'Regenerating your code will permanently delete all chats, memos, todos, calendar, stats, and backup data from server. Continue?'
-    : '코드 재생성 시 채팅/메모/할일/달력/통계/백업 모든 데이터가 서버에서 영구 삭제됩니다. 계속할까요?';
+  var msg = __T('Regenerating your code will permanently delete all chats, memos, todos, calendar, stats, and backup data from server. Continue?','코드 재생성 시 채팅/메모/할일/달력/통계/백업 모든 데이터가 서버에서 영구 삭제됩니다. 계속할까요?','重新生成代码将从服务器永久删除所有聊天/备忘/待办/日历/统计/备份数据。继续吗?','コード再生成時、チャット/メモ/タスク/カレンダー/統計/バックアップの全データがサーバーから永久に削除されます。続けますか?');
   showConfirm(msg, function() { _doRegenerateCode(); }); return;
 }
 // 코드 변경/재생성 시 서버에 남은 내 데이터 전부 삭제
@@ -2776,7 +3020,7 @@ function _purgeLocalData() {
 async function _doRegenerateCode() {
   var oldCode = myCode;
   var oldFriends = friends.slice();
-  try { showUploadStatus('서버 데이터 삭제 중...'); } catch(e) {}
+  try { showUploadStatus(__T('Deleting server data...','서버 데이터 삭제 중...','正在删除服务器数据...','サーバーデータを削除中...')); } catch(e) {}
   await _purgeServerData(oldCode, oldFriends);
   try { hideUploadStatus(); } catch(e) {}
 
@@ -2787,7 +3031,7 @@ async function _doRegenerateCode() {
   localStorage.setItem('friends', '[]');
 
   await db.collection('users').doc(myCode).set({ code: myCode, friends: [], ts: firebase.firestore.Timestamp.now() });
-  renderMyQr(); renderFriendList(); showAlert('코드 재생성: ' + myCode);
+  renderMyQr(); renderFriendList(); showAlert(__T('Code regenerated: ','코드 재생성: ','代码已重新生成: ','コード再生成: ') + myCode);
 }
 
 // ── CHANGE CODE ─────────────────────────────────────
@@ -2797,11 +3041,11 @@ function closeChangeCode() { document.getElementById('changeCodeModal').style.di
 async function confirmChangeCode() {
   const newCode = document.getElementById('newCodeInput').value.trim().toUpperCase();
   if (!newCode || newCode.length < 2) {
-    showAlert(localStorage.getItem('lang') === 'en' ? 'At least 2 chars required' : '2자 이상 입력하세요');
+    showAlert(__T('At least 2 chars required','2자 이상 입력하세요','请输入至少2个字符','2文字以上入力してください'));
     return;
   }
   if (newCode === myCode) {
-    showAlert(localStorage.getItem('lang') === 'en' ? 'Same as current code' : '현재 코드와 같습니다');
+    showAlert(__T('Same as current code','현재 코드와 같습니다','与当前代码相同','現在のコードと同じです'));
     return;
   }
   closeChangeCode();
@@ -2830,7 +3074,7 @@ async function changeCodeAndPurge() {
 
   var oldCode = myCode;
   var oldFriends = friends.slice();
-  try { showUploadStatus('서버 데이터 삭제 중...'); } catch(e) {}
+  try { showUploadStatus(__T('Deleting server data...','서버 데이터 삭제 중...','正在删除服务器数据...','サーバーデータを削除中...')); } catch(e) {}
   // 서버 풀 정리 (백업/패턴인덱스 포함)
   await _purgeServerData(oldCode, oldFriends);
   try {
@@ -2855,9 +3099,13 @@ async function changeCodeAndPurge() {
   try { await performBackup(); } catch(e) {}
   closeSecretSettings();
   renderFriendList();
-  showAlert((localStorage.getItem('lang') === 'en')
-    ? 'Code changed to: ' + myCode
-    : '코드가 변경되었습니다: ' + myCode);
+  var _cL = localStorage.getItem('lang') || 'ko';
+  var _cM;
+  if (_cL === 'en') _cM = 'Code changed to: ' + myCode;
+  else if (_cL === 'zh') _cM = '代码已更改为: ' + myCode;
+  else if (_cL === 'ja') _cM = 'コードが変更されました: ' + myCode;
+  else _cM = '코드가 변경되었습니다: ' + myCode;
+  showAlert(_cM);
 }
 
 // "데이터 유지" 선택: 메모/할일/통계/달력/설정은 유지, 친구/채팅/공유만 정리
@@ -2869,7 +3117,7 @@ async function changeCodeAndKeep() {
 
   var oldCode = myCode;
   var oldFriends = friends.slice();
-  try { showUploadStatus('코드 변경 중...'); } catch(e) {}
+  try { showUploadStatus(__T('Changing code...','코드 변경 중...','正在更改代码...','コード変更中...')); } catch(e) {}
 
   // 친구 관계 + 서버 양측 정리 (메모/할일/통계/달력 로컬은 유지)
   await _purgeServerData(oldCode, oldFriends);
@@ -2906,9 +3154,13 @@ async function changeCodeAndKeep() {
   try { hideUploadStatus(); } catch(e) {}
   closeSecretSettings();
   renderFriendList();
-  showAlert((localStorage.getItem('lang') === 'en')
-    ? 'Code changed to: ' + myCode
-    : '코드가 변경되었습니다: ' + myCode);
+  var _cL = localStorage.getItem('lang') || 'ko';
+  var _cM;
+  if (_cL === 'en') _cM = 'Code changed to: ' + myCode;
+  else if (_cL === 'zh') _cM = '代码已更改为: ' + myCode;
+  else if (_cL === 'ja') _cM = 'コードが変更されました: ' + myCode;
+  else _cM = '코드가 변경되었습니다: ' + myCode;
+  showAlert(_cM);
 }
 
 // 기존 _doConfirmChangeCode는 폐기 (호환 위해 changeCodeAndPurge 호출하도록)
@@ -2994,7 +3246,7 @@ function listenRoomSettings() {
       document.getElementById('deleteRequestBanner')?.remove();
       if (req.from === myCode && (req.updatedAt || 0) > _roomListenStartTime) {
         closeTimerModal();
-        showAlert('상대방이 변경을 거부했습니다');
+        showAlert(__T('Partner rejected the change','상대방이 변경을 거부했습니다','对方拒绝了变更','相手が変更を拒否しました'));
       }
     }
     if (req.status === 'approved') {
@@ -3012,10 +3264,25 @@ function showDeleteTimeRequest(from, minutes, reqId) {
   document.getElementById('deleteRequestBanner')?.remove();
   const banner = document.createElement('div');
   banner.id = 'deleteRequestBanner'; banner.className = 'delete-request-banner';
-  banner.innerHTML = `<div class="drb-text">${from}님이 자동삭제 시간을 <b>${minutes}분</b>으로 변경 요청</div>
+  var _drL = localStorage.getItem('lang') || 'ko';
+  var _drText, _drAccept, _drReject;
+  if (_drL === 'en') {
+    _drText = from + ' requested to change auto-delete time to <b>' + minutes + ' min</b>';
+    _drAccept = 'Accept'; _drReject = 'Reject';
+  } else if (_drL === 'zh') {
+    _drText = from + ' 请求将自动删除时间更改为 <b>' + minutes + '分钟</b>';
+    _drAccept = '同意'; _drReject = '拒绝';
+  } else if (_drL === 'ja') {
+    _drText = from + ' さんが自動削除時間を <b>' + minutes + '分</b> に変更リクエスト';
+    _drAccept = '同意'; _drReject = '拒否';
+  } else {
+    _drText = from + '님이 자동삭제 시간을 <b>' + minutes + '분</b>으로 변경 요청';
+    _drAccept = '동의'; _drReject = '거부';
+  }
+  banner.innerHTML = `<div class="drb-text">${_drText}</div>
     <div class="drb-btns">
-      <button class="drb-accept" onclick="respondDeleteRequest(true,'${reqId}',${minutes})">동의</button>
-      <button class="drb-reject" onclick="respondDeleteRequest(false,'${reqId}',${minutes})">거부</button>
+      <button class="drb-accept" onclick="respondDeleteRequest(true,'${reqId}',${minutes})">${_drAccept}</button>
+      <button class="drb-reject" onclick="respondDeleteRequest(false,'${reqId}',${minutes})">${_drReject}</button>
     </div>`;
   document.getElementById('activeChatView').insertBefore(banner, document.getElementById('messageList'));
 }
@@ -3060,7 +3327,7 @@ function listenMessages() {
             hasNewMsg = true;
             // FCM 토큰 없을 때만 SW 로컬 알림 (FCM 있으면 FCM이 알림 처리)
             if (document.visibilityState !== 'visible' && notifEnabled && Notification.permission === 'granted' && !fcmToken) {
-              sendNotification('새 메시지', '새 알림이 있어요');
+              sendNotification(__T('New message','새 메시지','新消息','新着メッセージ'), __T('New notification','새 알림이 있어요','有新通知','新着通知があります'));
               unreadCount++;
               setBadge(unreadCount);
             }
@@ -3139,7 +3406,7 @@ function renderMessage(data, id) {
   meta.className = 'msg-meta';
   const sent = document.createElement('div'); sent.className = 'msg-time';
   const d = data.ts?.toDate ? data.ts.toDate() : new Date();
-  sent.textContent = d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+  sent.textContent = d.toLocaleTimeString(_locForLang(localStorage.getItem('lang')||'ko'), { hour: '2-digit', minute: '2-digit' });
   const cd = document.createElement('div'); cd.className = 'msg-countdown'; cd.id = 'cd-' + id;
   meta.appendChild(sent); meta.appendChild(cd);
 
@@ -3216,15 +3483,15 @@ async function handleFileSelect(e) {
       setTimeout(() => { clearInterval(check); resolve(); }, 5000);
     });
   }
-  if (!currentUser) { showAlert('인증 실패 - 새로고침 후 다시 시도하세요'); return; }
+  if (!currentUser) { showAlert(__T('Auth failed - refresh and retry','인증 실패 - 새로고침 후 다시 시도하세요','认证失败 - 请刷新后重试','認証失敗 - 更新後再試行してください')); return; }
 
   // 단일 파일
   if (files.length === 1) {
     const file = files[0];
     const isVideo = file.type.startsWith('video');
     const isImage = file.type.startsWith('image');
-    if (!isVideo && !isImage) { showAlert('이미지 또는 영상만 전송 가능합니다'); return; }
-    showUploadStatus('업로드 중...');
+    if (!isVideo && !isImage) { showAlert(__T('Only images or videos can be sent','이미지 또는 영상만 전송 가능합니다','只能发送图片或视频','画像または動画のみ送信可能です')); return; }
+    showUploadStatus(__T('Uploading...','업로드 중...','正在上传...','アップロード中...'));
     try {
       const path = `media/${chatRoomId}/${Date.now()}`;
       const snap = await storage.ref().child(path).put(file);
@@ -3238,16 +3505,16 @@ async function handleFileSelect(e) {
       hideUploadStatus();
       const friendSnap = await db.collection('users').doc(activeFriendCode).get();
       if (friendSnap.exists && friendSnap.data().fcmToken) sendFCMPush(friendSnap.data().fcmToken);
-    } catch(err) { hideUploadStatus(); showAlert('전송 실패: ' + err.message); }
+    } catch(err) { hideUploadStatus(); showAlert(__T('Send failed: ','전송 실패: ','发送失败: ','送信失敗: ') + err.message); }
     return;
   }
 
   // 다중 파일 - 앨범으로 묶어서 전송
   const imageFiles = files.filter(f => f.type.startsWith('image'));
-  if (!imageFiles.length) { showAlert('이미지만 묶음 전송 가능합니다'); return; }
-  if (imageFiles.length > 10) { showAlert('최대 10장까지 선택 가능합니다'); return; }
+  if (!imageFiles.length) { showAlert(__T('Only images can be sent as a bundle','이미지만 묶음 전송 가능합니다','只能批量发送图片','画像のみ一括送信可能です')); return; }
+  if (imageFiles.length > 10) { showAlert(__T('Up to 10 photos can be selected','최대 10장까지 선택 가능합니다','最多可选择10张','最大10枚まで選択可能です')); return; }
 
-  showUploadStatus(`업로드 중... (0/${imageFiles.length})`);
+  showUploadStatus(__T('Uploading...','업로드 중...','正在上传...','アップロード中...') + ` (0/${imageFiles.length})`);
   try {
     const urls = [];
     const paths = [];
@@ -3256,7 +3523,7 @@ async function handleFileSelect(e) {
       const snap = await storage.ref().child(path).put(imageFiles[i]);
       urls.push(await snap.ref.getDownloadURL());
       paths.push(path);
-      showUploadStatus(`업로드 중... (${i+1}/${imageFiles.length})`);
+      showUploadStatus(__T('Uploading...','업로드 중...','正在上传...','アップロード中...') + ` (${i+1}/${imageFiles.length})`);
     }
     await db.collection('rooms').doc(chatRoomId).collection('messages').add({
       sender: myCode, receiverId: activeFriendCode,
@@ -3266,7 +3533,7 @@ async function handleFileSelect(e) {
     hideUploadStatus();
     const friendSnap = await db.collection('users').doc(activeFriendCode).get();
     if (friendSnap.exists && friendSnap.data().fcmToken) sendFCMPush(friendSnap.data().fcmToken);
-  } catch(err) { hideUploadStatus(); showAlert('전송 실패: ' + err.message); }
+  } catch(err) { hideUploadStatus(); showAlert(__T('Send failed: ','전송 실패: ','发送失败: ','送信失敗: ') + err.message); }
 }
 
 async function sendMessage() {
@@ -3286,14 +3553,14 @@ async function sendMessage() {
   try {
     const friendSnap = await db.collection('users').doc(activeFriendCode).get();
     if (friendSnap.exists && friendSnap.data().fcmToken) {
-      sendFCMPush(friendSnap.data().fcmToken, '새 메시지', '새 알림이 있어요');
+      sendFCMPush(friendSnap.data().fcmToken, __T('New message','새 메시지','新消息','新着メッセージ'), __T('New notification','새 알림이 있어요','有新通知','新着通知があります'));
     }
   } catch(e) { console.log('push error:', e.message); }
 }
 
 async function deleteAllNow() {
   if (!chatRoomId) return;
-  showConfirm('모든 채팅을 즉시 삭제합니다. 복구 불가입니다.', function() { _doDeleteAllNow(); }); return;
+  showConfirm(__T('All chats will be deleted immediately. Cannot be recovered.','모든 채팅을 즉시 삭제합니다. 복구 불가입니다.','将立即删除所有聊天。无法恢复。','全てのチャットを即座に削除します。復元不可です。'), function() { _doDeleteAllNow(); }); return;
 }
 async function _doDeleteAllNow() {
   const snap = await db.collection('rooms').doc(chatRoomId).collection('messages').get();
@@ -3330,19 +3597,19 @@ function _resetTimerModal() {
   // 하단 버튼 → Delete Now (빨간색)
   if (actionBtn) {
     actionBtn.style.display = '';
-    actionBtn.textContent = en ? 'Delete Now' : '즉시삭제';
+    actionBtn.textContent = __T('Delete Now','즉시삭제','立即删除','今すぐ削除');
     actionBtn.className = 'timer-action-btn timer-action-delete';
     actionBtn.setAttribute('onclick', 'closeTimerModal();deleteAllNow()');
   }
   // Cancel 복원
   if (closeBtn) {
-    closeBtn.textContent = en ? 'Cancel' : '취소';
+    closeBtn.textContent = __T('Cancel','취소','取消','キャンセル');
     closeBtn.className = 'timer-cancel-btn';
     closeBtn.setAttribute('onclick', 'closeTimerModal()');
   }
   if (desc) {
-    desc.textContent = en ? 'Requires partner approval to change' : '변경 시 상대방 동의가 필요합니다';
-    desc.style.color = '#94a3b8'; desc.style.fontSize = '12px';
+    desc.textContent = __T('Requires partner approval to change','변경 시 상대방 동의가 필요합니다','变更需对方同意','変更には相手の同意が必要です');
+    desc.style.color = '#334155'; desc.style.fontSize = '12px';
   }
   window._selectedTimerMin = null;
 }
@@ -3362,7 +3629,7 @@ function selectTimerOpt(btn, min) {
   var actionBtn = document.getElementById('deleteNowBtn');
   var en = localStorage.getItem('lang') === 'en';
   if (actionBtn) {
-    actionBtn.textContent = en ? 'Submit' : '확인';
+    actionBtn.textContent = __T('Submit','확인','提交','送信');
     actionBtn.className = 'timer-action-btn timer-action-submit';
     actionBtn.setAttribute('onclick', 'submitTimerSelection()');
   }
@@ -3389,9 +3656,9 @@ async function setAutoDelete(min) {
 
   if (opts) opts.style.display = 'none';
   if (actionBtn) actionBtn.style.display = 'none';
-  if (desc) { desc.textContent = en ? 'Waiting for partner approval...' : '상대방 승인 대기 중...'; desc.style.color = 'var(--primary)'; desc.style.fontSize = '14px'; }
+  if (desc) { desc.textContent = __T('Waiting for partner approval...','상대방 승인 대기 중...','等待对方批准...','相手の承認待ち...'); desc.style.color = 'var(--primary)'; desc.style.fontSize = '14px'; }
   if (closeBtn) {
-    closeBtn.textContent = en ? 'Close' : '닫기';
+    closeBtn.textContent = __T('Close','닫기','关闭','閉じる');
     closeBtn.className = 'timer-close-pending-btn';
     closeBtn.setAttribute('onclick', 'closeTimerModal()');
   }
@@ -3401,7 +3668,15 @@ async function setAutoDelete(min) {
     deleteRequest: { from: myCode, minutes: min, id: reqId, status: 'pending', appliedTo: [], ts: firebase.firestore.Timestamp.now() }
   }, { merge: true });
 }
-function updateAutoDeleteLabel() { document.getElementById('autoDeleteLabel').textContent = `자동삭제: ${autoDeleteMinutes}분`; }
+function updateAutoDeleteLabel() {
+  var _adL = localStorage.getItem('lang') || 'ko';
+  var _adT;
+  if (_adL === 'en') _adT = 'Auto-delete: ' + autoDeleteMinutes + ' min';
+  else if (_adL === 'zh') _adT = '自动删除: ' + autoDeleteMinutes + '分钟';
+  else if (_adL === 'ja') _adT = '自動削除: ' + autoDeleteMinutes + '分';
+  else _adT = '자동삭제: ' + autoDeleteMinutes + '분';
+  document.getElementById('autoDeleteLabel').textContent = _adT;
+}
 
 // ── SECRET SETTINGS ──────────────────────────────────
 function setChatFontSize(size) {
@@ -3419,8 +3694,12 @@ function applyChatFontSize() {
 
 function updateFontSizeBtns() {
   const size = parseInt(localStorage.getItem('chatFontSize') || '18');
+  // 4언어의 S/소/小/小, M/중/中/中, L/대/大/大 어떤 값이든 매칭
+  var SMALL = ['소','S','小'];
+  var MID = ['중','M','中'];
   document.querySelectorAll('.font-size-btn').forEach(btn => {
-    const s = btn.textContent === '소' ? 12 : btn.textContent === '중' ? 15 : 18;
+    var t = (btn.textContent || '').trim();
+    const s = SMALL.indexOf(t) !== -1 ? 12 : MID.indexOf(t) !== -1 ? 15 : 18;
     btn.style.background = s === size ? '#3b82f6' : '#0f172a';
   });
 }
@@ -3449,22 +3728,22 @@ function updateThemeBtns() {
   const en = localStorage.getItem('lang') === 'en';
   var d = document.getElementById('themeDarkBtn');
   var l = document.getElementById('themeLightBtn');
-  if(d) { d.classList.toggle('theme-active', theme === 'dark'); d.textContent = en ? 'Dark' : '다크'; }
-  if(l) { l.classList.toggle('theme-active', theme === 'light'); l.textContent = en ? 'Light' : '라이트'; }
+  if(d) { d.classList.toggle('theme-active', theme === 'dark'); d.textContent = __T('Dark','다크','深色','ダーク'); }
+  if(l) { l.classList.toggle('theme-active', theme === 'light'); l.textContent = __T('Light','라이트','浅色','ライト'); }
 }
 
 function updateFontSizeBtns() {
   const size = parseInt(localStorage.getItem('chatFontSize') || '18');
   const en = localStorage.getItem('lang') === 'en';
   const map = { 'fontSmBtn': 14, 'fontMdBtn': 18, 'fontLgBtn': 22 };
-  const labels = { 'fontSmBtn': en?'S':'소', 'fontMdBtn': en?'M':'중', 'fontLgBtn': en?'L':'대' };
+  const labels = { 'fontSmBtn': __T('S','소','小','小'), 'fontMdBtn': __T('M','중','中','中'), 'fontLgBtn': __T('L','대','大','大') };
   Object.entries(map).forEach(([id, s]) => {
     const el = document.getElementById(id);
     if (el) { el.classList.toggle('font-active', s === size); el.textContent = labels[id]; }
   });
-  var sl = document.getElementById('fontSmLabel'); if(sl) sl.textContent = en?'S':'소';
-  var ml = document.getElementById('fontMdLabel'); if(ml) ml.textContent = en?'M':'중';
-  var ll = document.getElementById('fontLgLabel'); if(ll) ll.textContent = en?'L':'대';
+  var sl = document.getElementById('fontSmLabel'); if(sl) sl.textContent = __T('S','소','小','小');
+  var ml = document.getElementById('fontMdLabel'); if(ml) ml.textContent = __T('M','중','中','中');
+  var ll = document.getElementById('fontLgLabel'); if(ll) ll.textContent = __T('L','대','大','大');
 }
 
 function toggleAutoLock(enabled) {
@@ -3474,7 +3753,7 @@ function toggleAutoLockBtn(btn) {
   var isOn = btn.dataset.on !== 'true';
   var en = localStorage.getItem('lang') === 'en';
   btn.dataset.on = isOn ? 'true' : 'false';
-  btn.textContent = isOn ? (en ? 'On' : '켜짐') : (en ? 'Off' : '꺼짐');
+  btn.textContent = isOn ? (__T('On','켜짐','开','オン')) : (__T('Off','꺼짐','关','オフ'));
   btn.classList.toggle('ss-onoff-on', isOn);
   localStorage.setItem('autoLock', isOn ? 'true' : 'false');
 }
@@ -3491,7 +3770,7 @@ function openSecretSettings() {
     var isOn = localStorage.getItem('autoLock') !== 'false';
     var en = localStorage.getItem('lang') === 'en';
     autoLockEl.dataset.on = isOn ? 'true' : 'false';
-    autoLockEl.textContent = isOn ? (en ? 'On' : '켜짐') : (en ? 'Off' : '꺼짐');
+    autoLockEl.textContent = isOn ? (__T('On','켜짐','开','オン')) : (__T('Off','꺼짐','关','オフ'));
     autoLockEl.classList.toggle('ss-onoff-on', isOn);
   }
   document.getElementById('secretSettingsModal').style.display = 'flex';
@@ -3515,7 +3794,7 @@ function openShareTargetPicker() {
 
   if (!friends.length) {
     listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--chat-text2);font-size:13px;">' +
-      (en ? 'No friends yet. Add a friend first.' : '친구가 없습니다. 먼저 친구를 추가하세요.') + '</div>';
+      (__T('No friends yet. Add a friend first.','친구가 없습니다. 먼저 친구를 추가하세요.','暂无好友。请先添加好友。','友達がいません。まず友達を追加してください。')) + '</div>';
   } else {
     listEl.innerHTML = friends.map(function(code) {
       var isCurrent = code === current;
@@ -3537,7 +3816,7 @@ function closeShareTargetPicker() {
 // 친구 선택 시 호출
 async function pickShareTarget(code) {
   closeShareTargetPicker();
-  try { showUploadStatus('공유 대상 변경 중...'); } catch(e) {}
+  try { showUploadStatus(__T('Changing share target...','공유 대상 변경 중...','正在更改共享对象...','共有相手を変更中...')); } catch(e) {}
   try {
     await setShareTarget(code);
   } catch(e) { console.log('[SHARE] set error:', e.message); }
@@ -3548,7 +3827,7 @@ async function pickShareTarget(code) {
 // 공유 대상 해제
 async function clearShareTarget() {
   closeShareTargetPicker();
-  try { showUploadStatus('공유 대상 해제 중...'); } catch(e) {}
+  try { showUploadStatus(__T('Releasing share target...','공유 대상 해제 중...','正在解除共享对象...','共有相手を解除中...')); } catch(e) {}
   try {
     await setShareTarget(null);
   } catch(e) { console.log('[SHARE] clear error:', e.message); }
@@ -3656,7 +3935,9 @@ async function initFCM() {
 }
 
 // Render 서버로 FCM 푸시 전송
-async function sendFCMPush(targetToken, title = '새 메시지', body = '새 알림이 있어요') {
+async function sendFCMPush(targetToken, title, body) {
+  if (title == null) title = __T('New message','새 메시지','新消息','新着メッセージ');
+  if (body == null) body = __T('New notification','새 알림이 있어요','有新通知','新着通知があります');
   if (!targetToken) return;
   try {
     await fetch(`${FCM_SERVER}`, {
@@ -3711,8 +3992,8 @@ function toggleSettingsNotif(type, enabled) {
 }
 
 function toggleNotification() {
-  if (typeof Notification === 'undefined') { showAlert('이 브라우저는 알림을 지원하지 않습니다'); return; }
-  if (Notification.permission === 'denied') { showAlert('알림이 차단됨. 브라우저 설정에서 허용해주세요'); return; }
+  if (typeof Notification === 'undefined') { showAlert(__T('This browser does not support notifications','이 브라우저는 알림을 지원하지 않습니다','此浏览器不支持通知','このブラウザは通知をサポートしていません')); return; }
+  if (Notification.permission === 'denied') { showAlert(__T('Notifications blocked. Allow in browser settings','알림이 차단됨. 브라우저 설정에서 허용해주세요','通知被阻止。请在浏览器设置中允许','通知がブロックされています。ブラウザ設定で許可してください')); return; }
   if (Notification.permission === 'default') {
     _filePickerOpen = true;
     _appWasHidden = false; // 강제 리셋
@@ -3744,7 +4025,7 @@ function updateNotifBtn() {
   notifEnabled = (localStorage.getItem('notifEvent') === 'true') ||
                  (localStorage.getItem('notifEnabled') === 'true');
   btn.textContent = notifEnabled ? '🔔 알림 켜짐' : '🔕 알림 꺼짐';
-  btn.style.background = notifEnabled ? '#22c55e' : '#475569';
+  btn.style.background = notifEnabled ? '#22c55e' : '#334155';
 }
 
 function showUploadStatus(text) {
@@ -3764,7 +4045,7 @@ function showAlert(msg) {
   var isEn = localStorage.getItem('lang') === 'en';
   document.getElementById('customAlertMsg').textContent = msg;
   var okBtn = document.getElementById('customAlertOk');
-  okBtn.textContent = isEn ? 'OK' : '확인';
+  okBtn.textContent = __T('OK','확인','确定','OK');
   overlay.style.display = 'flex';
   okBtn.onclick = function() { overlay.style.display = 'none'; okBtn.onclick = null; };
 }
@@ -3775,8 +4056,8 @@ function showConfirm(msg, onOk, onCancel) {
   document.getElementById('customConfirmMsg').textContent = msg;
   var okBtn = document.getElementById('customConfirmOk');
   var cancelBtn = document.getElementById('customConfirmCancel');
-  okBtn.textContent = isEn ? 'OK' : '확인';
-  cancelBtn.textContent = isEn ? 'Cancel' : '취소';
+  okBtn.textContent = __T('OK','확인','确定','OK');
+  cancelBtn.textContent = __T('Cancel','취소','取消','キャンセル');
   overlay.style.display = 'flex';
   function cleanup() { overlay.style.display = 'none'; okBtn.onclick = null; cancelBtn.onclick = null; }
   okBtn.onclick = function() { cleanup(); if (onOk) onOk(); };
@@ -3799,26 +4080,32 @@ function hideInAppNotif() {
 
 // -- Health Stats --
 var STAT_CATS = {
-  weight:   { label: "체중",   labelEn: "Weight",   unit: "kg",    color: "#4A90D9", emoji: "⚖️",
+  weight:   { label: "체중",   labelEn: "Weight",   labelZh: "体重",     labelJa: "体重",   unit: "kg",    color: "#4A90D9", emoji: "⚖️",
     svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v4l3 3"/></svg>' },
-  bp:       { label: "혈압",   labelEn: "BP",       unit: "mmHg",  color: "#ef4444", emoji: "🫀",
+  bp:       { label: "혈압",   labelEn: "BP",       labelZh: "血压",     labelJa: "血圧",   unit: "mmHg",  color: "#ef4444", emoji: "🫀",
     svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>' },
-  steps:    { label: "걸음수", labelEn: "Steps",    unit: "steps", color: "#22c55e", emoji: "🚶",
+  steps:    { label: "걸음수", labelEn: "Steps",    labelZh: "步数",     labelJa: "歩数",   unit: "steps", color: "#22c55e", emoji: "🚶",
     svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><path d="M12 7v6l3 4"/><path d="M9 17l-2 4"/><path d="M15 13l2 4"/></svg>' },
-  exercise: { label: "운동",   labelEn: "Exercise", unit: "min",   color: "#f59e0b", emoji: "🏃",
+  exercise: { label: "운동",   labelEn: "Exercise", labelZh: "运动",     labelJa: "運動",   unit: "min",   color: "#f59e0b", emoji: "🏃",
     svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4" r="2"/><path d="M15 8l-3 3-3-3"/><path d="M9 11l-3 6"/><path d="M15 11l3 6"/><path d="M9 17l3-4 3 4"/></svg>' }
 };
 
 function statLabel(k) {
-  var en = localStorage.getItem('lang') === 'en';
-  return en ? (STAT_CATS[k].labelEn || STAT_CATS[k].label) : STAT_CATS[k].label;
+  var lang = localStorage.getItem('lang') || 'ko';
+  var c = STAT_CATS[k]; if (!c) return k;
+  if (lang === 'en') return c.labelEn || c.label;
+  if (lang === 'zh') return c.labelZh || c.labelEn || c.label;
+  if (lang === 'ja') return c.labelJa || c.labelEn || c.label;
+  return c.label;
 }
 function statUnit(k) {
-  var en = localStorage.getItem('lang') === 'en';
-  if (!en) return STAT_CATS[k].unit;
-  // 영문 단위 매핑
+  var lang = localStorage.getItem('lang') || 'ko';
+  var u = STAT_CATS[k] && STAT_CATS[k].unit;
+  if (!u) return '';
+  if (lang === 'ko') return u;
+  // ko 외 언어에서는 영문 단위 매핑 (간단)
   var unitMap = { '보': 'steps', '분': 'min' };
-  return unitMap[STAT_CATS[k].unit] || STAT_CATS[k].unit;
+  return unitMap[u] || u;
 }
 var curSC = "weight";
 
@@ -3844,7 +4131,7 @@ function setSD(d) {
 }
 
 function openStats() {
-  document.getElementById("featureTitle").textContent = localStorage.getItem("lang")==="en" ? "Health Stats" : "건강 통계";
+  document.getElementById("featureTitle").textContent = __T("Health Stats","건강 통계","健康统计","健康統計");
   // Firestore 리스너
   if (statListener) { statListener(); statListener = null; }
   var sid = getSharedStatId();
@@ -3855,7 +4142,7 @@ function openStats() {
         var d = snap.data();
         localStorage.setItem("hStats", JSON.stringify(d.data || {}));
         if (!firstLoad && d.updatedBy && d.updatedBy !== myCode) {
-          if (localStorage.getItem('notifApp') === 'true') sendNotification('통계', '건강 기록이 업데이트됐어요');
+          if (localStorage.getItem('notifApp') === 'true') sendNotification(__T('Stats','통계','统计','統計'), __T('Health record updated','건강 기록이 업데이트됐어요','健康记录已更新','健康記録が更新されました'));
         }
         firstLoad = false;
         renderStatsUI();
@@ -3875,7 +4162,7 @@ function renderStatsUI() {
   var boxBg   = isDark ? '#1A1A1A' : '#F8F9FF';
   var boxBd   = isDark ? '#2A2A2A' : '#ECEEF8';
   var titleCl = isDark ? '#F1F1F1' : '#1e293b';
-  var dateCl  = isDark ? '#94a3b8' : '#64748b';
+  var dateCl  = isDark ? '#334155' : '#334155';
 
   var tabHtml = '<div style="display:flex;flex-wrap:nowrap;gap:8px;padding:4px 0 16px;overflow-x:auto;">';
   Object.keys(STAT_CATS).forEach(function(k) {
@@ -3883,7 +4170,7 @@ function renderStatsUI() {
     var active = (k === curSC);
     var hasDot = data[k] && data[k].length > 0;
     var bg = active ? "var(--primary)" : "var(--card,#f1f5f9)";
-    var col = active ? "#fff" : "var(--text,#64748b)";
+    var col = active ? "#fff" : "var(--text,#334155)";
     var btn = document.createElement("button");
     btn.innerHTML = statLabel(k) + (hasDot ? " ●" : "");
     btn.setAttribute("data-scat", k);
@@ -3892,22 +4179,22 @@ function renderStatsUI() {
   });
   tabHtml += "</div>";
 
-  var addHtml = '<div style="text-align:right;margin-bottom:12px;"><button id="openSmBtn" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;">' + (localStorage.getItem('lang')==='en' ? '+ Add' : '+ 입력') + '</button></div>';
+  var addHtml = '<div style="text-align:right;margin-bottom:12px;"><button id="openSmBtn" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;">' + (__T('+ Add','+ 입력','+ 添加','+ 入力')) + '</button></div>';
 
-  var chartHtml = '<div style="background:' + boxBg + ';border:1.5px solid ' + boxBd + ';border-radius:16px;padding:16px;margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:' + titleCl + ';">' + cat.emoji + ' ' + statLabel(curSC) + '</div><div style="font-size:11px;color:#94a3b8;margin-bottom:12px;">' + (localStorage.getItem('lang')==='en' ? 'Unit: ' : '단위: ') + statUnit(curSC) + '</div>';
+  var chartHtml = '<div style="background:' + boxBg + ';border:1.5px solid ' + boxBd + ';border-radius:16px;padding:16px;margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:' + titleCl + ';">' + cat.emoji + ' ' + statLabel(curSC) + '</div><div style="font-size:11px;color:#334155;margin-bottom:12px;">' + (__T('Unit: ','단위: ','单位: ','単位: ')) + statUnit(curSC) + '</div>';
   if (entries.length === 0) {
-    chartHtml += '<div style="text-align:center;color:#64748b;font-size:13px;padding:30px 0;">데이터가 없어요.<br>+ 입력으로 추가해보세요!</div>';
+    chartHtml += '<div style="text-align:center;color:#334155;font-size:13px;padding:30px 0;">데이터가 없어요.<br>+ 입력으로 추가해보세요!</div>';
   } else {
     chartHtml += '<canvas id="sCanvas" style="width:100%;"></canvas>';
   }
   chartHtml += "</div>";
 
-  var listHtml = '<div style="font-size:13px;font-weight:700;color:#64748b;margin-bottom:8px;">' + (localStorage.getItem('lang')==='en' ? 'Recent Records' : '최근 기록') + '</div>';
+  var listHtml = '<div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:8px;">' + (__T('Recent Records','최근 기록','最近记录','最近の記録')) + '</div>';
   entries.slice().reverse().slice(0,10).forEach(function(e, i) {
     var origIdx = entries.length - 1 - i;
     var valDisplay = (curSC === 'bp' && e.dia != null)
-      ? '<span style="font-size:15px;font-weight:700;color:' + cat.color + ';">' + e.value + '/' + e.dia + ' <small style="font-size:11px;color:#94a3b8;">mmHg</small></span>'
-      : '<span style="font-size:15px;font-weight:700;color:' + cat.color + ';">' + e.value + ' <small style="font-size:11px;color:#94a3b8;">' + cat.unit + '</small></span>';
+      ? '<span style="font-size:15px;font-weight:700;color:' + cat.color + ';">' + e.value + '/' + e.dia + ' <small style="font-size:11px;color:#334155;">mmHg</small></span>'
+      : '<span style="font-size:15px;font-weight:700;color:' + cat.color + ';">' + e.value + ' <small style="font-size:11px;color:#334155;">' + cat.unit + '</small></span>';
     var row = '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:' + boxBg + ';border:1.5px solid ' + boxBd + ';border-radius:12px;margin-bottom:6px;">'
       + '<span style="font-size:13px;color:' + dateCl + ';">' + e.date + '</span>'
       + valDisplay
@@ -3961,7 +4248,7 @@ function drawSC(canvas, entries, cat) {
     var gy=pT+(gH/4)*g;
     ctx.strokeStyle="#333";ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(pL,gy);ctx.lineTo(W-pR,gy);ctx.stroke();
-    ctx.fillStyle="#94a3b8";ctx.font="9px sans-serif";ctx.textAlign="right";
+    ctx.fillStyle="#334155";ctx.font="9px sans-serif";ctx.textAlign="right";
     ctx.fillText((mx-(rng/4)*g).toFixed(1),pL-3,gy+3);
   }
 
@@ -3978,7 +4265,7 @@ function drawSC(canvas, entries, cat) {
       ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);
       ctx.fillStyle="#1A1A1A";ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=2;ctx.stroke();
       if(entries.length<=7||i%Math.ceil(entries.length/6)===0){
-        ctx.fillStyle="#94a3b8";ctx.font="8px sans-serif";ctx.textAlign="center";
+        ctx.fillStyle="#334155";ctx.font="8px sans-serif";ctx.textAlign="center";
         ctx.fillText(entries[i].date.slice(5),p.x,H-2);
       }
     });
@@ -4008,9 +4295,9 @@ function openSM() {
   var boxBg  = isDark ? '#1A1A1A' : '#fff';
   var boxBd  = isDark ? '#2A2A2A' : '#e2e8f0';
   var textCl = isDark ? '#F1F1F1' : '#1e293b';
-  var subCl  = isDark ? '#94a3b8' : '#94a3b8';
+  var subCl  = isDark ? '#334155' : '#334155';
   var cancelBg = isDark ? '#2A2A2A' : '#f1f5f9';
-  var cancelCl = isDark ? '#94a3b8' : '#64748b';
+  var cancelCl = isDark ? '#334155' : '#334155';
 
   var overlay = document.createElement("div");
   overlay.id = "smOverlay";
@@ -4048,7 +4335,7 @@ function smCatChange() {
   var boxBg  = isDark ? '#1A1A1A' : '#fff';
   var boxBd  = isDark ? '#2A2A2A' : '#e2e8f0';
   var textCl = isDark ? '#F1F1F1' : '#1e293b';
-  var subCl  = isDark ? '#94a3b8' : '#94a3b8';
+  var subCl  = isDark ? '#334155' : '#334155';
   var inpStyle = "width:100%;padding:10px;border-radius:10px;border:1.5px solid " + boxBd + ";font-size:16px;box-sizing:border-box;background:" + boxBg + ";color:" + textCl + ";";
 
   var cat = document.getElementById("smCat").value;
@@ -4106,7 +4393,7 @@ function startClock() {
     var now = new Date();
     var hours = now.getHours();
     var isEn = localStorage.getItem('lang') === 'en';
-    var ampm = hours >= 12 ? (isEn ? 'PM' : '오후') : (isEn ? 'AM' : '오전');
+    var ampm = hours >= 12 ? (__T('PM','오후','下午','午後')) : (__T('AM','오전','上午','午前'));
     var h12 = hours % 12 || 12;
     var h = String(h12).padStart(2,'0');
     var m = String(now.getMinutes()).padStart(2,'0');
@@ -4118,6 +4405,12 @@ function startClock() {
       var mns = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
       var dns = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
       dateStr = mns[now.getMonth()] + ' ' + now.getDate() + ' (' + dns[now.getDay()] + ')';
+    } else if (lang2 === 'zh') {
+      var dnsZh = ['日','一','二','三','四','五','六'];
+      dateStr = (now.getMonth()+1) + '月' + now.getDate() + '日 (周' + dnsZh[now.getDay()] + ')';
+    } else if (lang2 === 'ja') {
+      var dnsJa = ['日','月','火','水','木','金','土'];
+      dateStr = (now.getMonth()+1) + '月' + now.getDate() + '日 (' + dnsJa[now.getDay()] + ')';
     } else {
       dateStr = (now.getMonth()+1) + '월 ' + now.getDate() + '일 (' + days[now.getDay()] + ')';
     }
@@ -4145,17 +4438,17 @@ function getWeatherIcon(id) {
 
 function getDustLevel(pm10) {
   var en = localStorage.getItem('lang') === 'en';
-  if (pm10 <= 30) return { text: en ? 'Good' : '좋음', color: '#4ade80' };
-  if (pm10 <= 80) return { text: en ? 'Moderate' : '보통', color: '#facc15' };
-  if (pm10 <= 150) return { text: en ? 'Bad' : '나쁨', color: '#fb923c' };
-  return { text: en ? 'V.Bad' : '매우나쁨', color: '#f87171' };
+  if (pm10 <= 30) return { text: __T('Good','좋음','良好','良好'), color: '#4ade80' };
+  if (pm10 <= 80) return { text: __T('Moderate','보통','一般','普通'), color: '#facc15' };
+  if (pm10 <= 150) return { text: __T('Bad','나쁨','差','悪い'), color: '#fb923c' };
+  return { text: __T('V.Bad','매우나쁨','极差','非常に悪い'), color: '#f87171' };
 }
 
 function getClothes(temp, pm10) {
-  var en = localStorage.getItem('lang') === 'en';
-  var mask = pm10 > 80 ? (en ? '😷 Mask recommended' : '😷 마스크 착용 권장') : '';
+  var lang = localStorage.getItem('lang') || 'ko';
+  var mask = pm10 > 80 ? (__T('😷 Mask recommended','😷 마스크 착용 권장','😷 建议佩戴口罩','😷 マスク着用推奨')) : '';
   var top, bot;
-  if (en) {
+  if (lang === 'en') {
     if (temp >= 28) { top = 'Sleeveless · T-shirt'; bot = 'Shorts · Dress'; }
     else if (temp >= 23) { top = 'T-shirt · Light shirt'; bot = 'Shorts'; }
     else if (temp >= 20) { top = 'Blouse · Long sleeve'; bot = 'Pants · Jeans'; }
@@ -4164,6 +4457,24 @@ function getClothes(temp, pm10) {
     else if (temp >= 9)  { top = 'Trench coat · Knit'; bot = 'Jeans'; }
     else if (temp >= 5)  { top = 'Wool coat · Heattech'; bot = 'Layered'; }
     else                 { top = 'Padding · Thick coat'; bot = 'Scarf'; }
+  } else if (lang === 'zh') {
+    if (temp >= 28) { top = '无袖 · 短袖'; bot = '短裤 · 连衣裙'; }
+    else if (temp >= 23) { top = '短袖 · 薄衬衫'; bot = '短裤'; }
+    else if (temp >= 20) { top = '衬衫 · 长袖'; bot = '棉裤 · 牛仔裤'; }
+    else if (temp >= 17) { top = '薄开衫'; bot = '长裤'; }
+    else if (temp >= 12) { top = '夹克 · 开衫'; bot = '牛仔裤'; }
+    else if (temp >= 9)  { top = '风衣 · 针织衫'; bot = '牛仔裤'; }
+    else if (temp >= 5)  { top = '羊毛大衣 · 保暖内衣'; bot = '叠穿'; }
+    else                 { top = '羽绒服 · 厚大衣'; bot = '围巾'; }
+  } else if (lang === 'ja') {
+    if (temp >= 28) { top = 'ノースリーブ · 半袖'; bot = 'ショートパンツ · ワンピース'; }
+    else if (temp >= 23) { top = '半袖 · 薄手シャツ'; bot = 'ショートパンツ'; }
+    else if (temp >= 20) { top = 'ブラウス · 長袖'; bot = 'コットンパンツ · ジーンズ'; }
+    else if (temp >= 17) { top = '薄手カーディガン'; bot = '長ズボン'; }
+    else if (temp >= 12) { top = 'ジャケット · カーディガン'; bot = 'ジーンズ'; }
+    else if (temp >= 9)  { top = 'トレンチコート · ニット'; bot = 'ジーンズ'; }
+    else if (temp >= 5)  { top = 'ウールコート · ヒートテック'; bot = '重ね着'; }
+    else                 { top = 'ダウン · 厚手コート'; bot = 'マフラー'; }
   } else {
     if (temp >= 28) { top = '민소매 · 반팔'; bot = '반바지 · 원피스'; }
     else if (temp >= 23) { top = '반팔 · 얇은 셔츠'; bot = '반바지'; }
@@ -4191,8 +4502,8 @@ function renderWeatherUI(data) {
   var level = getDustLevel(data.pm10);
   var level25 = getDustLevel(data.pm25);
   document.getElementById('widgetDustVal').innerHTML =
-    (en ? 'Fine dust ' : '미세 ') + '<b style="color:' + level.color + '">' + level.text + '</b><br>' +
-    (en ? 'Ultra-fine ' : '초미세 ') + '<b style="color:' + level25.color + '">' + level25.text + '</b>';
+    (__T('Fine dust ','미세 ','细颗粒 ','微小 ')) + '<b style="color:' + level.color + '">' + level.text + '</b><br>' +
+    (__T('Ultra-fine ','초미세 ','超细颗粒 ','超微小 ')) + '<b style="color:' + level25.color + '">' + level25.text + '</b>';
   document.getElementById('widgetDustLevel').textContent = '';
   document.getElementById('widgetClothesVal').innerHTML = getClothes(data.temp, data.pm10).replace(/\n/g, '<br>');
 }
@@ -4204,7 +4515,7 @@ async function loadWeather() {
     var lon = pos.coords.longitude;
     try {
       var en = localStorage.getItem('lang') === 'en';
-      var wLang = en ? 'en' : 'kr';
+      var wLang = __T('en','kr','zh','ja');
       var wRes = await fetch('https://api.openweathermap.org/data/2.5/weather?lat='+lat+'&lon='+lon+'&appid='+OWM_KEY+'&units=metric&lang='+wLang);
       var wData = await wRes.json();
       var fRes = await fetch('https://api.openweathermap.org/data/2.5/forecast?lat='+lat+'&lon='+lon+'&appid='+OWM_KEY+'&units=metric&cnt=8');
@@ -4225,11 +4536,11 @@ async function loadWeather() {
       renderWeatherUI(_weatherCache);
     } catch(e) {
       var en = localStorage.getItem('lang') === 'en';
-      document.getElementById('widgetClothesVal').textContent = en ? 'No weather info' : '날씨 정보 없음';
+      document.getElementById('widgetClothesVal').textContent = __T('No weather info','날씨 정보 없음','无天气信息','天気情報なし');
     }
   }, function() {
     var en = localStorage.getItem('lang') === 'en';
-    document.getElementById('widgetClothesVal').textContent = en ? 'Location permission needed' : '위치 권한 필요';
+    document.getElementById('widgetClothesVal').textContent = __T('Location permission needed','위치 권한 필요','需要位置权限','位置情報の権限が必要');
   });
 }
 
@@ -4331,6 +4642,48 @@ const I18N = {
     dust: 'Air Quality', clothes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="vertical-align:middle;margin-right:3px;color:var(--primary);"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>Outfit Tip',
     loading: 'Loading...', locationNeeded: 'Location permission needed',
     cancel: 'Cancel', save2: 'Save', delete: 'Delete',
+  },
+  zh: {
+    todo: '待办', schedule: '日程', alarm: '闹钟',
+    memo: '备忘', goal: '目标', stats: '统计',
+    project: '项目', tag: '标签', calendar: '日历',
+    settings: '设置', back: '← 返回',
+    settingsTitle: '设置', appNameLabel: '应用名称',
+    save: '保存', themeColor: '主题色',
+    notifSection: '通知', notifApp: '应用提醒 (备忘/日程/待办/统计)',
+    notifEvent: '事件提醒 (聊天)',
+    language: '语言',
+    todoTitle: '待办', todoPlaceholder: '添加新任务...',
+    memoTitle: '备忘', calendarTitle: '日历',
+    statsTitle: '健康统计', statInput: '输入数据',
+    recentRecord: '最近记录',
+    noData: '暂无数据。\n点击+添加!',
+    chatList: '列表', noFriend: '添加好友后可开始聊天',
+    msgPlaceholder: '输入消息...',
+    dust: '空气质量', clothes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="vertical-align:middle;margin-right:3px;color:var(--primary);"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>穿搭推荐',
+    loading: '加载中...', locationNeeded: '需要位置权限',
+    cancel: '取消', save2: '保存', delete: '删除',
+  },
+  ja: {
+    todo: 'タスク', schedule: '予定', alarm: 'アラーム',
+    memo: 'メモ', goal: '目標', stats: '統計',
+    project: 'プロジェクト', tag: 'タグ', calendar: 'カレンダー',
+    settings: '設定', back: '← 戻る',
+    settingsTitle: '設定', appNameLabel: 'アプリ名',
+    save: '保存', themeColor: 'テーマカラー',
+    notifSection: '通知', notifApp: 'アプリ通知 (メモ/予定/タスク/統計)',
+    notifEvent: 'イベント通知 (チャット)',
+    language: '言語',
+    todoTitle: 'タスク', todoPlaceholder: '新しいタスクを追加...',
+    memoTitle: 'メモ', calendarTitle: 'カレンダー',
+    statsTitle: '健康統計', statInput: '数値入力',
+    recentRecord: '最近の記録',
+    noData: 'データがありません。\n+で追加してください!',
+    chatList: 'リスト', noFriend: '友達を追加するとチャットが始まります',
+    msgPlaceholder: 'メッセージを入力...',
+    dust: 'PM2.5', clothes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="vertical-align:middle;margin-right:3px;color:var(--primary);"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>服装提案',
+    loading: '読み込み中...', locationNeeded: '位置情報の権限が必要',
+    cancel: 'キャンセル', save2: '保存', delete: '削除',
   }
 };
 
@@ -4340,15 +4693,34 @@ function t(key) {
   return (I18N[currentLang] && I18N[currentLang][key]) || (I18N['ko'][key]) || key;
 }
 
+// 4언어 인라인 헬퍼: __T(en, ko, zh, ja)
+// 현재 lang에 따라 해당 문자열을 반환. zh/ja가 누락되면 en으로 fallback.
+function __T(en, ko, zh, ja) {
+  var lang = localStorage.getItem('lang') || 'ko';
+  if (lang === 'en') return en;
+  if (lang === 'zh') return (zh != null ? zh : en);
+  if (lang === 'ja') return (ja != null ? ja : en);
+  return ko;
+}
+
 function setLang(lang) {
   currentLang = lang;
   localStorage.setItem('lang', lang);
+  // <html lang="..."> 동적 변경
+  try {
+    var htmlLangMap = { en: 'en', ko: 'ko', zh: 'zh', ja: 'ja' };
+    document.documentElement.setAttribute('lang', htmlLangMap[lang] || 'ko');
+  } catch(e) {}
   applyLang();
   renderWeatherUI(_weatherCache);
 }
 
 function applyLang() {
   currentLang = localStorage.getItem('lang') || 'ko';
+  try {
+    var _hlm = { en: 'en', ko: 'ko', zh: 'zh', ja: 'ja' };
+    document.documentElement.setAttribute('lang', _hlm[currentLang] || 'ko');
+  } catch(e) {}
   var en = currentLang === 'en';
   updateFakeDate();
 
@@ -4361,228 +4733,290 @@ function applyLang() {
   menuLabels.forEach(function(el,i){ if(menuKeys[i]) el.textContent = t(menuKeys[i]); });
 
   // 날짜 배너
-  _setText('dateSubtitle', en ? "Check today's schedule" : '오늘의 일정을 확인하세요');
+  _setText('dateSubtitle', __T("Check today's schedule",'오늘의 일정을 확인하세요','查看今日日程','今日の予定を確認'));
 
   // 서브타이틀
-  _setText('settingsTitle', en ? 'Settings' : '설정');
-  _setText('todoTitle', en ? 'To-Do' : '할 일');
-  _setText('memoTitle', en ? 'Memo' : '메모');
-  _setText('calendarTitle', en ? 'Calendar' : '달력');
-  _setText('statsTitle', en ? 'Health Stats' : '건강 통계');
-  _setText('chatListTitle', en ? 'List' : '목록');
-  _setText('newMemoTitle', en ? 'New Memo' : '새 메모');
+  _setText('settingsTitle', __T('Settings','설정','设置','設定'));
+  _setText('todoTitle', __T('To-Do','할 일','待办','タスク'));
+  _setText('memoTitle', __T('Memo','메모','备忘','メモ'));
+  _setText('calendarTitle', __T('Calendar','달력','日历','カレンダー'));
+  _setText('statsTitle', __T('Health Stats','건강 통계','健康统计','健康統計'));
+  _setText('chatListTitle', __T('List','목록','列表','リスト'));
+  _setText('newMemoTitle', __T('New Memo','새 메모','新建备忘','新規メモ'));
   _setText('featureTitle', document.getElementById('featureTitle') ? document.getElementById('featureTitle').textContent : '');
 
   // sub-title bold: 영문 bold, 한글 normal
-  document.querySelectorAll('.sub-title').forEach(function(el){ el.style.fontWeight = en ? '800' : '400'; });
+  document.querySelectorAll('.sub-title').forEach(function(el){ el.style.fontWeight = __T('800','400','800','800'); });
 
   // back 버튼은 SVG 아이콘으로 고정 — 언어 전환 불필요
 
   // 설정 라벨
-  _setText('appNameLabel', en ? 'App Name' : '앱 이름');
-  _setText('iconStyleLabel', en ? 'Icon Style' : '아이콘 스타일');
-  _setText('iconStyleEmoji', en ? 'Emoji' : '이모지');
-  _setText('iconStyleSvg',   en ? 'SVG Line' : 'SVG 라인');
-  _setText('svgColorLabel', en ? 'SVG Line Color' : 'SVG 라인 색상');
-  _setText('svgColorOn',    en ? 'Individual' : '개별 색상');
-  _setText('svgColorOff',   en ? 'Theme Color' : '테마 색상');
-  _setText('appTitleLabel', en ? 'App Title' : '앱 타이틀');
-  _setText('titleColorHint', en ? 'Long-press to pick color & size' : '롱프레스로 색상·크기 선택');
-  _setText('displayModeLabel', en ? 'Display Mode' : '화면 모드');
-  _setText('darkModeText', en ? 'Dark Mode' : '다크 모드');
-  _setText('themeColorLabel', en ? 'Theme Color' : '테마 색상');
-  _setText('notifSectionLabel', en ? 'Notifications' : '알림');
-  _setText('langLabel', en ? 'Language' : '언어');
-  _setText('infoLabel', en ? 'Info' : '정보');
-  _setText('notifEventLabel', en ? 'Event Alerts' : '이벤트 알림');
-  _setText('notifAppLabel', en ? 'App Alerts' : '앱 알림');
-  _setText('shareTargetLabel', en ? 'Share Target :' : '공유 대상 :');
-  _setText('shareTargetBtn', en ? 'Change' : '변경');
-  _setText('shareTargetModalTitle', en ? 'Select Share Target' : '공유 대상 선택');
-  _setText('shareReqTitle',       en ? 'Share Request' : '공유 요청');
-  _setText('restoreTitle',        en ? 'Enter Your Code' : '내 코드 입력');
-  _setText('restoreDesc',         en ? 'Enter your code' : '사용하실 코드를 입력하세요');
-  _setText('restoreCancelBtn',    en ? 'Cancel' : '취소');
-  _setText('restoreOkBtn',        en ? 'OK' : '확인');
-  _setText('shareReqDescText',    en ? ' sent you a share request.' : '님이 공유 대상으로 지정했습니다.');
-  _setText('shareReqHint',        en ? 'Accept to share Memo/To-Do/Schedule/Stats together.' : '승인하면 메모/할일/일정/통계를 함께 사용합니다.');
-  _setText('shareReqRejectBtn',   en ? 'Reject' : '거절');
-  _setText('shareReqAcceptBtn',   en ? 'Accept' : '승인');
-  _setText('shareTargetModalDesc', en ? 'Choose a friend to share Memo/To-Do/Schedule/Stats with' : '메모/할일/일정/통계를 함께 사용할 친구를 선택하세요');
-  _setText('shareTargetCancelBtn', en ? 'Cancel' : '취소');
-  _setText('shareTargetClearBtn', en ? 'Clear' : '해제');
+  _setText('appNameLabel', __T('App Name','앱 이름','应用名称','アプリ名'));
+  _setText('iconStyleLabel', __T('Icon Style','아이콘 스타일','图标样式','アイコンスタイル'));
+  _setText('iconStyleEmoji', __T('Emoji','이모지','表情符号','絵文字'));
+  _setText('iconStyleSvg',   __T('SVG Line','SVG 라인','SVG 线条','SVGライン'));
+  _setText('svgColorLabel', __T('SVG Line Color','SVG 라인 색상','SVG 线条颜色','SVGライン色'));
+  _setText('svgColorOn',    __T('Individual','개별 색상','单独颜色','個別色'));
+  _setText('svgColorOff',   __T('Theme Color','테마 색상','主题色','テーマカラー'));
+  _setText('appTitleLabel', __T('App Title','앱 타이틀','应用标题','アプリタイトル'));
+  _setText('titleColorHint', __T('Long-press to pick color & size','롱프레스로 색상·크기 선택','长按选择颜色和大小','長押しで色とサイズを選択'));
+  _setText('displayModeLabel', __T('Display Mode','화면 모드','显示模式','表示モード'));
+  _setText('darkModeText', __T('Dark Mode','다크 모드','深色模式','ダークモード'));
+  _setText('themeColorLabel', __T('Theme Color','테마 색상','主题色','テーマカラー'));
+  _setText('themeColorPaletteLabel', __T('Select theme color','테마 색상 선택','选择主题色','テーマカラー選択'));
+  _setText('themeColorPaletteCancelBtn', __T('Close','닫기','关闭','閉じる'));
+  _setText('notifSectionLabel', __T('Notifications','알림','通知','通知'));
+  _setText('langLabel', __T('Language','언어','语言','言語'));
+  _setText('infoLabel', __T('Info','정보','信息','情報'));
+  _setText('notifEventLabel', __T('Event Alerts','이벤트 알림','事件提醒','イベント通知'));
+  _setText('notifAppLabel', __T('App Alerts','앱 알림','应用提醒','アプリ通知'));
+  _setText('shareTargetLabel', __T('Share Target :','공유 대상 :','共享对象 :','共有相手 :'));
+  _setText('shareTargetBtn', __T('Change','변경','更改','変更'));
+  _setText('shareTargetModalTitle', __T('Select Share Target','공유 대상 선택','选择共享对象','共有相手を選択'));
+  _setText('shareReqTitle',       __T('Share Request','공유 요청','共享请求','共有リクエスト'));
+  _setText('restoreTitle',        __T('Enter Your Code','내 코드 입력','输入您的代码','コードを入力'));
+  _setText('restoreDesc',         __T('Enter your code','사용하실 코드를 입력하세요','请输入要使用的代码','使用するコードを入力してください'));
+  _setText('restoreCancelBtn',    __T('Cancel','취소','取消','キャンセル'));
+  _setText('restoreOkBtn',        __T('OK','확인','确定','OK'));
+  _setText('shareReqDescText',    __T(' sent you a share request.','님이 공유 대상으로 지정했습니다.',' 已将您指定为共享对象。',' さんがあなたを共有相手に指定しました。'));
+  _setText('shareReqHint',        __T('Accept to share Memo/To-Do/Schedule/Stats together.','승인하면 메모/할일/일정/통계를 함께 사용합니다.','同意后将共享备忘/待办/日程/统计。','承認するとメモ/タスク/予定/統計を共有します。'));
+  _setText('shareReqRejectBtn',   __T('Reject','거절','拒绝','拒否'));
+  _setText('shareReqAcceptBtn',   __T('Accept','승인','同意','承認'));
+  _setText('shareTargetModalDesc', __T('Choose a friend to share Memo/To-Do/Schedule/Stats with','메모/할일/일정/통계를 함께 사용할 친구를 선택하세요','选择共享备忘/待办/日程/统计的好友','メモ/タスク/予定/統計を共有する友達を選択'));
+  _setText('shareTargetCancelBtn', __T('Cancel','취소','取消','キャンセル'));
+  _setText('shareTargetClearBtn', __T('Clear','해제','解除','解除'));
 
   // 메모
-  _setText('newMemoBtn', en ? '+ New' : '+ 새 메모');
-  _setText('memoSaveBtn', en ? 'Save' : '저장');
+  _setText('newMemoBtn', __T('+ New','+ 새 메모','+ 新建','+ 新規'));
+  _setText('memoSaveBtn', __T('Save','저장','保存','保存'));
   var memoTP = document.getElementById('memoTitleInput');
-  if(memoTP) memoTP.placeholder = en ? 'Title' : '제목';
+  if(memoTP) memoTP.placeholder = __T('Title','제목','标题','タイトル');
   var memoCP = document.getElementById('memoContent');
-  if(memoCP) memoCP.placeholder = en ? 'Enter memo...' : '메모를 입력하세요...';
+  if(memoCP) memoCP.placeholder = __T('Enter memo...','메모를 입력하세요...','输入备忘...','メモを入力...');
 
   // 달력
-  _setText('calRefreshBtn', en ? 'Refresh' : '새로고침');
+  _setText('calRefreshBtn', __T('Refresh','새로고침','刷新','更新'));
 
   // 친구추가 모달
-  _setText('addFriendTitle', en ? 'Add Friend' : '친구 추가');
-  _setText('tabCode', en ? 'Code' : '코드');
-  _setText('tabQRScan', en ? 'QR Scan' : 'QR 스캔');
-  _setText('tabMyQR', en ? 'My QR' : '내 QR');
-  _setText('addFriendBtn', en ? 'Add' : '추가');
-  _setText('regenCodeBtn', en ? '🔄 Regenerate' : '🔄 코드 재생성');
+  _setText('addFriendTitle', __T('Add Friend','친구 추가','添加好友','友達追加'));
+  _setText('tabCode', __T('Code','코드','代码','コード'));
+  _setText('tabQRScan', __T('QR Scan','QR 스캔','扫描二维码','QRスキャン'));
+  _setText('tabMyQR', __T('My QR','내 QR','我的二维码','マイQR'));
+  _setText('addFriendBtn', __T('Add','추가','添加','追加'));
+  _setText('regenCodeBtn', __T('🔄 Regenerate','🔄 코드 재생성','🔄 重新生成代码','🔄 コード再生成'));
 
   // 태그 화면
   // tagBackBtn은 SVG 아이콘 고정
-  _setText('tagTitle', en ? 'Tags' : '태그');
-  _setText('tagDeleteAllBtn', en ? 'Clear All' : '전체삭제');
-  _setText('tagAutoDeleteLabel', en ? 'Auto Delete' : '자동삭제');
-  _setText('tagAuto0', en ? 'Off' : '끄기');
-  _setText('tagAuto1', en ? '1 day' : '1일');
-  _setText('tagAuto7', en ? '7 days' : '7일');
-  _setText('tagAuto30', en ? '30 days' : '30일');
+  _setText('tagTitle', __T('Tags','태그','标签','タグ'));
+  _setText('tagDeleteAllBtn', __T('Clear All','전체삭제','全部清除','全て削除'));
+  _setText('tagAutoDeleteLabel', __T('Auto Delete','자동삭제','自动删除','自動削除'));
+  _setText('tagAuto0', __T('Off','끄기','关闭','オフ'));
+  _setText('tagAuto1', __T('1 day','1일','1天','1日'));
+  _setText('tagAuto7', __T('7 days','7일','7天','7日'));
+  _setText('tagAuto30', __T('30 days','30일','30天','30日'));
 
   // 자동삭제
-  _setText('autoDeleteTitle', en ? 'Auto-Delete Timer' : '자동삭제 시간');
-  _setText('closeTimerBtn', en ? 'Cancel' : '취소');
+  _setText('autoDeleteTitle', __T('Auto-Delete Timer','자동삭제 시간','自动删除时间','自動削除タイマー'));
+  _setText('closeTimerBtn', __T('Cancel','취소','取消','キャンセル'));
   // deleteNowBtn 텍스트는 _resetTimerModal에서 lang 기준으로 동적 처리
 
   // 보안설정
-  _setText('securityTitle', en ? 'Settings' : '설정');
-  _setText('themeLabel2', en ? 'Theme' : '테마');
-  _setText('fontSizeLabel', en ? 'Font Size' : '폰트 크기');
-  _setText('lockPatternLabel', en ? 'Lock Pattern' : '잠금 패턴');
-  _setText('patternChangeBtn', en ? 'New Pattern' : '변경');
-  _setText('patternSetupTitle', en ? 'Change Pattern' : '패턴 변경');
-  _setText('patternGuide', en ? 'Drag to draw a new pattern (min. 4)' : '메뉴를 드래그해서 새 패턴 입력 (최소 4개)');
+  _setText('securityTitle', __T('Settings','설정','设置','設定'));
+  _setText('themeLabel2', __T('Theme','테마','主题','テーマ'));
+  _setText('fontSizeLabel', __T('Font Size','폰트 크기','字体大小','文字サイズ'));
+  _setText('lockPatternLabel', __T('Lock Pattern','잠금 패턴','锁定图案','ロックパターン'));
+  _setText('patternChangeBtn', __T('New Pattern','변경','更改','変更'));
+  _setText('patternSetupTitle', __T('Change Pattern','패턴 변경','更改图案','パターン変更'));
+  _setText('patternGuide', __T('Drag to draw a new pattern (min. 4)','메뉴를 드래그해서 새 패턴 입력 (최소 4개)','拖动菜单绘制新图案 (至少4个)','メニューをドラッグして新パターン入力 (最低4個)'));
   _setPatternBtn(false);
-  _setText('enhancedSecLabel', en ? 'Enhanced Security' : '강화 보안');
-  _setText('autoLockDesc', en ? 'Auto-lock chat when leaving screen' : '화면 이탈 시 채팅 자동 잠금');
-  _setText('myCodeLabel', en ? 'My Code :' : '내 코드 :');
-  _setText('changeCodeTitle', en ? 'Change ID Code' : '식별 코드 변경');
-  _setText('changeCodeDesc',  en ? 'Enter a new ID code' : '새 식별 코드를 입력하세요');
-  _setText('changeCodeCancelBtn', en ? 'Cancel' : '취소');
-  _setText('changeCodeConfirm', en ? 'OK' : '확인');
-  _setText('changeChoiceTitle', en ? 'Data Handling' : '데이터 처리');
-  _setText('changeChoiceDesc',  en ? 'What to do with existing data after code change?' : '코드 변경 후 기존 데이터를 어떻게 할까요?');
-  _setText('changeChoiceKeepBtn', en ? 'Keep Data' : '데이터 유지');
-  _setText('changeChoiceResetBtn', en ? 'Reset Data' : '데이터 초기화');
-  _setText('changeChoiceCancelBtn', en ? 'Cancel' : '취소');
+  _setText('enhancedSecLabel', __T('Enhanced Security','강화 보안','增强安全','強化セキュリティ'));
+  _setText('autoLockDesc', __T('Auto-lock chat when leaving screen','화면 이탈 시 채팅 자동 잠금','离开屏幕时自动锁定聊天','画面離脱時にチャット自動ロック'));
+  _setText('myCodeLabel', __T('My Code :','내 코드 :','我的代码 :','マイコード :'));
+  _setText('changeCodeTitle', __T('Change ID Code','식별 코드 변경','更改识别代码','識別コード変更'));
+  _setText('changeCodeDesc',  __T('Enter a new ID code','새 식별 코드를 입력하세요','输入新的识别代码','新しい識別コードを入力'));
+  _setText('changeCodeCancelBtn', __T('Cancel','취소','取消','キャンセル'));
+  _setText('changeCodeConfirm', __T('OK','확인','确定','OK'));
+  _setText('changeChoiceTitle', __T('Data Handling','데이터 처리','数据处理','データ処理'));
+  _setText('changeChoiceDesc',  __T('What to do with existing data after code change?','코드 변경 후 기존 데이터를 어떻게 할까요?','更改代码后如何处理现有数据?','コード変更後、既存データをどうしますか?'));
+  _setText('changeChoiceKeepBtn', __T('Keep Data','데이터 유지','保留数据','データ保持'));
+  _setText('changeChoiceResetBtn', __T('Reset Data','데이터 초기화','重置数据','データ初期化'));
+  _setText('changeChoiceCancelBtn', __T('Cancel','취소','取消','キャンセル'));
   var hintEl = document.getElementById('changeChoiceHint');
   if (hintEl) {
-    var keep = en ? 'Keep' : '유지';
-    var reset = en ? 'Reset' : '초기화';
-    hintEl.innerHTML = en
-      ? '<b style="color:#f59e0b;">' + keep + '</b>: Memo/To-Do/Stats/Calendar/Settings preserved. Friends, chats, shared data removed.<br><b style="color:#ef4444;">' + reset + '</b>: All data permanently deleted from server and device.'
-      : '<b style="color:#f59e0b;">' + keep + '</b>: 메모/할일/통계/달력/설정은 보존하고, 친구·채팅·공유 데이터만 삭제됩니다.<br><b style="color:#ef4444;">' + reset + '</b>: 모든 데이터가 서버와 기기에서 영구 삭제됩니다.';
+    var keep = __T('Keep','유지','保留','保持');
+    var reset = __T('Reset','초기화','重置','初期化');
+    var _hL = localStorage.getItem('lang') || 'ko';
+    var _h;
+    if (_hL === 'en') {
+      _h = '<b style="color:#f59e0b;">' + keep + '</b>: Memo/To-Do/Stats/Calendar/Settings preserved. Friends, chats, shared data removed.<br><b style="color:#ef4444;">' + reset + '</b>: All data permanently deleted from server and device.';
+    } else if (_hL === 'zh') {
+      _h = '<b style="color:#f59e0b;">' + keep + '</b>: 备忘/待办/统计/日历/设置将保留。好友、聊天、共享数据将被删除。<br><b style="color:#ef4444;">' + reset + '</b>: 所有数据将从服务器和设备永久删除。';
+    } else if (_hL === 'ja') {
+      _h = '<b style="color:#f59e0b;">' + keep + '</b>: メモ/タスク/統計/カレンダー/設定は保持されます。友達、チャット、共有データは削除されます。<br><b style="color:#ef4444;">' + reset + '</b>: 全データがサーバーと端末から永久に削除されます。';
+    } else {
+      _h = '<b style="color:#f59e0b;">' + keep + '</b>: 메모/할일/통계/달력/설정은 보존하고, 친구·채팅·공유 데이터만 삭제됩니다.<br><b style="color:#ef4444;">' + reset + '</b>: 모든 데이터가 서버와 기기에서 영구 삭제됩니다.';
+    }
+    hintEl.innerHTML = _h;
   }
-  _setText('changeCodeConfirm', en ? 'Confirm' : '변경 확인');
+  _setText('changeCodeConfirm', __T('Confirm','변경 확인','确认更改','変更を確認'));
 
   // 패턴
-  _setText('patternSaveBtn', en ? 'Save Pattern' : '패턴 저장');
+  _setText('patternSaveBtn', __T('Save Pattern','패턴 저장','保存图案','パターン保存'));
 
   // 통계
-  _setText('statAddBtn', en ? '+ Add' : '+ 입력');
-  _setText('statInputTitle', en ? 'Enter Data' : '수치 입력');
-  _setText('statCatLabel', en ? 'Category' : '카테고리');
-  _setText('statValLabel', en ? 'Value' : '수치');
-  _setText('statDateLabel', en ? 'Date' : '날짜');
+  _setText('statAddBtn', __T('+ Add','+ 입력','+ 添加','+ 入力'));
+  _setText('statInputTitle', __T('Enter Data','수치 입력','输入数据','数値入力'));
+  _setText('statCatLabel', __T('Category','카테고리','类别','カテゴリ'));
+  _setText('statValLabel', __T('Value','수치','数值','数値'));
+  _setText('statDateLabel', __T('Date','날짜','日期','日付'));
 
   // 날씨
-  _setText('dustLabel', en ? 'Air Quality' : '미세먼지');
+  _setText('dustLabel', __T('Air Quality','미세먼지','空气质量','PM2.5'));
   applyClothesIcon(en);
 
   // placeholder
   var todoEl = document.getElementById('todoInputEl') || document.getElementById('todoInput');
-  if(todoEl) todoEl.placeholder = en ? 'Add new task...' : '새 할 일 추가...';
+  if(todoEl) todoEl.placeholder = __T('Add new task...','새 할 일 추가...','添加新任务...','新しいタスクを追加...');
   var msgEl = document.getElementById('msgInput');
-  if(msgEl) msgEl.placeholder = en ? 'Type a message...' : '메시지 입력...';
+  if(msgEl) msgEl.placeholder = __T('Type a message...','메시지 입력...','输入消息...','メッセージを入力...');
 
   // 이미지 다운로드
-  _setText('imgDownloadBtn', en ? '⬇ Save' : '⬇ 저장');
+  _setText('imgDownloadBtn', __T('⬇ Save','⬇ 저장','⬇ 保存','⬇ 保存'));
 
   // 보안설정 내부 버튼
-  var dBtn = document.getElementById('themeDarkBtn'); if(dBtn) dBtn.textContent = en ? 'Dark' : '다크';
-  var lBtn = document.getElementById('themeLightBtn'); if(lBtn) lBtn.textContent = en ? 'Light' : '라이트';
-  _setText('fontSmLabel', en ? 'S' : '소');
-  _setText('fontMdLabel', en ? 'M' : '중');
-  _setText('fontLgLabel', en ? 'L' : '대');
-  _setText('changeCodeBtn', en ? 'New Code' : '변경');
-  _setText('closeSecretBtn', en ? 'OK' : '확인');
-  _setText('closeAddFriendBtn', en ? 'Cancel' : '취소');
-  _setText('addFriendBtn', en ? 'Add' : '추가');
-  _setText('changeCodeTitle', en ? 'Change ID Code' : '식별 코드 변경');
-  _setText('changeCodeDesc',  en ? 'Enter a new ID code' : '새 식별 코드를 입력하세요');
-  _setText('changeCodeCancelBtn', en ? 'Cancel' : '취소');
-  _setText('changeCodeConfirm', en ? 'OK' : '확인');
-  _setText('changeChoiceTitle', en ? 'Data Handling' : '데이터 처리');
-  _setText('changeChoiceDesc',  en ? 'What to do with existing data after code change?' : '코드 변경 후 기존 데이터를 어떻게 할까요?');
-  _setText('changeChoiceKeepBtn', en ? 'Keep Data' : '데이터 유지');
-  _setText('changeChoiceResetBtn', en ? 'Reset Data' : '데이터 초기화');
-  _setText('changeChoiceCancelBtn', en ? 'Cancel' : '취소');
+  var dBtn = document.getElementById('themeDarkBtn'); if(dBtn) dBtn.textContent = __T('Dark','다크','深色','ダーク');
+  var lBtn = document.getElementById('themeLightBtn'); if(lBtn) lBtn.textContent = __T('Light','라이트','浅色','ライト');
+  _setText('fontSmLabel', __T('S','소','小','小'));
+  _setText('fontMdLabel', __T('M','중','中','中'));
+  _setText('fontLgLabel', __T('L','대','大','大'));
+  _setText('changeCodeBtn', __T('New Code','변경','更改','変更'));
+  _setText('closeSecretBtn', __T('OK','확인','确定','OK'));
+  _setText('closeAddFriendBtn', __T('Cancel','취소','取消','キャンセル'));
+  _setText('addFriendBtn', __T('Add','추가','添加','追加'));
+  _setText('changeCodeTitle', __T('Change ID Code','식별 코드 변경','更改识别代码','識別コード変更'));
+  _setText('changeCodeDesc',  __T('Enter a new ID code','새 식별 코드를 입력하세요','输入新的识别代码','新しい識別コードを入力'));
+  _setText('changeCodeCancelBtn', __T('Cancel','취소','取消','キャンセル'));
+  _setText('changeCodeConfirm', __T('OK','확인','确定','OK'));
+  _setText('changeChoiceTitle', __T('Data Handling','데이터 처리','数据处理','データ処理'));
+  _setText('changeChoiceDesc',  __T('What to do with existing data after code change?','코드 변경 후 기존 데이터를 어떻게 할까요?','更改代码后如何处理现有数据?','コード変更後、既存データをどうしますか?'));
+  _setText('changeChoiceKeepBtn', __T('Keep Data','데이터 유지','保留数据','データ保持'));
+  _setText('changeChoiceResetBtn', __T('Reset Data','데이터 초기화','重置数据','データ初期化'));
+  _setText('changeChoiceCancelBtn', __T('Cancel','취소','取消','キャンセル'));
   var hintEl = document.getElementById('changeChoiceHint');
   if (hintEl) {
-    var keep = en ? 'Keep' : '유지';
-    var reset = en ? 'Reset' : '초기화';
-    hintEl.innerHTML = en
-      ? '<b style="color:#f59e0b;">' + keep + '</b>: Memo/To-Do/Stats/Calendar/Settings preserved. Friends, chats, shared data removed.<br><b style="color:#ef4444;">' + reset + '</b>: All data permanently deleted from server and device.'
-      : '<b style="color:#f59e0b;">' + keep + '</b>: 메모/할일/통계/달력/설정은 보존하고, 친구·채팅·공유 데이터만 삭제됩니다.<br><b style="color:#ef4444;">' + reset + '</b>: 모든 데이터가 서버와 기기에서 영구 삭제됩니다.';
+    var keep = __T('Keep','유지','保留','保持');
+    var reset = __T('Reset','초기화','重置','初期化');
+    var _hL = localStorage.getItem('lang') || 'ko';
+    var _h;
+    if (_hL === 'en') {
+      _h = '<b style="color:#f59e0b;">' + keep + '</b>: Memo/To-Do/Stats/Calendar/Settings preserved. Friends, chats, shared data removed.<br><b style="color:#ef4444;">' + reset + '</b>: All data permanently deleted from server and device.';
+    } else if (_hL === 'zh') {
+      _h = '<b style="color:#f59e0b;">' + keep + '</b>: 备忘/待办/统计/日历/设置将保留。好友、聊天、共享数据将被删除。<br><b style="color:#ef4444;">' + reset + '</b>: 所有数据将从服务器和设备永久删除。';
+    } else if (_hL === 'ja') {
+      _h = '<b style="color:#f59e0b;">' + keep + '</b>: メモ/タスク/統計/カレンダー/設定は保持されます。友達、チャット、共有データは削除されます。<br><b style="color:#ef4444;">' + reset + '</b>: 全データがサーバーと端末から永久に削除されます。';
+    } else {
+      _h = '<b style="color:#f59e0b;">' + keep + '</b>: 메모/할일/통계/달력/설정은 보존하고, 친구·채팅·공유 데이터만 삭제됩니다.<br><b style="color:#ef4444;">' + reset + '</b>: 모든 데이터가 서버와 기기에서 영구 삭제됩니다.';
+    }
+    hintEl.innerHTML = _h;
   }
-  _setText('changeCodeDesc', en ? '⚠️ All friends will be deleted on both sides' : '⚠️ 변경 시 모든 친구가 양측에서 삭제됩니다');
-  _setText('changeCodeConfirm', en ? 'Confirm' : '변경 확인');
-  _setText('changeCodeCancelBtn', en ? 'Cancel' : '취소');
+  _setText('changeCodeDesc', __T('⚠️ All friends will be deleted on both sides','⚠️ 변경 시 모든 친구가 양측에서 삭제됩니다','⚠️ 更改时双方所有好友将被删除','⚠️ 変更時に双方の全ての友達が削除されます'));
+  _setText('changeCodeConfirm', __T('Confirm','변경 확인','确认更改','変更を確認'));
+  _setText('changeCodeCancelBtn', __T('Cancel','취소','取消','キャンセル'));
   var inp = document.getElementById('newCodeInput');
-  if (inp) inp.placeholder = en ? 'Enter new ID code' : '새 식별 코드 입력';
-  _setText('closeTimerBtn', en ? 'Cancel' : '취소');
+  if (inp) inp.placeholder = __T('Enter new ID code','새 식별 코드 입력','输入新识别代码','新識別コード入力');
+  _setText('closeTimerBtn', __T('Cancel','취소','取消','キャンセル'));
 
   // 달력 통계
-  _setText('calAchievedLabel', en ? 'Achieved' : '달성일');
-  _setText('calRateLabel', en ? 'Rate' : '달성률');
-  _setText('calStreakLabel', en ? 'Streak' : '연속 달성');
+  _setText('calAchievedLabel', __T('Achieved','달성일','达成日','達成日'));
+  _setText('calRateLabel', __T('Rate','달성률','达成率','達成率'));
+  _setText('calStreakLabel', __T('Streak','연속 달성','连续达成','連続達成'));
 
   // 알림 토글
-  _setText('notifEventLabel', en ? 'Event Alerts' : '이벤트 알림');
-  _setText('notifAppLabel', en ? 'App Alerts' : '앱 알림');
-  _setText('shareTargetLabel', en ? 'Share Target :' : '공유 대상 :');
-  _setText('shareTargetBtn', en ? 'Change' : '변경');
-  _setText('shareTargetModalTitle', en ? 'Select Share Target' : '공유 대상 선택');
-  _setText('shareReqTitle',       en ? 'Share Request' : '공유 요청');
-  _setText('restoreTitle',        en ? 'Enter Your Code' : '내 코드 입력');
-  _setText('restoreDesc',         en ? 'Enter your code' : '사용하실 코드를 입력하세요');
-  _setText('restoreCancelBtn',    en ? 'Cancel' : '취소');
-  _setText('restoreOkBtn',        en ? 'OK' : '확인');
-  _setText('shareReqDescText',    en ? ' sent you a share request.' : '님이 공유 대상으로 지정했습니다.');
-  _setText('shareReqHint',        en ? 'Accept to share Memo/To-Do/Schedule/Stats together.' : '승인하면 메모/할일/일정/통계를 함께 사용합니다.');
-  _setText('shareReqRejectBtn',   en ? 'Reject' : '거절');
-  _setText('shareReqAcceptBtn',   en ? 'Accept' : '승인');
-  _setText('shareTargetModalDesc', en ? 'Choose a friend to share Memo/To-Do/Schedule/Stats with' : '메모/할일/일정/통계를 함께 사용할 친구를 선택하세요');
-  _setText('shareTargetCancelBtn', en ? 'Cancel' : '취소');
-  _setText('shareTargetClearBtn', en ? 'Clear' : '해제');
+  _setText('notifEventLabel', __T('Event Alerts','이벤트 알림','事件提醒','イベント通知'));
+  _setText('notifAppLabel', __T('App Alerts','앱 알림','应用提醒','アプリ通知'));
+  _setText('shareTargetLabel', __T('Share Target :','공유 대상 :','共享对象 :','共有相手 :'));
+  _setText('shareTargetBtn', __T('Change','변경','更改','変更'));
+  _setText('shareTargetModalTitle', __T('Select Share Target','공유 대상 선택','选择共享对象','共有相手を選択'));
+  _setText('shareReqTitle',       __T('Share Request','공유 요청','共享请求','共有リクエスト'));
+  _setText('restoreTitle',        __T('Enter Your Code','내 코드 입력','输入您的代码','コードを入力'));
+  _setText('restoreDesc',         __T('Enter your code','사용하실 코드를 입력하세요','请输入要使用的代码','使用するコードを入力してください'));
+  _setText('restoreCancelBtn',    __T('Cancel','취소','取消','キャンセル'));
+  _setText('restoreOkBtn',        __T('OK','확인','确定','OK'));
+  _setText('shareReqDescText',    __T(' sent you a share request.','님이 공유 대상으로 지정했습니다.',' 已将您指定为共享对象。',' さんがあなたを共有相手に指定しました。'));
+  _setText('shareReqHint',        __T('Accept to share Memo/To-Do/Schedule/Stats together.','승인하면 메모/할일/일정/통계를 함께 사용합니다.','同意后将共享备忘/待办/日程/统计。','承認するとメモ/タスク/予定/統計を共有します。'));
+  _setText('shareReqRejectBtn',   __T('Reject','거절','拒绝','拒否'));
+  _setText('shareReqAcceptBtn',   __T('Accept','승인','同意','承認'));
+  _setText('shareTargetModalDesc', __T('Choose a friend to share Memo/To-Do/Schedule/Stats with','메모/할일/일정/통계를 함께 사용할 친구를 선택하세요','选择共享备忘/待办/日程/统计的好友','メモ/タスク/予定/統計を共有する友達を選択'));
+  _setText('shareTargetCancelBtn', __T('Cancel','취소','取消','キャンセル'));
+  _setText('shareTargetClearBtn', __T('Clear','해제','解除','解除'));
 
   // 닉네임 설정
-  _setText('nicknameLabel', en ? 'Set your nickname' : '닉네임을 설정하세요');
-  _setText('nicknameSetBtn', en ? 'Set' : '설정');
-  _setText('exitChatBtn', en ? '← Exit' : '← 나가기');
+  _setText('nicknameLabel', __T('Set your nickname','닉네임을 설정하세요','设置您的昵称','ニックネームを設定'));
+  _setText('nicknameSetBtn', __T('Set','설정','设置','設定'));
+  _setText('exitChatBtn', __T('← Exit','← 나가기','← 退出','← 退出'));
   var nnInput = document.getElementById('nicknameInput');
-  if (nnInput) nnInput.placeholder = en ? 'Enter nickname' : '닉네임 입력';
+  if (nnInput) nnInput.placeholder = __T('Enter nickname','닉네임 입력','输入昵称','ニックネーム入力');
 
   // 할일 빈 목록 갱신
   var emptyState = document.querySelector('.empty-state');
-  if (emptyState) emptyState.innerHTML = (en ? 'No tasks yet' : '할 일이 없습니다');
+  if (emptyState) emptyState.innerHTML = (__T('No tasks yet','할 일이 없습니다','暂无任务','タスクがありません'));
 
   // 달력 갱신 (요일 헤더)
   var calScreen = document.getElementById('calendarScreen');
   if (calScreen && calScreen.classList.contains('active')) renderCalendar();
 
   // 친구추가 모달
-  _setText('friendCodeDesc', en ? "Enter your friend's ID code" : '친구의 식별 코드를 입력하세요');
+  _setText('friendCodeDesc', __T("Enter your friend's ID code",'친구의 식별 코드를 입력하세요','输入好友的识别代码','友達の識別コードを入力'));
   var fci = document.getElementById('friendCodeInput2') || document.getElementById('friendCodeInput');
-  if (fci) fci.placeholder = en ? 'Enter friend code' : '친구 코드 입력';
-  _setText('qrScanDesc', en ? "Scan your friend's QR code" : '친구의 QR코드를 스캔하세요');
-  _setText('myQrDesc', en ? 'Show your QR code to your friend' : '내 QR코드를 친구에게 보여주세요');
+  if (fci) fci.placeholder = __T('Enter friend code','친구 코드 입력','输入好友代码','友達コード入力');
+  _setText('qrScanDesc', __T("Scan your friend's QR code",'친구의 QR코드를 스캔하세요','扫描好友的二维码','友達のQRコードをスキャン'));
+  _setText('myQrDesc', __T('Show your QR code to your friend','내 QR코드를 친구에게 보여주세요','向好友展示您的二维码','自分のQRコードを友達に見せて'));
 
   // 닉네임 placeholder
   var nnInput2 = document.getElementById('myCodeInput');
-  if (nnInput2) nnInput2.placeholder = en ? 'Enter nickname' : '닉네임 입력';
+  if (nnInput2) nnInput2.placeholder = __T('Enter nickname','닉네임 입력','输入昵称','ニックネーム入力');
+
+  // ── 추가 누락 ID들 ──
+  // 메모 에디터 타이틀, 날씨 위젯 로딩 문구, 통계 빈 상태, 타이머 모달 등
+  _setText('memoEditorTitle', __T('New Memo','새 메모','新建备忘','新規メモ'));
+  _setText('statEmpty', __T('No data yet.\nTap + to add!','데이터가 없어요.\n+ 입력으로 추가해보세요!','暂无数据。\n点击+添加!','データがありません。\n+で追加してください!'));
+  _setText('timerModalDesc', __T('Requires partner approval to change','변경 시 상대방 동의가 필요합니다','变更需对方同意','変更には相手の同意が必要です'));
+  _setText('paletteCancelBtn', __T('Close','닫기','关闭','閉じる'));
+  _setText('savePatternBtn', __T('Cancel','취소','取消','キャンセル'));
+  _setText('customAlertOk', __T('OK','확인','确定','OK'));
+  _setText('customConfirmCancel', __T('Cancel','취소','取消','キャンセル'));
+  _setText('customConfirmOk', __T('OK','확인','确定','OK'));
+  _setText('changeChoiceKeepLabel', __T('Keep','유지','保留','保持'));
+  _setText('changeChoiceResetLabel', __T('Reset','초기화','重置','初期化'));
+  // 폰트 사이즈 팔레트 버튼들
+  _setText('fontSizeBtn24', __T('S','소','小','小'));
+  _setText('fontSizeBtn28', __T('M','중','中','中'));
+  _setText('fontSizeBtn32', __T('L','대','大','大'));
+  // 이미지 다운로드 버튼
+  var imgDl = document.getElementById('imgViewerDownload');
+  if (imgDl) imgDl.textContent = __T('⬇ Save','⬇ 저장','⬇ 保存','⬇ 保存');
+  // 메모 본문 placeholder (contenteditable)
+  var mci = document.getElementById('memoContentInput');
+  if (mci) mci.setAttribute('data-placeholder', __T('Enter content...','내용을 입력하세요...','输入内容...','内容を入力...'));
+  // 통계 입력 placeholder
+  var svInput = document.getElementById('statValueInput');
+  if (svInput) svInput.placeholder = __T('Enter value','수치 입력','输入数据','数値入力');
+  // 복구 코드 placeholder
+  var rci = document.getElementById('restoreCodeInput');
+  if (rci) rci.placeholder = __T('Enter code','코드 입력','输入代码','コード入力');
+  // 위젯 초기 로딩 문구 (날씨 데이터가 아직 없을 때만)
+  var wd = document.getElementById('widgetDesc');
+  if (wd && (wd.textContent === '로딩 중...' || wd.textContent === 'Loading...' || wd.textContent === '加载中...' || wd.textContent === '読み込み中...')) {
+    wd.textContent = __T('Loading...','로딩 중...','加载中...','読み込み中...');
+  }
+  var wcv = document.getElementById('widgetClothesVal');
+  if (wcv && (wcv.textContent === '로딩 중...' || wcv.textContent === 'Loading...' || wcv.textContent === '加载中...' || wcv.textContent === '読み込み中...')) {
+    wcv.textContent = __T('Loading...','로딩 중...','加载中...','読み込み中...');
+  }
+  // 자동삭제 라벨 갱신
+  try { if (typeof updateAutoDeleteLabel === 'function') updateAutoDeleteLabel(); } catch(e) {}
+  // 폰트 사이즈 버튼 텍스트
+  try { if (typeof updateFontSizeBtns === 'function') updateFontSizeBtns(); } catch(e) {}
 }
 
 function _setText(id, text) {
