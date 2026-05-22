@@ -1149,10 +1149,14 @@ function setTheme(c) {
   document.documentElement.style.setProperty('--primary', c);
   localStorage.setItem('themeColor', c);
   applyMenuTheme(c);
-  // Individual 모드이고 그레이가 아닐 때 → 테마 기반 SVG 색상 자동 랜덤 반영
   var svgMode = localStorage.getItem('svgColorMode') || 'on';
   var isGray = c === '#334155';
-  if (svgMode === 'on' && !isGray) {
+  if (isGray) {
+    // 그레이: 저장된 SVG 색상 초기화 (이전 랜덤값 제거)
+    localStorage.removeItem('svgColorsCustom');
+    SVG_COLORS = ['#94a3b8','#94a3b8','#94a3b8','#94a3b8','#94a3b8','#94a3b8','#94a3b8','#94a3b8','#94a3b8'];
+  } else if (svgMode === 'on') {
+    // Individual 모드: 테마 기반 SVG 색상 자동 랜덤 반영
     randomizeSvgColors(true);
   }
   applyIconStyle();
