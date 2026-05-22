@@ -80,7 +80,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // ── 최초 실행 시 디폴트값 설정 ──
   if (!localStorage.getItem('_defaultsSet')) {
     localStorage.setItem('darkMode', 'true');
-    localStorage.setItem('themeColor', '#6b7280');
+    localStorage.setItem('themeColor', '#94a3b8');
     localStorage.setItem('iconStyle', 'svg');
     localStorage.setItem('svgColorMode', 'off');
     localStorage.setItem('lang', 'en');
@@ -840,8 +840,8 @@ function applyIconStyle() {
   var style = localStorage.getItem('iconStyle') || 'svg';
   var colorMode = localStorage.getItem('svgColorMode') || 'on';
   var isDark = localStorage.getItem('darkMode') === 'true';
-  var themeColor = localStorage.getItem('themeColor') || '#6C63FF';
-  var isGray = themeColor === '#6b7280';
+  var themeColor = localStorage.getItem('themeColor') || '#94a3b8';
+  var isGray = themeColor === '#94a3b8';
 
   // 테마색 미적용시 적용할 색상
   var themeIconColor = (isDark && isGray) ? '#9ca3af' : themeColor;
@@ -865,7 +865,12 @@ function applyIconStyle() {
         svgEl = iconEl.querySelector('svg');
       }
       if (svgEl) {
-        svgEl.style.color = colorMode === 'on' ? (SVG_COLORS[i] || '#6C63FF') : themeIconColor;
+        if (isGray) {
+          // 그레이 테마: SVG 라인 모두 화이트로 통일
+          svgEl.style.color = '#FFFFFF';
+        } else {
+          svgEl.style.color = colorMode === 'on' ? (SVG_COLORS[i] || '#6C63FF') : themeIconColor;
+        }
       }
     }
   });
@@ -1123,7 +1128,7 @@ function applyDarkMode() {
   var titleColor;
   if (!enabled) {
     titleColor = ''; // 라이트모드: CSS 기본값
-  } else if (themeColor === '#6b7280') {
+  } else if (themeColor === '#94a3b8') {
     titleColor = '#FFFFFF'; // 그레이+다크: 흰색
   } else {
     titleColor = themeColor; // 다른테마+다크: 테마색
@@ -1149,123 +1154,51 @@ function setTheme(c) {
   renderThemeRecentColors();
 }
 
-// 최근 선택 색상 저장/불러오기 (최대 5개)
+// 6가지 고정 테마 색상 (그레이 1 + 채도 낮은 5)
+var THEME_COLORS = [
+  '#94a3b8', // gray (slate-400)
+  '#f87171', // soft rose
+  '#fb923c', // warm orange
+  '#86efac', // mint
+  '#93c5fd', // soft blue
+  '#c4b5fd'  // lavender
+];
+
+// 최근 선택 색상 — 6가지 고정 색상 그대로 반환
 function getRecentThemeColors() {
-  try {
-    var saved = JSON.parse(localStorage.getItem('themeRecentColors') || '[]');
-    if (saved.length >= 5) return saved.slice(0, 5);
-    // 부족하면 TITLE_COLORS에서 랜덤으로 채우기
-    var pool = TITLE_COLORS.filter(function(c) { return saved.indexOf(c) < 0; });
-    while (saved.length < 5 && pool.length > 0) {
-      var idx = Math.floor(Math.random() * pool.length);
-      saved.push(pool.splice(idx, 1)[0]);
-    }
-    return saved;
-  } catch(e) { return TITLE_COLORS.slice(0, 5); }
+  return THEME_COLORS.slice();
 }
 
 function addRecentThemeColor(hex) {
-  var recent = getRecentThemeColors();
-  // 이미 있으면 맨 앞으로
-  recent = recent.filter(function(c) { return c !== hex; });
-  recent.unshift(hex);
-  recent = recent.slice(0, 5);
-  localStorage.setItem('themeRecentColors', JSON.stringify(recent));
+  // 6개 고정이므로 별도 저장 불필요 (호환 위해 stub 유지)
 }
 
 function renderThemeRecentColors() {
   var wrap = document.getElementById('themeRecentColors');
   if (!wrap) return;
   wrap.innerHTML = '';
-  var recent = getRecentThemeColors();
-  var cur = localStorage.getItem('themeColor') || '#6C63FF';
-  recent.forEach(function(hex) {
+  var cur = localStorage.getItem('themeColor') || THEME_COLORS[0];
+  THEME_COLORS.forEach(function(hex) {
     var btn = document.createElement('button');
     var isCur = hex === cur;
-    btn.style.cssText = 'width:36px;height:36px;border-radius:50%;border:' +
+    btn.style.cssText = 'width:42px;height:42px;border-radius:50%;border:' +
       (isCur ? '3px solid var(--chat-text)' : '2px solid transparent') +
       ';outline:' + (isCur ? '2px solid var(--chat-text)' : 'none') +
       ';cursor:pointer;background:' + hex + ';flex-shrink:0;transition:transform 0.1s;';
     btn.onclick = function() { setTheme(hex); };
     wrap.appendChild(btn);
   });
-  // + 버튼
-  var plusBtn = document.createElement('button');
-  plusBtn.style.cssText = 'width:36px;height:36px;border-radius:50%;border:2px solid var(--chat-border);background:var(--chat-surface2);color:var(--chat-text2);font-size:20px;line-height:1;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;';
-  plusBtn.innerHTML = '+';
-  plusBtn.onclick = function() { openThemeColorPalette(plusBtn); };
-  wrap.appendChild(plusBtn);
 }
 
-function openThemeColorPalette(btnEl) {
-  initThemeColorGrid();
-  var palette = document.getElementById('themeColorPalette');
-  var rect = btnEl.getBoundingClientRect();
-  var top = rect.bottom + 8;
-  if (top + 260 > window.innerHeight) top = rect.top - 268;
-  palette.style.top = top + 'px';
-  palette.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - 276)) + 'px';
-  palette.style.display = 'block';
-  setTimeout(function() {
-    document.addEventListener('click', _themeColorOutsideClick);
-  }, 50);
-}
-
-function _themeColorOutsideClick(e) {
-  var palette = document.getElementById('themeColorPalette');
-  var wrap = document.getElementById('themeRecentColors');
-  if (palette && !palette.contains(e.target) && (!wrap || !wrap.contains(e.target))) {
-    closeThemeColorPalette();
-  }
-}
-
-function closeThemeColorPalette() {
-  var palette = document.getElementById('themeColorPalette');
-  if (palette) palette.style.display = 'none';
-  document.removeEventListener('click', _themeColorOutsideClick);
-}
-
-function applyThemeBtnBorder(c) {
-  renderThemeRecentColors();
-}
-
-function initThemeColorGrid() {
-  var grid = document.getElementById('themeColorGrid');
-  if (!grid || grid.children.length > 0) {
-    var cur = localStorage.getItem('themeColor') || '#6C63FF';
-    // 팔레트 내 선택 표시
-    if (grid) grid.querySelectorAll('.theme-palette-swatch').forEach(function(sw) {
-      var isSelected = sw.dataset.color === cur;
-      sw.style.outline = isSelected ? '2.5px solid var(--chat-text)' : 'none';
-      sw.style.outlineOffset = isSelected ? '2px' : '0';
-      sw.style.transform = isSelected ? 'scale(1.15)' : 'scale(1)';
-    });
-    return;
-  }
-  TITLE_COLORS.forEach(function(hex) {
-    var sw = document.createElement('button');
-    sw.className = 'theme-palette-swatch';
-    sw.dataset.color = hex;
-    sw.style.cssText = 'width:100%;aspect-ratio:1;border-radius:5px;cursor:pointer;border:none;background:' + hex + ';transition:transform 0.1s;';
-    sw.onclick = function() {
-      setTheme(hex);
-      addRecentThemeColor(hex);
-      renderThemeRecentColors();
-      closeThemeColorPalette();
-    };
-    grid.appendChild(sw);
-  });
-  var cur = localStorage.getItem('themeColor') || '#6C63FF';
-  grid.querySelectorAll('.theme-palette-swatch').forEach(function(sw) {
-    var isSelected = sw.dataset.color === cur;
-    sw.style.outline = isSelected ? '2.5px solid var(--chat-text)' : 'none';
-    sw.style.outlineOffset = isSelected ? '2px' : '0';
-    sw.style.transform = isSelected ? 'scale(1.15)' : 'scale(1)';
-  });
-}
+// 팔레트 팝업 관련 함수들 — 호환 stub (HTML이 제거되어 호출되지 않음)
+function openThemeColorPalette(btnEl) {}
+function _themeColorOutsideClick(e) {}
+function closeThemeColorPalette() {}
+function applyThemeBtnBorder(c) { renderThemeRecentColors(); }
+function initThemeColorGrid() {}
 
 function applyMenuTheme(c) {
-  var isGray = (c === '#6b7280');
+  var isGray = (c === '#94a3b8');
   var items = document.querySelectorAll('.menu-item');
   var pastelColors = [
     '#E8F8F5','#E8F4FF','#FFE8EE','#FFF8E8',
