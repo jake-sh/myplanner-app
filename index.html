@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"/>
   <title>my planner</title>
   <link rel="manifest" href="manifest.json"/>
   <meta name="theme-color" content="#4A90D9"/>
@@ -11,14 +11,14 @@
   <meta name="apple-mobile-web-app-title" content="my planner"/>
   <link rel="apple-touch-icon" href="icons/icon-192.png"/>
   <link rel="stylesheet" href="style.css"/>
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400&family=Noto+Sans+KR:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400&display=swap" rel="stylesheet"/>
 </head>
 <body>
 
 <!-- ===== FAKE HOME ===== -->
-<div id="fakeApp" class="screen active" style="display:flex;flex-direction:column;height:100%;position:relative;">
+<div id="fakeApp" class="screen active" style="display:flex;flex-direction:column;height:100%;">
   <div class="fake-header">
-    <span class="fake-title" id="appTitle"><span id="titleMy" style="user-select:none;-webkit-user-select:none;">my</span><span id="titlePlanner" style="user-select:none;-webkit-user-select:none;">planner</span></span>
+    <span class="fake-title" id="appTitle"><span id="titleMy">my</span><span id="titlePlanner">planner</span></span>
     <button class="icon-btn" onclick="openSettings()" style="color:var(--primary);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
   </div>
   <div class="fake-date-banner" style="display:flex;justify-content:space-between;align-items:center;">
@@ -44,7 +44,7 @@
   </div>
 
   <!-- 날씨 위젯 -->
-  <div id="weatherWidget" style="margin:8px 16px 35px;background:#fff;border-radius:20px;padding:14px 16px;box-shadow:0 2px 12px rgba(108,99,255,0.08);flex-shrink:0;border:1.5px solid #F0F1F8;">
+  <div id="weatherWidget" style="margin:8px 16px 12px;background:#fff;border-radius:20px;padding:14px 16px;box-shadow:0 2px 12px rgba(108,99,255,0.08);flex-shrink:0;border:1.5px solid #F0F1F8;">
     <!-- 날씨 상단 -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
       <div style="display:flex;align-items:center;gap:8px;">
@@ -74,8 +74,6 @@
       </div>
     </div>
   </div>
-  <!-- 캐시버전 표기 (개발용) -->
-  <div style="text-align:center;font-size:10px;color:#aaa;opacity:0.35;pointer-events:none;margin-top:-22px;margin-bottom:8px;letter-spacing:0.5px;user-select:none;">v3.3.7</div>
 </div>
 
 <!-- ===== FAKE SETTINGS ===== -->
@@ -95,7 +93,13 @@
     </div>
     <div class="settings-section">
       <div id="themeColorLabel" class="settings-label">테마 색상</div>
-      <div id="themeRecentColors" style="display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;"></div>
+      <div class="theme-options">
+        <button class="theme-btn" style="background:#4A90D9" onclick="setTheme('#4A90D9')" id="themeBlue"></button>
+        <button class="theme-btn" style="background:#22c55e" onclick="setTheme('#22c55e')" id="themeGreen"></button>
+        <button class="theme-btn" style="background:#8b5cf6" onclick="setTheme('#8b5cf6')" id="themePurple"></button>
+        <button class="theme-btn" style="background:#f59e0b" onclick="setTheme('#f59e0b')" id="themeYellow"></button>
+        <button class="theme-btn" style="background:#6b7280" onclick="setTheme('#6b7280')" id="themeGray"></button>
+      </div>
     </div>
     <div class="settings-section">
       <div id="iconStyleLabel" class="settings-label">아이콘 스타일</div>
@@ -118,11 +122,11 @@
     </div>
     <div class="settings-section">
       <div id="langLabel" class="settings-label">언어</div>
-      <select id="langSelect" class="settings-select" onchange="setLang(this.value)"><option value="ko">한국어</option><option value="en">English</option><option value="zh">中文</option><option value="ja">日本語</option></select>
+      <select id="langSelect" class="settings-select" onchange="setLang(this.value)"><option value="ko">한국어</option><option value="en">English</option></select>
     </div>
     <div class="settings-section">
       <div class="settings-label" id="infoLabel">정보</div>
-      <div class="settings-desc">my planner v3.3.7</div>
+      <div class="settings-desc">my planner v1.0.0</div>
     </div>
   </div>
 </div>
