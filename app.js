@@ -80,7 +80,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // ── 최초 실행 시 디폴트값 설정 ──
   if (!localStorage.getItem('_defaultsSet')) {
     localStorage.setItem('darkMode', 'true');
-    localStorage.setItem('themeColor', '#334155');
+    localStorage.setItem('themeColor', '#64748b');
     localStorage.setItem('iconStyle', 'svg');
     localStorage.setItem('svgColorMode', 'off');
     localStorage.setItem('lang', 'en');
@@ -840,8 +840,8 @@ function applyIconStyle() {
   var style = localStorage.getItem('iconStyle') || 'svg';
   var colorMode = localStorage.getItem('svgColorMode') || 'on';
   var isDark = localStorage.getItem('darkMode') === 'true';
-  var themeColor = localStorage.getItem('themeColor') || '#334155';
-  var isGray = themeColor === '#334155';
+  var themeColor = localStorage.getItem('themeColor') || '#64748b';
+  var isGray = themeColor === '#64748b';
 
   // 테마색 미적용시 적용할 색상
   var themeIconColor = (isDark && isGray) ? '#9ca3af' : themeColor;
@@ -1128,7 +1128,7 @@ function applyDarkMode() {
   var titleColor;
   if (!enabled) {
     titleColor = ''; // 라이트모드: CSS 기본값
-  } else if (themeColor === '#334155') {
+  } else if (themeColor === '#64748b') {
     titleColor = '#FFFFFF'; // 그레이+다크: 흰색
   } else {
     titleColor = themeColor; // 다른테마+다크: 테마색
@@ -1149,26 +1149,19 @@ function setTheme(c) {
   document.documentElement.style.setProperty('--primary', c);
   localStorage.setItem('themeColor', c);
   applyMenuTheme(c);
-  // Individual 모드이고 그레이가 아닐 때 → 테마 기반 SVG 색상 자동 랜덤 반영
-  var svgMode = localStorage.getItem('svgColorMode') || 'on';
-  var isGray = c === '#334155';
-  if (svgMode === 'on' && !isGray) {
-    randomizeSvgColors(true);
-  }
-  applyIconStyle();
   applyDarkMode();
   addRecentThemeColor(c);
   renderThemeRecentColors();
 }
 
-// 6가지 고정 테마 색상 (그레이 1 + 채도 낮은 5, 더 어두운 톤)
+// 6가지 고정 테마 색상 (그레이 1 + 채도 낮은 5, 어두운 톤)
 var THEME_COLORS = [
-  '#334155', // gray (slate-700)
-  '#9f1239', // muted rose (rose-800)
-  '#9a3412', // muted orange (orange-800)
-  '#166534', // muted green (green-800)
-  '#1e3a8a', // muted blue (blue-900)
-  '#4c1d95'  // muted violet (violet-900)
+  '#64748b', // gray (slate-500)
+  '#dc2626', // deep rose (red-600)
+  '#ea580c', // burnt orange (orange-600)
+  '#16a34a', // forest green (green-600)
+  '#2563eb', // royal blue (blue-600)
+  '#7c3aed'  // deep violet (violet-600)
 ];
 
 // 최근 선택 색상 — 6가지 고정 색상 그대로 반환
@@ -1205,7 +1198,7 @@ function applyThemeBtnBorder(c) { renderThemeRecentColors(); }
 function initThemeColorGrid() {}
 
 function applyMenuTheme(c) {
-  var isGray = (c === '#334155');
+  var isGray = (c === '#64748b');
   var items = document.querySelectorAll('.menu-item');
   var pastelColors = [
     '#E8F8F5','#E8F4FF','#FFE8EE','#FFF8E8',
@@ -2915,9 +2908,9 @@ function startQrScanner() {
     var _cl = localStorage.getItem('lang') || 'ko';
     var _cm;
     if (_cl === 'en') _cm = '<p style="color:#64748b;font-size:13px;text-align:center;">Camera permission required</p>';
-    else if (_cl === 'zh') _cm = '<p style="color:#334155;font-size:13px;text-align:center;">需要相机权限</p>';
-    else if (_cl === 'ja') _cm = '<p style="color:#334155;font-size:13px;text-align:center;">カメラの権限が必要です</p>';
-    else _cm = '<p style="color:#334155;font-size:13px;text-align:center;">카메라 권한이 필요합니다</p>';
+    else if (_cl === 'zh') _cm = '<p style="color:#64748b;font-size:13px;text-align:center;">需要相机权限</p>';
+    else if (_cl === 'ja') _cm = '<p style="color:#64748b;font-size:13px;text-align:center;">カメラの権限が必要です</p>';
+    else _cm = '<p style="color:#64748b;font-size:13px;text-align:center;">카메라 권한이 필요합니다</p>';
     wrap.innerHTML = _cm;
   });
 }
@@ -3605,7 +3598,7 @@ function _resetTimerModal() {
   }
   if (desc) {
     desc.textContent = __T('Requires partner approval to change','변경 시 상대방 동의가 필요합니다','变更需对方同意','変更には相手の同意が必要です');
-    desc.style.color = '#334155'; desc.style.fontSize = '12px';
+    desc.style.color = '#64748b'; desc.style.fontSize = '12px';
   }
   window._selectedTimerMin = null;
 }
@@ -4021,7 +4014,7 @@ function updateNotifBtn() {
   notifEnabled = (localStorage.getItem('notifEvent') === 'true') ||
                  (localStorage.getItem('notifEnabled') === 'true');
   btn.textContent = notifEnabled ? '🔔 알림 켜짐' : '🔕 알림 꺼짐';
-  btn.style.background = notifEnabled ? '#22c55e' : '#334155';
+  btn.style.background = notifEnabled ? '#22c55e' : '#475569';
 }
 
 function showUploadStatus(text) {
@@ -4158,7 +4151,7 @@ function renderStatsUI() {
   var boxBg   = isDark ? '#1A1A1A' : '#F8F9FF';
   var boxBd   = isDark ? '#2A2A2A' : '#ECEEF8';
   var titleCl = isDark ? '#F1F1F1' : '#1e293b';
-  var dateCl  = isDark ? '#334155' : '#334155';
+  var dateCl  = isDark ? '#64748b' : '#64748b';
 
   var tabHtml = '<div style="display:flex;flex-wrap:nowrap;gap:8px;padding:4px 0 16px;overflow-x:auto;">';
   Object.keys(STAT_CATS).forEach(function(k) {
@@ -4166,7 +4159,7 @@ function renderStatsUI() {
     var active = (k === curSC);
     var hasDot = data[k] && data[k].length > 0;
     var bg = active ? "var(--primary)" : "var(--card,#f1f5f9)";
-    var col = active ? "#fff" : "var(--text,#334155)";
+    var col = active ? "#fff" : "var(--text,#64748b)";
     var btn = document.createElement("button");
     btn.innerHTML = statLabel(k) + (hasDot ? " ●" : "");
     btn.setAttribute("data-scat", k);
@@ -4177,20 +4170,20 @@ function renderStatsUI() {
 
   var addHtml = '<div style="text-align:right;margin-bottom:12px;"><button id="openSmBtn" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;">' + (__T('+ Add','+ 입력','+ 添加','+ 入力')) + '</button></div>';
 
-  var chartHtml = '<div style="background:' + boxBg + ';border:1.5px solid ' + boxBd + ';border-radius:16px;padding:16px;margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:' + titleCl + ';">' + cat.emoji + ' ' + statLabel(curSC) + '</div><div style="font-size:11px;color:#334155;margin-bottom:12px;">' + (__T('Unit: ','단위: ','单位: ','単位: ')) + statUnit(curSC) + '</div>';
+  var chartHtml = '<div style="background:' + boxBg + ';border:1.5px solid ' + boxBd + ';border-radius:16px;padding:16px;margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:' + titleCl + ';">' + cat.emoji + ' ' + statLabel(curSC) + '</div><div style="font-size:11px;color:#64748b;margin-bottom:12px;">' + (__T('Unit: ','단위: ','单位: ','単位: ')) + statUnit(curSC) + '</div>';
   if (entries.length === 0) {
-    chartHtml += '<div style="text-align:center;color:#334155;font-size:13px;padding:30px 0;">데이터가 없어요.<br>+ 입력으로 추가해보세요!</div>';
+    chartHtml += '<div style="text-align:center;color:#64748b;font-size:13px;padding:30px 0;">데이터가 없어요.<br>+ 입력으로 추가해보세요!</div>';
   } else {
     chartHtml += '<canvas id="sCanvas" style="width:100%;"></canvas>';
   }
   chartHtml += "</div>";
 
-  var listHtml = '<div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:8px;">' + (__T('Recent Records','최근 기록','最近记录','最近の記録')) + '</div>';
+  var listHtml = '<div style="font-size:13px;font-weight:700;color:#64748b;margin-bottom:8px;">' + (__T('Recent Records','최근 기록','最近记录','最近の記録')) + '</div>';
   entries.slice().reverse().slice(0,10).forEach(function(e, i) {
     var origIdx = entries.length - 1 - i;
     var valDisplay = (curSC === 'bp' && e.dia != null)
-      ? '<span style="font-size:15px;font-weight:700;color:' + cat.color + ';">' + e.value + '/' + e.dia + ' <small style="font-size:11px;color:#334155;">mmHg</small></span>'
-      : '<span style="font-size:15px;font-weight:700;color:' + cat.color + ';">' + e.value + ' <small style="font-size:11px;color:#334155;">' + cat.unit + '</small></span>';
+      ? '<span style="font-size:15px;font-weight:700;color:' + cat.color + ';">' + e.value + '/' + e.dia + ' <small style="font-size:11px;color:#64748b;">mmHg</small></span>'
+      : '<span style="font-size:15px;font-weight:700;color:' + cat.color + ';">' + e.value + ' <small style="font-size:11px;color:#64748b;">' + cat.unit + '</small></span>';
     var row = '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:' + boxBg + ';border:1.5px solid ' + boxBd + ';border-radius:12px;margin-bottom:6px;">'
       + '<span style="font-size:13px;color:' + dateCl + ';">' + e.date + '</span>'
       + valDisplay
@@ -4244,7 +4237,7 @@ function drawSC(canvas, entries, cat) {
     var gy=pT+(gH/4)*g;
     ctx.strokeStyle="#333";ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(pL,gy);ctx.lineTo(W-pR,gy);ctx.stroke();
-    ctx.fillStyle="#334155";ctx.font="9px sans-serif";ctx.textAlign="right";
+    ctx.fillStyle="#64748b";ctx.font="9px sans-serif";ctx.textAlign="right";
     ctx.fillText((mx-(rng/4)*g).toFixed(1),pL-3,gy+3);
   }
 
@@ -4261,7 +4254,7 @@ function drawSC(canvas, entries, cat) {
       ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);
       ctx.fillStyle="#1A1A1A";ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=2;ctx.stroke();
       if(entries.length<=7||i%Math.ceil(entries.length/6)===0){
-        ctx.fillStyle="#334155";ctx.font="8px sans-serif";ctx.textAlign="center";
+        ctx.fillStyle="#64748b";ctx.font="8px sans-serif";ctx.textAlign="center";
         ctx.fillText(entries[i].date.slice(5),p.x,H-2);
       }
     });
@@ -4291,9 +4284,9 @@ function openSM() {
   var boxBg  = isDark ? '#1A1A1A' : '#fff';
   var boxBd  = isDark ? '#2A2A2A' : '#e2e8f0';
   var textCl = isDark ? '#F1F1F1' : '#1e293b';
-  var subCl  = isDark ? '#334155' : '#334155';
+  var subCl  = isDark ? '#64748b' : '#64748b';
   var cancelBg = isDark ? '#2A2A2A' : '#f1f5f9';
-  var cancelCl = isDark ? '#334155' : '#334155';
+  var cancelCl = isDark ? '#64748b' : '#64748b';
 
   var overlay = document.createElement("div");
   overlay.id = "smOverlay";
@@ -4331,7 +4324,7 @@ function smCatChange() {
   var boxBg  = isDark ? '#1A1A1A' : '#fff';
   var boxBd  = isDark ? '#2A2A2A' : '#e2e8f0';
   var textCl = isDark ? '#F1F1F1' : '#1e293b';
-  var subCl  = isDark ? '#334155' : '#334155';
+  var subCl  = isDark ? '#64748b' : '#64748b';
   var inpStyle = "width:100%;padding:10px;border-radius:10px;border:1.5px solid " + boxBd + ";font-size:16px;box-sizing:border-box;background:" + boxBg + ";color:" + textCl + ";";
 
   var cat = document.getElementById("smCat").value;
