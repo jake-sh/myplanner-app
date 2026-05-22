@@ -2782,6 +2782,8 @@ async function _doDeleteChat(friendCode) {
   const batch = db.batch();
   snap.docs.forEach(d => batch.delete(d.ref));
   await batch.commit();
+  // [d] 로컬 캐시도 정리
+  _clearChatCache(roomId);
   // 2. 내 친구목록에서 상대 제거 (로컬 + Firestore)
   friends = friends.filter(f => f !== friendCode);
   localStorage.setItem('friends', JSON.stringify(friends));
@@ -3000,6 +3002,15 @@ function _purgeLocalData() {
   // 삭제: 친구, 공유타겟, 메모, 할일, 달력, 통계, 백업타임스탬프
   ['friends', 'shareTarget', 'memos', 'todos', 'habits', 'hStats', '_lastBackup']
     .forEach(function(k) { localStorage.removeItem(k); });
+  // [d] 모든 채팅 캐시 제거
+  try {
+    var rm = [];
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (k && k.indexOf('chatCache_') === 0) rm.push(k);
+    }
+    rm.forEach(function(k){ localStorage.removeItem(k); });
+  } catch(e) {}
 }
 
 async function _doRegenerateCode() {
@@ -3195,11 +3206,14 @@ function openChat(friendCode) {
   if (roomListener) { roomListener(); roomListener = null; }
   listenMessages();
   listenRoomSettings();
-  // 읽지 않은 메시지 삭제 타이머 시작
-  markMessagesRead();
+  // [c] markMessagesRead는 listenMessages 첫 스냅샷 후 자동 호출됨
+  // (진입 직후 호출하면 batch update가 즉시 onSnapshot을 재트리거하여 빈 화면 구간이 길어짐)
 }
 
 function backToFriendList() {
+  // [d] 보류된 캐시 저장이 있으면 즉시 flush
+  if (_cacheSaveTimer) { clearTimeout(_cacheSaveTimer); _cacheSaveTimer = null; }
+  if (chatRoomId) _saveChatCache(chatRoomId);
   if (messageListener) { messageListener(); messageListener = null; }
   if (roomListener) { roomListener(); roomListener = null; }
   Object.values(countdownTimers).forEach(t => clearInterval(t)); countdownTimers = {};
@@ -3287,6 +3301,67 @@ async function respondDeleteRequest(accept, reqId, minutes) {
 let seenMsgIds = new Set();
 let firstLoad = true;
 
+// ── 채팅 캐시 (오프라인/재진입 즉시 표시용) ────────────────────
+// localStorage에 채팅방별로 최근 메시지를 저장. Firestore 첫 스냅샷이 오기 전
+// 화면이 비어있는 구간을 제거하기 위함. 첫 스냅샷 도착 시 캐시와 서버 상태가
+// 차이가 있으면 서버 기준으로 정리(서버 없는 메시지 제거).
+const CHAT_CACHE_LIMIT = 200; // 방당 최대 메시지 수
+function _chatCacheKey(roomId) { return 'chatCache_' + roomId; }
+// Firestore Timestamp 호환 래퍼 (toDate/toMillis 지원)
+function _ts(ms) { return { toDate: function(){ return new Date(ms); }, toMillis: function(){ return ms; } }; }
+function _loadChatCache(roomId) {
+  try {
+    var raw = localStorage.getItem(_chatCacheKey(roomId));
+    if (!raw) return [];
+    var arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return [];
+    // 직렬화된 ts/deleteAt(ms) → Timestamp 호환 객체로 복원
+    return arr.map(function(item) {
+      var d = item.data || {};
+      var restored = Object.assign({}, d);
+      if (typeof d._tsMs === 'number') restored.ts = _ts(d._tsMs);
+      if (typeof d._deleteAtMs === 'number') restored.deleteAt = _ts(d._deleteAtMs);
+      else if (d._deleteAtMs === null) restored.deleteAt = null;
+      return { id: item.id, data: restored };
+    });
+  } catch(e) { return []; }
+}
+function _saveChatCache(roomId) {
+  try {
+    var list = document.getElementById('messageList');
+    if (!list || !_cachedMessages) return;
+    // _cachedMessages는 listenMessages가 관리하는 메모리 캐시 (id -> data)
+    var ids = Array.from(list.children).map(function(el){ return (el.id||'').replace(/^msg-/,''); });
+    var out = [];
+    ids.forEach(function(id) {
+      if (!id) return;
+      var d = _cachedMessages[id];
+      if (!d) return;
+      var ser = Object.assign({}, d);
+      // Timestamp는 직렬화 불가 → ms 숫자로 변환
+      if (d.ts && typeof d.ts.toMillis === 'function') { ser._tsMs = d.ts.toMillis(); delete ser.ts; }
+      if (d.deleteAt && typeof d.deleteAt.toMillis === 'function') { ser._deleteAtMs = d.deleteAt.toMillis(); delete ser.deleteAt; }
+      else if (d.deleteAt === null) { ser._deleteAtMs = null; delete ser.deleteAt; }
+      out.push({ id: id, data: ser });
+    });
+    // 상한 적용 (최근 메시지 우선)
+    if (out.length > CHAT_CACHE_LIMIT) out = out.slice(out.length - CHAT_CACHE_LIMIT);
+    localStorage.setItem(_chatCacheKey(roomId), JSON.stringify(out));
+  } catch(e) {}
+}
+function _clearChatCache(roomId) {
+  try { localStorage.removeItem(_chatCacheKey(roomId)); } catch(e) {}
+}
+// 메모리 캐시 (현재 방의 id → data). 직렬화 시 사용.
+var _cachedMessages = null;
+// 캐시 저장 debounce 타이머
+var _cacheSaveTimer = null;
+function _scheduleCacheSave() {
+  if (_cacheSaveTimer) clearTimeout(_cacheSaveTimer);
+  var roomId = chatRoomId;
+  _cacheSaveTimer = setTimeout(function() { _saveChatCache(roomId); }, 500);
+}
+
 function listenMessages() {
   // 기존 리스너 완전 정리
   if (messageListener) { messageListener(); messageListener = null; }
@@ -3295,6 +3370,24 @@ function listenMessages() {
 
   seenMsgIds = new Set();
   firstLoad = true;
+  _cachedMessages = {};
+
+  // 채팅방 진입 시 이전 잔여 DOM 깨끗히 정리 (이전 방의 메시지가 남아있을 수 있음)
+  var initList = document.getElementById('messageList');
+  if (initList) initList.innerHTML = '';
+
+  // [d] 캐시된 메시지를 즉시 표시 → 첫 스냅샷 도착 전 빈 화면 제거
+  var cached = _loadChatCache(chatRoomId);
+  if (cached.length && initList) {
+    cached.forEach(function(item) {
+      _cachedMessages[item.id] = item.data;
+      seenMsgIds.add(item.id);
+      renderMessage(item.data, item.id);
+      // 캐시된 메시지가 이미 deleteAt이 있으면 자동삭제 타이머도 복원
+      if (item.data.deleteAt) scheduleAutoDelete(item.id, item.data);
+    });
+    initList.scrollTop = initList.scrollHeight;
+  }
 
   messageListener = db.collection('rooms').doc(chatRoomId).collection('messages').orderBy('ts')
     .onSnapshot(snap => {
@@ -3302,12 +3395,34 @@ function listenMessages() {
       if (!list) return;
       const atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 60;
 
-      // 새 메시지 알림 (첫 로드 이후, 상대방 메시지만)
       let hasNewMsg = false;
-      snap.docChanges().forEach(change => {
+      let myNewMsg = false;
+      const changes = snap.docChanges();
+
+      // 첫 스냅샷이면 서버에 있는 ID 집합을 만들어두고, 캐시로 그려놨지만
+      // 서버에 없는(이미 삭제된) 메시지 노드를 제거한다.
+      if (firstLoad) {
+        var serverIds = new Set();
+        snap.docs.forEach(function(d){ serverIds.add(d.id); });
+        // 캐시로 그려둔 노드 중 서버에 없는 것 제거
+        Array.from(list.children).forEach(function(el){
+          var nid = (el.id || '').replace(/^msg-/, '');
+          if (nid && !serverIds.has(nid)) {
+            el.remove();
+            if (deleteTimers[nid]) { clearTimeout(deleteTimers[nid]); delete deleteTimers[nid]; }
+            if (countdownTimers[nid]) { clearInterval(countdownTimers[nid]); delete countdownTimers[nid]; }
+            seenMsgIds.delete(nid);
+            delete _cachedMessages[nid];
+          }
+        });
+      }
+
+      changes.forEach(change => {
+        const id = change.doc.id;
+        const data = change.doc.data();
+
         if (change.type === 'added') {
-          const data = change.doc.data();
-          const id = change.doc.id;
+          // 새 메시지 알림 처리 (첫 로드 이후, 상대방 메시지만)
           if (!firstLoad && data.sender !== myCode && data.type !== 'system' && !seenMsgIds.has(id)) {
             hasNewMsg = true;
             // FCM 토큰 없을 때만 SW 로컬 알림 (FCM 있으면 FCM이 알림 처리)
@@ -3317,41 +3432,83 @@ function listenMessages() {
               setBadge(unreadCount);
             }
           }
+          // 내가 보낸 새 메시지면 스크롤 강제 보장
+          if (!firstLoad && data.sender === myCode && !seenMsgIds.has(id)) {
+            myNewMsg = true;
+          }
           seenMsgIds.add(id);
+          _cachedMessages[id] = data;
+
+          // 이미 DOM에 있으면 중복 추가 방지 (캐시로 미리 그려진 경우 포함)
+          if (document.getElementById('msg-' + id)) {
+            // 데이터만 갱신 (modified로 들어오지 않은 케이스 대비)
+            if (!deleteTimers[id]) scheduleAutoDelete(id, data);
+            startCountdown(id, data.deleteAt);
+            return;
+          }
+
+          // newIndex 위치에 정확히 삽입
+          // (newIndex는 정렬된 결과 기준 인덱스. 동등 정렬을 위해 list.children에 매핑)
+          const children = list.children;
+          const beforeNode = (change.newIndex >= 0 && change.newIndex < children.length)
+            ? children[change.newIndex] : null;
+          renderMessage(data, id, beforeNode);
+          if (!deleteTimers[id]) scheduleAutoDelete(id, data);
+        }
+        else if (change.type === 'modified') {
+          // 카운트다운/자동삭제 타이머만 갱신 (메시지 내용은 immutable)
+          if (deleteTimers[id]) { clearTimeout(deleteTimers[id]); delete deleteTimers[id]; }
+          scheduleAutoDelete(id, data);
+          startCountdown(id, data.deleteAt);
+          _cachedMessages[id] = data;
+        }
+        else if (change.type === 'removed') {
+          // 해당 노드만 제거 + 타이머 정리
+          const node = document.getElementById('msg-' + id);
+          if (node) node.remove();
+          if (deleteTimers[id]) { clearTimeout(deleteTimers[id]); delete deleteTimers[id]; }
+          if (countdownTimers[id]) { clearInterval(countdownTimers[id]); delete countdownTimers[id]; }
+          seenMsgIds.delete(id);
+          delete _cachedMessages[id];
         }
       });
+
       // 채팅창 열려있는 상태에서 새 메시지 오면 즉시 읽음 처리 → 카운트 시작
       if (hasNewMsg) markMessagesRead();
 
-      // 카운트다운 타이머 정리 후 재시작
-      Object.values(countdownTimers).forEach(t => clearInterval(t)); countdownTimers = {};
+      // 첫 로드, 내 메시지, 또는 이미 맨 아래에 있던 경우 → 맨 아래로 스크롤
+      if (firstLoad || myNewMsg || atBottom) list.scrollTop = list.scrollHeight;
 
-      list.innerHTML = '';
-      snap.forEach(doc => {
-        renderMessage(doc.data(), doc.id);
-        // 삭제 타이머는 아직 없는 것만 등록
-        if (!deleteTimers[doc.id]) scheduleAutoDelete(doc.id, doc.data());
-      });
-      if (atBottom) list.scrollTop = list.scrollHeight;
+      // [c] 첫 스냅샷이 그려진 다음에야 읽음 처리(batch update)를 호출
+      // → 진입 직후 빈 화면 구간 제거, modified 이벤트는 (a) 증분 렌더에서 본문 재렌더 안 함
+      if (firstLoad) {
+        markMessagesRead();
+      }
 
       firstLoad = false;
+
+      // [d] 캐시 저장 (debounce로 부담 최소화)
+      _scheduleCacheSave();
     });
 }
 
-function renderMessage(data, id) {
+function renderMessage(data, id, beforeNode) {
   const list = document.getElementById('messageList');
   const mine = data.sender === myCode;
   if (data.type === 'system') {
     const sysDiv = document.createElement('div');
     sysDiv.className = 'msg-bubble system-msg';
+    sysDiv.id = 'msg-' + id;
     sysDiv.textContent = data.text;
-    list.appendChild(sysDiv);
+    if (beforeNode) list.insertBefore(sysDiv, beforeNode);
+    else list.appendChild(sysDiv);
     return;
   }
 
   // 컨테이너 (시간 + 말풍선 가로 배치)
   const row = document.createElement('div');
   row.className = `msg-row ${mine ? 'msg-row-mine' : 'msg-row-theirs'}`;
+  row.id = 'msg-' + id;
 
   // 말풍선
   const bubble = document.createElement('div');
@@ -3399,7 +3556,8 @@ function renderMessage(data, id) {
   if (mine) { row.appendChild(meta); row.appendChild(bubble); }
   else { row.appendChild(bubble); row.appendChild(meta); }
 
-  list.appendChild(row);
+  if (beforeNode) list.insertBefore(row, beforeNode);
+  else list.appendChild(row);
   startCountdown(id, data.deleteAt);
 }
 
@@ -3558,6 +3716,9 @@ async function _doDeleteAllNow() {
   await batch.commit();
   Object.values(deleteTimers).forEach(t => clearTimeout(t)); deleteTimers = {};
   Object.values(countdownTimers).forEach(t => clearInterval(t)); countdownTimers = {};
+  // [d] 캐시 즉시 정리 (onSnapshot에서도 정리되지만 명시적으로)
+  _cachedMessages = {};
+  if (chatRoomId) _clearChatCache(chatRoomId);
 }
 
 function openTimerSetting() { document.getElementById('timerModal').style.display = 'flex'; }
