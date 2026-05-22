@@ -15,16 +15,16 @@
 </head>
 <body>
 
-<!-- ===== FAKE HOME ===== -->
-<div id="fakeApp" class="screen active" style="display:flex;flex-direction:column;height:100%;position:relative;">
-  <div class="fake-header">
-    <span class="fake-title" id="appTitle"><span id="titleMy" style="user-select:none;-webkit-user-select:none;">my</span><span id="titlePlanner" style="user-select:none;-webkit-user-select:none;">planner</span></span>
+<!-- ===== PLAN HOME ===== -->
+<div id="planApp" class="screen active" style="display:flex;flex-direction:column;height:100%;position:relative;">
+  <div class="plan-header">
+    <span class="plan-title" id="appTitle"><span id="titleMy" style="user-select:none;-webkit-user-select:none;">my</span><span id="titlePlanner" style="user-select:none;-webkit-user-select:none;">planner</span></span>
     <button class="icon-btn" onclick="openSettings()" style="color:var(--primary);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
   </div>
-  <div class="fake-date-banner" style="display:flex;justify-content:space-between;align-items:center;">
+  <div class="plan-date-banner" style="display:flex;justify-content:space-between;align-items:center;">
     <div>
-      <div id="fakeDate" class="fake-date"></div>
-      <div class="fake-subtitle"><span id="dateSubtitle">오늘의 일정을 확인하세요</span></div>
+      <div id="planDate" class="plan-date"></div>
+      <div class="plan-subtitle"><span id="dateSubtitle">오늘의 일정을 확인하세요</span></div>
     </div>
     <div style="text-align:right;">
       <div id="widgetClock" onclick="addTagNow()" style="font-size:26px;font-weight:700;letter-spacing:-1px;line-height:1;color:#1A1A2E;cursor:pointer;user-select:none;"></div>
@@ -75,13 +75,13 @@
     </div>
   </div>
   <!-- 캐시버전 표기 (개발용) -->
-  <div style="text-align:center;font-size:10px;color:#aaa;opacity:0.35;pointer-events:none;margin-top:-22px;margin-bottom:8px;letter-spacing:0.5px;user-select:none;">v3.3.7</div>
+  <div style="text-align:center;font-size:10px;color:#aaa;opacity:0.35;pointer-events:none;margin-top:-22px;margin-bottom:8px;letter-spacing:0.5px;user-select:none;">v3.3.8</div>
 </div>
 
-<!-- ===== FAKE SETTINGS ===== -->
+<!-- ===== PLAN SETTINGS ===== -->
 <div id="settingsScreen" class="screen">
   <div class="sub-header">
-    <button onclick="showScreen('fakeApp')" class="back-btn" data-i18n-back="1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <button onclick="showScreen('planApp')" class="back-btn" data-i18n-back="1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
     <span id="settingsTitle" class="sub-title">설정</span>
   </div>
   <div class="settings-content">
@@ -130,7 +130,7 @@
 <!-- ===== 할 일 ===== -->
 <div id="todoScreen" class="screen">
   <div class="sub-header">
-    <button onclick="showScreen('fakeApp')" class="back-btn" data-i18n-back="1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <button onclick="showScreen('planApp')" class="back-btn" data-i18n-back="1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
     <span id="todoTitle" class="sub-title">할 일</span>
     <span id="todoCount" class="todo-count"></span>
   </div>
@@ -145,7 +145,7 @@
 <!-- ===== 메모 ===== -->
 <div id="memoScreen" class="screen">
   <div class="sub-header">
-    <button onclick="showScreen('fakeApp')" class="back-btn" data-i18n-back="1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <button onclick="showScreen('planApp')" class="back-btn" data-i18n-back="1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
     <span id="memoTitle" class="sub-title">메모</span>
     <button class="sub-action-btn" onclick="openNewMemo()" id="newMemoBtn">+ 새 메모</button>
 
@@ -179,7 +179,7 @@
 <!-- ===== 달력 ===== -->
 <div id="calendarScreen" class="screen">
   <div class="sub-header">
-    <button onclick="showScreen('fakeApp')" class="back-btn" data-i18n-back="1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <button onclick="showScreen('planApp')" class="back-btn" data-i18n-back="1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
     <span id="calendarTitle" class="sub-title">달력</span>
     <button class="cal-refresh-btn" onclick="refreshCalendar()" id="calRefreshBtn">새로고침</button>
   </div>
@@ -210,10 +210,10 @@
   </div>
 </div>
 
-<!-- ===== FAKE FEATURE ===== -->
+<!-- ===== PLAN FEATURE ===== -->
 <div id="tagScreen" class="screen">
   <div class="sub-header">
-    <button onclick="showScreen('fakeApp')" class="back-btn" id="tagBackBtn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <button onclick="showScreen('planApp')" class="back-btn" id="tagBackBtn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
     <span class="sub-title" id="tagTitle">태그</span>
     <button onclick="deleteAllTags()" style="background:none;border:none;color:#F43F5E;font-size:12px;font-weight:700;cursor:pointer;padding:6px 10px;" id="tagDeleteAllBtn">전체삭제</button>
   </div>
@@ -233,9 +233,9 @@
   <div id="tagList" style="flex:1;overflow-y:auto;padding:10px 16px;display:flex;flex-direction:column;gap:8px;"></div>
 </div>
 
-<div id="fakeFeature" class="screen">
+<div id="planFeature" class="screen">
   <div class="sub-header">
-    <button onclick="showScreen('fakeApp')" class="back-btn" data-i18n-back="1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <button onclick="showScreen('planApp')" class="back-btn" data-i18n-back="1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
     <span id="featureTitle" class="sub-title"></span>
   </div>
   <div id="featureContent" class="feature-content"></div>
@@ -323,7 +323,7 @@
 <!-- ===== STATS SCREEN ===== -->
 <div id="statsScreen" class="screen">
   <div class="sub-header">
-    <button onclick="showScreen('fakeApp')" class="back-btn" data-i18n-back="1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <button onclick="showScreen('planApp')" class="back-btn" data-i18n-back="1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
     <span id="statsTitle" class="sub-title">건강 통계</span>
     <button onclick="openAddStatModal()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;" id="statAddBtn">+ 입력</button>
   </div>

@@ -136,10 +136,10 @@ window.addEventListener('DOMContentLoaded', () => {
   applyDarkMode();
   applyTitle();
   // 2. 날짜/시계
-  updateFakeDate();
+  updatePlanDate();
   startClock();
   // 3. 화면 표시
-  showScreen('fakeApp');
+  showScreen('planApp');
 
   // 3-1. 공유 인텐트 처리 (다른 앱에서 텍스트 공유로 들어온 경우)
   // 메인 화면을 띄운 직후에 호출 → 백그라운드 동작처럼 보이며 즉시 닫힘 시도
@@ -182,21 +182,21 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-function updateFakeDate() {
+function updatePlanDate() {
   const d = new Date(), days = ['일','월','화','수','목','금','토'];
   var lang = localStorage.getItem('lang') || 'ko';
   if (lang === 'en') {
     var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     var daysEn = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    document.getElementById('fakeDate').textContent = months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear() + ' (' + daysEn[d.getDay()] + ')';
+    document.getElementById('planDate').textContent = months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear() + ' (' + daysEn[d.getDay()] + ')';
   } else if (lang === 'zh') {
     var daysZh = ['日','一','二','三','四','五','六'];
-    document.getElementById('fakeDate').textContent = d.getFullYear() + '年' + (d.getMonth()+1) + '月' + d.getDate() + '日 (周' + daysZh[d.getDay()] + ')';
+    document.getElementById('planDate').textContent = d.getFullYear() + '年' + (d.getMonth()+1) + '月' + d.getDate() + '日 (周' + daysZh[d.getDay()] + ')';
   } else if (lang === 'ja') {
     var daysJa = ['日','月','火','水','木','金','土'];
-    document.getElementById('fakeDate').textContent = d.getFullYear() + '年' + (d.getMonth()+1) + '月' + d.getDate() + '日 (' + daysJa[d.getDay()] + ')';
+    document.getElementById('planDate').textContent = d.getFullYear() + '年' + (d.getMonth()+1) + '月' + d.getDate() + '日 (' + daysJa[d.getDay()] + ')';
   } else {
-    document.getElementById('fakeDate').textContent = d.getFullYear() + '년 ' + (d.getMonth()+1) + '월 ' + d.getDate() + '일 (' + days[d.getDay()] + ')';
+    document.getElementById('planDate').textContent = d.getFullYear() + '년 ' + (d.getMonth()+1) + '월 ' + d.getDate() + '일 (' + days[d.getDay()] + ')';
   }
 }
 
@@ -204,14 +204,12 @@ function updateFakeDate() {
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  if (id !== 'fakeApp') {
+  if (id !== 'planApp') {
     history.pushState({ screen: id }, '', '');
   }
 }
 
-let _ignorNextPopstate = false;
 window.addEventListener('popstate', function(e) {
-  if (_ignorNextPopstate) { _ignorNextPopstate = false; return; }
   // 이미지 뷰어가 열려있으면 닫기
   var viewer = document.getElementById('imgViewer');
   if (viewer && viewer.style.display === 'flex') {
@@ -220,7 +218,7 @@ window.addEventListener('popstate', function(e) {
   }
   // 뒤로가기 누르면 메인 화면으로
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('fakeApp').classList.add('active');
+  document.getElementById('planApp').classList.add('active');
 });
 
 // ── PATTERN ────────────────────────────────────────
@@ -234,8 +232,6 @@ function dotStart(e, dot) {
   document.addEventListener('mousemove', onMouseMove);
   document.addEventListener('mouseup', onDragEnd, { once: true });
 }
-
-let _tapStartDot = -1;
 
 function onTouchMove(e) {
   e.preventDefault();
@@ -451,10 +447,10 @@ function openFeature(i) {
   else if (i === 5) openStats();
   else if (i === 7) openTag();
   else if (i === 8) openCalendar();
-  else openFakeFeature(i);
+  else openPlanFeature(i);
 }
 
-const fakeData = [
+const planData = [
   null,
   ['10:00 팀 미팅','13:00 점심 약속','15:30 보고서 제출','18:00 퇴근'],
   ['⏰ 오전 7:30 기상','⏰ 오후 12:00 점심','⏰ 오후 6:00 퇴근'],
@@ -465,7 +461,7 @@ const fakeData = [
   ['🏷️ 업무 (24)','🏷️ 개인 (12)','🏷️ 중요 (8)'],
   null
 ];
-const fakeDataEn = [
+const planDataEn = [
   null,
   ['10:00 Team meeting','13:00 Lunch appointment','15:30 Submit report','18:00 Off work'],
   ['⏰ 7:30 AM Wake up','⏰ 12:00 PM Lunch','⏰ 6:00 PM Off work'],
@@ -476,7 +472,7 @@ const fakeDataEn = [
   ['🏷️ Work (24)','🏷️ Personal (12)','🏷️ Important (8)'],
   null
 ];
-const fakeDataZh = [
+const planDataZh = [
   null,
   ['10:00 团队会议','13:00 午餐约会','15:30 提交报告','18:00 下班'],
   ['⏰ 上午7:30 起床','⏰ 下午12:00 午餐','⏰ 下午6:00 下班'],
@@ -487,7 +483,7 @@ const fakeDataZh = [
   ['🏷️ 工作 (24)','🏷️ 个人 (12)','🏷️ 重要 (8)'],
   null
 ];
-const fakeDataJa = [
+const planDataJa = [
   null,
   ['10:00 チーム会議','13:00 ランチ約束','15:30 レポート提出','18:00 退勤'],
   ['⏰ 午前7:30 起床','⏰ 午後12:00 ランチ','⏰ 午後6:00 退勤'],
@@ -498,23 +494,23 @@ const fakeDataJa = [
   ['🏷️ 仕事 (24)','🏷️ 個人 (12)','🏷️ 重要 (8)'],
   null
 ];
-const fakeTitles = ['할 일','일정표','알림','메모','목표','통계','프로젝트','태그','달력'];
-const fakeTitlesEn = ['To-Do','Schedule','Alarm','Memo','Goals','Stats','Projects','Tags','Calendar'];
-const fakeTitlesZh = ['待办','日程','闹钟','备忘','目标','统计','项目','标签','日历'];
-const fakeTitlesJa = ['タスク','予定','アラーム','メモ','目標','統計','プロジェクト','タグ','カレンダー'];
+const planTitles = ['할 일','일정표','알림','메모','목표','통계','프로젝트','태그','달력'];
+const planTitlesEn = ['To-Do','Schedule','Alarm','Memo','Goals','Stats','Projects','Tags','Calendar'];
+const planTitlesZh = ['待办','日程','闹钟','备忘','目标','统计','项目','标签','日历'];
+const planTitlesJa = ['タスク','予定','アラーム','メモ','目標','統計','プロジェクト','タグ','カレンダー'];
 
-function openFakeFeature(i) {
+function openPlanFeature(i) {
   var _lang = localStorage.getItem('lang') || 'ko';
   var _ft, _fd;
-  if (_lang === 'en') { _ft = fakeTitlesEn[i]; _fd = fakeDataEn[i]; }
-  else if (_lang === 'zh') { _ft = fakeTitlesZh[i]; _fd = fakeDataZh[i]; }
-  else if (_lang === 'ja') { _ft = fakeTitlesJa[i]; _fd = fakeDataJa[i]; }
-  else { _ft = fakeTitles[i]; _fd = fakeData[i]; }
+  if (_lang === 'en') { _ft = planTitlesEn[i]; _fd = planDataEn[i]; }
+  else if (_lang === 'zh') { _ft = planTitlesZh[i]; _fd = planDataZh[i]; }
+  else if (_lang === 'ja') { _ft = planTitlesJa[i]; _fd = planDataJa[i]; }
+  else { _ft = planTitles[i]; _fd = planData[i]; }
   document.getElementById('featureTitle').textContent = _ft;
   document.getElementById('featureContent').innerHTML =
     `<div class="feature-placeholder"><h3>${_ft}</h3>` +
-    (_fd||[]).map(t=>`<div class="fake-item"><div class="fake-check"></div>${t}</div>`).join('') + '</div>';
-  showScreen('fakeFeature');
+    (_fd||[]).map(t=>`<div class="plan-item"><div class="plan-check"></div>${t}</div>`).join('') + '</div>';
+  showScreen('planFeature');
 }
 
 
@@ -529,7 +525,7 @@ document.addEventListener('visibilitychange', function() {
     if (isAutoLockOn()) el.style.display = 'block';
   } else {
     if (isAutoLockOn()) {
-      showScreen('fakeApp');
+      showScreen('planApp');
       setTimeout(function() { el.style.display = 'none'; }, 600);
     } else {
       el.style.display = 'none';
@@ -545,7 +541,7 @@ window.addEventListener('pageshow', function(e) {
   var el = document.getElementById('privacyScreen');
   if (el) el.style.display = 'none';
   if (e.persisted && isAutoLockOn()) {
-    showScreen('fakeApp');
+    showScreen('planApp');
   }
 });
 var _appWasHidden = false;
@@ -577,7 +573,7 @@ window.addEventListener('focus', function() {
   }
   if (_appWasHidden) {
     _appWasHidden = false;
-    if (isAutoLockOn()) showScreen('fakeApp');
+    if (isAutoLockOn()) showScreen('planApp');
   }
 });
 
@@ -699,13 +695,6 @@ function openSettings() {
   showScreen('settingsScreen');
   var t2 = localStorage.getItem('themeColor') || '#6C63FF';
   setTimeout(function(){ renderThemeRecentColors(); updateIconStyleBtns(); updateSvgColorBtns(); }, 200);
-}
-function saveAppName() {
-  const n = document.getElementById('appNameInput').value.trim() || 'MyPlanner';
-  localStorage.setItem('appName', n);
-  document.getElementById('appTitle').textContent = n;
-  document.title = n;
-  showAlert(__T('Saved','저장되었습니다','已保存','保存しました'));
 }
 
 
@@ -1202,11 +1191,7 @@ function renderThemeRecentColors() {
 }
 
 // 팔레트 팝업 관련 함수들 — 호환 stub (HTML이 제거되어 호출되지 않음)
-function openThemeColorPalette(btnEl) {}
-function _themeColorOutsideClick(e) {}
-function closeThemeColorPalette() {}
 function applyThemeBtnBorder(c) { renderThemeRecentColors(); }
-function initThemeColorGrid() {}
 
 function applyMenuTheme(c) {
   var isGray = (c === '#334155');
@@ -2092,7 +2077,7 @@ function handleShareIntent() {
 
     // 원래 앱으로 복귀: PWA에서 열렸으면 창 닫기 시도
     // (Android Chrome PWA는 share_target으로 들어오면 window.close()가 동작함)
-    // 실패 시 fakeApp 메인 화면에 머무름 (눈에 띄지 않게 토스트만)
+    // 실패 시 planApp 메인 화면에 머무름 (눈에 띄지 않게 토스트만)
     setTimeout(function() {
       try { window.close(); } catch(e) {}
       // window.close()가 막힌 환경 대응: 작은 안내 토스트
@@ -2390,7 +2375,7 @@ function exitChat() {
   if (calListener) { calListener(); calListener = null; }
   stopQrScanner();
   Object.values(countdownTimers).forEach(t => clearInterval(t)); countdownTimers = {};
-  showScreen('fakeApp');
+  showScreen('planApp');
 }
 
 async function saveMyCode() {
@@ -3692,18 +3677,6 @@ function applyChatFontSize() {
   if (input) input.style.fontSize = size + 'px';
 }
 
-function updateFontSizeBtns() {
-  const size = parseInt(localStorage.getItem('chatFontSize') || '18');
-  // 4언어의 S/소/小/小, M/중/中/中, L/대/大/大 어떤 값이든 매칭
-  var SMALL = ['소','S','小'];
-  var MID = ['중','M','中'];
-  document.querySelectorAll('.font-size-btn').forEach(btn => {
-    var t = (btn.textContent || '').trim();
-    const s = SMALL.indexOf(t) !== -1 ? 12 : MID.indexOf(t) !== -1 ? 15 : 18;
-    btn.style.background = s === size ? '#3b82f6' : '#0f172a';
-  });
-}
-
 function setChatTheme(theme) {
   localStorage.setItem('chatTheme', theme);
   applyChatTheme();
@@ -3761,7 +3734,6 @@ function toggleAutoLockBtn(btn) {
 function openSecretSettings() {
   initTitleInputs();
   document.getElementById('myCodeDisplaySettings').textContent = myCode;
-  updateNotifBtn();
   updateFontSizeBtns();
   updateThemeBtns();
   updateShareTargetDisplay();
@@ -3986,46 +3958,8 @@ function toggleSettingsNotif(type, enabled) {
   if (type === 'event') {
     notifEnabled = enabled;
     localStorage.setItem('notifEnabled', enabled ? 'true' : 'false');
-    if (typeof updateNotifBtn === 'function') updateNotifBtn();
   }
   // 'app' = 일반 앱 알림 마스터. 채팅 알림과 무관.
-}
-
-function toggleNotification() {
-  if (typeof Notification === 'undefined') { showAlert(__T('This browser does not support notifications','이 브라우저는 알림을 지원하지 않습니다','此浏览器不支持通知','このブラウザは通知をサポートしていません')); return; }
-  if (Notification.permission === 'denied') { showAlert(__T('Notifications blocked. Allow in browser settings','알림이 차단됨. 브라우저 설정에서 허용해주세요','通知被阻止。请在浏览器设置中允许','通知がブロックされています。ブラウザ設定で許可してください')); return; }
-  if (Notification.permission === 'default') {
-    _filePickerOpen = true;
-    _appWasHidden = false; // 강제 리셋
-    Notification.requestPermission().then(p => {
-      if (p === 'granted') {
-        notifEnabled = true;
-        localStorage.setItem('notifEnabled', 'true');
-        localStorage.setItem('notifEvent', 'true');
-        updateNotifBtn();
-      }
-      // 권한 결과 후 충분히 대기 (blur/focus 이벤트 모두 흘려보낸 후 해제)
-      setTimeout(function() {
-        _filePickerOpen = false;
-        _appWasHidden = false;
-      }, 1500);
-    });
-    return;
-  }
-  notifEnabled = !notifEnabled;
-  localStorage.setItem('notifEnabled', notifEnabled ? 'true' : 'false');
-  localStorage.setItem('notifEvent', notifEnabled ? 'true' : 'false');
-  updateNotifBtn();
-}
-
-function updateNotifBtn() {
-  const btn = document.getElementById('notifToggleBtn');
-  if (!btn) return;
-  // notifEvent를 우선 보되, 폴백으로 notifEnabled
-  notifEnabled = (localStorage.getItem('notifEvent') === 'true') ||
-                 (localStorage.getItem('notifEnabled') === 'true');
-  btn.textContent = notifEnabled ? '🔔 알림 켜짐' : '🔕 알림 꺼짐';
-  btn.style.background = notifEnabled ? '#22c55e' : '#334155';
 }
 
 function showUploadStatus(text) {
@@ -4069,11 +4003,6 @@ function showConfirm(msg, onOk, onCancel) {
 
 function openNaverMap() {
   window.open('https://map.naver.com', '_blank');
-}
-
-function hideInAppNotif() {
-  var el = document.getElementById('inAppNotif');
-  if (el) { el.classList.remove('show'); clearTimeout(el._hideTimer); }
 }
 
 
@@ -4150,7 +4079,7 @@ function openStats() {
     });
   }
   renderStatsUI();
-  showScreen("fakeFeature");
+  showScreen("planFeature");
 }
 
 function renderStatsUI() {
@@ -4722,7 +4651,7 @@ function applyLang() {
     document.documentElement.setAttribute('lang', _hlm[currentLang] || 'ko');
   } catch(e) {}
   var en = currentLang === 'en';
-  updateFakeDate();
+  updatePlanDate();
 
   var sel = document.getElementById('langSelect');
   if (sel) sel.value = currentLang;
