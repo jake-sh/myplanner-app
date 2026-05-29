@@ -2293,9 +2293,11 @@ function renderCalendar() {
       // 세로 반분할
       const c1 = CAL_COLORS[colors[0]] || colors[0];
       const c2 = CAL_COLORS[colors[1]] || colors[1];
-      inlineStyle = `style="background:linear-gradient(to right,${c1} 50%,${c2} 50%)!important"`;
+      inlineStyle = `style="background:linear-gradient(to right,${c1} 50%,${c2} 50%);color:#111!important"`;
       cls.push('cal-split');
     } else if (colors.length === 1) {
+      const bg = CAL_COLORS[colors[0]] || colors[0];
+      inlineStyle = `style="background:${bg};color:#111!important"`;
       cls.push(`cal-color-${colors[0]}`);
     }
 
