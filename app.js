@@ -172,12 +172,24 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 채팅 입력창 자동 높이 조절 (1줄 기본, 2줄 최대, 이후 스크롤)
+  // 채팅 입력창 자동 높이 조절 (1줄 기본, 4줄 최대, 이후 스크롤)
   var msgInput = document.getElementById('msgInput');
   if (msgInput) {
     msgInput.addEventListener('input', function() {
       this.style.height = 'auto';
       this.style.height = Math.min(this.scrollHeight, 136) + 'px';
+    });
+    // PC: Enter=전송, Shift+Enter=줄바꿈 / 모바일: Enter=줄바꿈(기본), ➤버튼=전송
+    msgInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        if (e.shiftKey || /Mobi|Android/i.test(navigator.userAgent)) {
+          // 모바일이거나 Shift+Enter → 줄바꿈 (기본 동작 유지)
+          return;
+        }
+        // PC에서 Enter 단독 → 전송
+        e.preventDefault();
+        sendMessage();
+      }
     });
   }
 });
