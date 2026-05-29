@@ -1159,6 +1159,7 @@ var THEME_COLORS = [
   '#334155', // gray (slate-700)
   '#f87171', // rose
   '#fb923c', // orange
+  '#F9A8D3', // pink
   '#7dd3c0', // mint/teal
   '#93c5fd', // blue
   '#c4b5fd'  // lavender
@@ -2249,6 +2250,14 @@ function openCalendar() {
   }
 }
 
+// 색상명 → hex 맵 (분할 gradient에 사용)
+const CAL_COLORS = {
+  pink:'#FFB3B3', yellow:'#F5E84A', green:'#8FF087',
+  blue:'#7EC8F5', purple:'#C3A8F0',
+  // 구버전 호환
+  done:'#FFB3B3', red:'#F5E84A'
+};
+
 function renderCalendar() {
   const now = new Date();
   const habits = JSON.parse(localStorage.getItem('habits') || '{}');
@@ -2276,13 +2285,28 @@ function renderCalendar() {
   for (let i = 0; i < firstDay; i++) html += '<div class="cal-empty"></div>';
   for (let d = 1; d <= daysInMonth; d++) {
     const today = d===now.getDate() && calMonth===now.getMonth() && calYear===now.getFullYear();
-    const color = dayMap[d];
+    const raw = dayMap[d]; // string | [c1,c2] | undefined
+    const colors = Array.isArray(raw) ? raw : (raw ? [raw] : []);
     const dow = (firstDay+d-1)%7;
-    const cls = ['cal-day', today?'cal-today':(color?`cal-color-${color}`:''), dow===0?'sun':dow===6?'sat':''].filter(Boolean).join(' ');
-    html += `<div class="${cls}" ontouchend="toggleHabit(${d});event.preventDefault();" onclick="toggleHabit(${d})">${d}</div>`;
+
+    let cls = ['cal-day', today ? 'cal-today' : '', dow===0?'sun':dow===6?'sat':''];
+    let inlineStyle = '';
+
+    if (colors.length === 2) {
+      // 세로 반분할
+      const c1 = CAL_COLORS[colors[0]] || colors[0];
+      const c2 = CAL_COLORS[colors[1]] || colors[1];
+      inlineStyle = `style="background:linear-gradient(to right,${c1} 50%,${c2} 50%)!important"`;
+      cls.push('cal-split');
+    } else if (colors.length === 1) {
+      cls.push(`cal-color-${colors[0]}`);
+    }
+
+    cls = cls.filter(Boolean).join(' ');
+    html += `<div class="${cls}" ${inlineStyle} ontouchend="toggleHabit(${d});event.preventDefault();" onclick="toggleHabit(${d})">${d}</div>`;
   }
   document.getElementById('calGrid').innerHTML = html;
-  const doneCount = Object.values(dayMap).filter(v => v && v !== 'clear').length;
+  const doneCount = Object.values(dayMap).filter(v => v && v !== 'clear' && !(Array.isArray(v) && v.length === 0)).length;
   const sorted = Object.keys(dayMap).map(Number).sort((a,b)=>b-a);
   let streak = 0;
   if (sorted.length) { streak = 1; for (let i=0;i<sorted.length-1;i++){if(sorted[i]-sorted[i+1]===1)streak++;else break;} }
@@ -2291,7 +2315,7 @@ function renderCalendar() {
   document.getElementById('calStreak').textContent = streak;
 }
 
-let selectedPalette = null;
+let selectedPalette = 'pink';
 
 function selectPalette(color) {
   if (selectedPalette === color) {
@@ -2305,19 +2329,40 @@ function selectPalette(color) {
 }
 
 async function toggleHabit(day) {
-  if (!selectedPalette) return; // 파레트 미선택 시 아무 동작 안 함
+  if (!selectedPalette) return;
   const habits = JSON.parse(localStorage.getItem('habits') || '{}');
   const key = `${calYear}-${calMonth}`;
   if (!habits[key]) habits[key] = {};
+  // 이전 버전 배열 호환
   if (Array.isArray(habits[key])) {
     const arr = habits[key]; habits[key] = {};
     arr.forEach(d => { habits[key][d] = 'done'; });
   }
+
   if (selectedPalette === 'clear') {
     delete habits[key][day];
   } else {
-    habits[key][day] = selectedPalette;
+    const cur = habits[key][day];
+    // 기존 값을 배열로 정규화
+    const curColors = Array.isArray(cur) ? cur : (cur ? [cur] : []);
+
+    if (curColors.length === 0) {
+      // 마킹 없음 → 단색 마킹
+      habits[key][day] = selectedPalette;
+    } else if (curColors.length === 1) {
+      if (curColors[0] === selectedPalette) {
+        // 같은 색 → 토글 삭제
+        delete habits[key][day];
+      } else {
+        // 다른 색 → 분할 마킹 (기존색 | 새색)
+        habits[key][day] = [curColors[0], selectedPalette];
+      }
+    } else {
+      // 이미 2색 분할 → 새 단색으로 교체
+      habits[key][day] = selectedPalette;
+    }
   }
+
   localStorage.setItem('habits', JSON.stringify(habits));
   renderCalendar();
   const sid = getSharedCalId();
