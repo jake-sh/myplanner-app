@@ -447,6 +447,7 @@ input:checked+.slider:before{transform:translateX(20px);}
   max-width:75%;padding:10px 14px;
   border-radius:18px;font-size:14px;line-height:1.5;
   font-weight:500;
+  white-space:pre-wrap;word-break:break-word;
 }
 .msg-bubble.mine{
   background:var(--chat-bubble-mine);color:#fff;
