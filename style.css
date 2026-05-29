@@ -894,6 +894,14 @@ body.dark-mode .cal-stat-label { color:#888; }
 body.dark-mode .cal-title,
 body.dark-mode .cal-day { color:#F1F1F1; }
 body.dark-mode .cal-day.cal-today { color:var(--primary) !important; }
+body.dark-mode .cal-day.cal-color-pink,
+body.dark-mode .cal-day.cal-color-yellow,
+body.dark-mode .cal-day.cal-color-green,
+body.dark-mode .cal-day.cal-color-blue,
+body.dark-mode .cal-day.cal-color-purple,
+body.dark-mode .cal-day.cal-color-done,
+body.dark-mode .cal-day.cal-color-red,
+body.dark-mode .cal-day.cal-split { color:#111 !important; }
 body.dark-mode .cal-wd { color:#555; }
 body.dark-mode .cal-wd.sun { color:#FF6B8A; }
 body.dark-mode .cal-wd.sat { color:var(--primary); }
