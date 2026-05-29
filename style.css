@@ -161,6 +161,30 @@ body:not(.dark-mode) .plan-title{color:var(--primary) !important;}
 }
 .settings-label{font-size:15px;font-weight:800;margin-bottom:12px;color:var(--text);}
 .settings-desc{font-size:13px;color:var(--subtext);}
+
+/* 테마 스와치 — 개수에 관계없이 한 줄에 균등 배치 */
+.theme-swatch-wrap{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(0, 1fr));
+  gap:8px;
+  width:100%;
+}
+.theme-swatch-btn{
+  aspect-ratio:1;
+  border-radius:50%;
+  border:2px solid transparent;
+  outline:none;
+  cursor:pointer;
+  transition:transform .1s;
+  padding:0;
+  min-width:0;
+}
+.theme-swatch-btn.theme-swatch-active{
+  border:3px solid var(--chat-text);
+  outline:2px solid var(--chat-text);
+  outline-offset:1px;
+  transform:scale(1.1);
+}
 .settings-input{
   width:100%;padding:12px 16px;
   border:1.5px solid #ECEEF8;border-radius:14px;
@@ -256,19 +280,19 @@ input:checked+.slider:before{transform:translateX(20px);}
 .empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#C4C7DC;font-size:15px;font-weight:600;text-align:center;gap:10px;padding:40px 20px;line-height:1.8;}
 
 /* ══ 할 일 ══ */
-.todo-add-bar{display:flex;gap:0;padding:12px 16px;background:var(--card);border-bottom:1px solid #F0F1F8;flex-shrink:0;}
+.todo-add-bar{display:flex;gap:0;padding:12px 12px;background:var(--card);border-bottom:1px solid #F0F1F8;flex-shrink:0;box-sizing:border-box;width:100%;}
 .todo-add-input{
-  flex:1;padding:12px 18px;
+  flex:1;min-width:0;padding:12px 14px;
   border:1.5px solid #ECEEF8;border-right:none;
   border-radius:14px 0 0 14px;
   font-size:15px;font-family:inherit;outline:none;
-  background:#F8F9FF;
+  background:#F8F9FF;box-sizing:border-box;
 }
 .todo-add-input:focus{border-color:var(--primary);background:#fff;}
 .todo-add-btn{
   background:var(--primary);color:#fff;border:none;
-  padding:12px 20px;border-radius:0 14px 14px 0;
-  font-size:22px;cursor:pointer;line-height:1;
+  padding:12px 16px;border-radius:0 14px 14px 0;
+  font-size:22px;cursor:pointer;line-height:1;flex-shrink:0;
 }
 .todo-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 16px;display:flex;flex-direction:column;}
 .todo-item{
@@ -666,16 +690,37 @@ input:checked+.slider:before{transform:translateX(20px);}
 .cal-refresh-btn{background:none;border:none;font-size:13px;font-weight:700;cursor:pointer;color:var(--primary);padding:4px 8px;margin-left:auto;font-family:inherit;}
 
 /* 팔레트 */
-.cal-palette{display:flex;gap:12px;justify-content:center;padding:16px 0 8px;}
+.cal-palette{display:flex;gap:10px;justify-content:center;padding:16px 0 8px;flex-wrap:wrap;}
 .pal-btn{width:26px;height:26px;border-radius:50%;border:2px solid #E2E4F0;cursor:pointer;transition:transform .15s;padding:0;}
 .pal-btn.pal-active{border:2px solid var(--primary);transform:scale(1.2);}
+.pal-clear{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cline x1='4' y1='4' x2='16' y2='16' stroke='%23ccc' stroke-width='2'/%3E%3Cline x1='16' y1='4' x2='4' y2='16' stroke='%23ccc' stroke-width='2'/%3E%3C/svg%3E") center/16px no-repeat !important;}
 
 /* 달력 날짜 */
 .cal-day{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;}
-.cal-day.cal-color-done{background:#FFB3B3!important;color:#1e293b!important;border-radius:50%;}
-.cal-day.cal-color-red{background:#F5E84A!important;color:#1e293b!important;border-radius:50%;}
-.cal-day.cal-color-green{background:#8FF087!important;color:#1e293b!important;border-radius:50%;}
-.cal-day.cal-today{background:var(--primary)!important;color:#fff!important;border-radius:50%;}
+
+/* 오늘: box-shadow 링으로 표시 — 마킹 배경과 공존 가능 */
+.cal-day.cal-today{
+  box-shadow:0 0 0 2.5px var(--primary) !important;
+  color:var(--primary) !important;
+  font-weight:800 !important;
+}
+/* 오늘이면서 마킹 없을 때만 배경 투명 */
+.cal-day.cal-today:not([class*="cal-color-"]):not(.cal-split){
+  background:transparent !important;
+}
+
+/* 단색 마킹 5종 — 배경만 변경, 텍스트 색은 그대로 */
+.cal-day.cal-color-pink  {background:#FFB3B3!important;border-radius:50%;}
+.cal-day.cal-color-yellow{background:#F5E84A!important;border-radius:50%;}
+.cal-day.cal-color-green {background:#8FF087!important;border-radius:50%;}
+.cal-day.cal-color-blue  {background:#7EC8F5!important;border-radius:50%;}
+.cal-day.cal-color-purple{background:#C3A8F0!important;border-radius:50%;}
+/* 구버전 호환 */
+.cal-day.cal-color-done  {background:#FFB3B3!important;border-radius:50%;}
+.cal-day.cal-color-red   {background:#F5E84A!important;border-radius:50%;}
+
+/* 분할 마킹 — JS에서 style 인라인으로 gradient 주입 */
+.cal-day.cal-split{border-radius:50%;}
 
 /* 메시지 행 */
 .msg-row{display:flex;align-items:flex-end;gap:6px;margin:4px 10px;max-width:100%;}
@@ -848,6 +893,7 @@ body.dark-mode .cal-stat-box {
 body.dark-mode .cal-stat-label { color:#888; }
 body.dark-mode .cal-title,
 body.dark-mode .cal-day { color:#F1F1F1; }
+body.dark-mode .cal-day.cal-today { color:var(--primary) !important; }
 body.dark-mode .cal-wd { color:#555; }
 body.dark-mode .cal-wd.sun { color:#FF6B8A; }
 body.dark-mode .cal-wd.sat { color:var(--primary); }

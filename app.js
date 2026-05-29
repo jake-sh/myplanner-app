@@ -1181,11 +1181,8 @@ function renderThemeRecentColors() {
   var cur = localStorage.getItem('themeColor') || THEME_COLORS[0];
   THEME_COLORS.forEach(function(hex) {
     var btn = document.createElement('button');
-    var isCur = hex === cur;
-    btn.style.cssText = 'width:42px;height:42px;border-radius:50%;border:' +
-      (isCur ? '3px solid var(--chat-text)' : '2px solid transparent') +
-      ';outline:' + (isCur ? '2px solid var(--chat-text)' : 'none') +
-      ';cursor:pointer;background:' + hex + ';flex-shrink:0;transition:transform 0.1s;';
+    btn.className = 'theme-swatch-btn' + (hex === cur ? ' theme-swatch-active' : '');
+    btn.style.background = hex;
     btn.onclick = function() { setTheme(hex); };
     wrap.appendChild(btn);
   });
@@ -2303,7 +2300,7 @@ function renderCalendar() {
     }
 
     cls = cls.filter(Boolean).join(' ');
-    html += `<div class="${cls}" ${inlineStyle} ontouchend="toggleHabit(${d});event.preventDefault();" onclick="toggleHabit(${d})">${d}</div>`;
+    html += `<div class="${cls}" ${inlineStyle} ontouchend="toggleHabit(${d},event);" onclick="toggleHabit(${d},event);">${d}</div>`;
   }
   document.getElementById('calGrid').innerHTML = html;
   const doneCount = Object.values(dayMap).filter(v => v && v !== 'clear' && !(Array.isArray(v) && v.length === 0)).length;
@@ -2328,7 +2325,18 @@ function selectPalette(color) {
   }
 }
 
-async function toggleHabit(day) {
+let _habitLastTouch = 0; // 중복 이벤트(touchend+click) 방지용
+
+async function toggleHabit(day, e) {
+  // touchend 이후 300ms 내 click 이벤트 무시 (모바일 이중 호출 방지)
+  const now = Date.now();
+  if (e && e.type === 'touchend') {
+    e.preventDefault();
+    _habitLastTouch = now;
+  } else if (e && e.type === 'click') {
+    if (now - _habitLastTouch < 400) return; // touchend가 이미 처리함
+  }
+
   if (!selectedPalette) return;
   const habits = JSON.parse(localStorage.getItem('habits') || '{}');
   const key = `${calYear}-${calMonth}`;
@@ -2340,26 +2348,26 @@ async function toggleHabit(day) {
   }
 
   if (selectedPalette === 'clear') {
+    // 지우개: 무조건 삭제
     delete habits[key][day];
   } else {
     const cur = habits[key][day];
-    // 기존 값을 배열로 정규화
     const curColors = Array.isArray(cur) ? cur : (cur ? [cur] : []);
 
     if (curColors.length === 0) {
-      // 마킹 없음 → 단색 마킹
+      // 빈 날 → 단색 마킹
       habits[key][day] = selectedPalette;
     } else if (curColors.length === 1) {
       if (curColors[0] === selectedPalette) {
-        // 같은 색 → 토글 삭제
-        delete habits[key][day];
+        // 같은 색 재입력 → 무시
+        return;
       } else {
-        // 다른 색 → 분할 마킹 (기존색 | 새색)
+        // 다른 색 → 입력 순서대로 반반 분할
         habits[key][day] = [curColors[0], selectedPalette];
       }
     } else {
-      // 이미 2색 분할 → 새 단색으로 교체
-      habits[key][day] = selectedPalette;
+      // 이미 2색 → 재입력 무시
+      return;
     }
   }
 
