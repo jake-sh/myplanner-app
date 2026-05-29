@@ -4911,6 +4911,20 @@ function applyLang() {
   _setText('notifSectionLabel', __T('Notifications','알림','通知','通知'));
   _setText('langLabel', __T('Language','언어','语言','言語'));
   _setText('infoLabel', __T('Info','정보','信息','情報'));
+  // SW 캐시명에서 버전 자동 추출 → appVersionText 동기화
+  (async function() {
+    try {
+      var keys = await caches.keys();
+      var ver = keys.find(function(k){ return k.indexOf('myplanner-') === 0; });
+      if (ver) {
+        var num = ver.replace('myplanner-v','');
+        // v347 → v3.4.7 형식으로 변환
+        var formatted = 'v' + num[0] + '.' + num[1] + '.' + num.slice(2);
+        var el = document.getElementById('appVersionText');
+        if (el) el.textContent = 'my planner ' + formatted;
+      }
+    } catch(e) {}
+  })();
   _setText('notifEventLabel', __T('Event Alerts','이벤트 알림','事件提醒','イベント通知'));
   _setText('notifAppLabel', __T('App Alerts','앱 알림','应用提醒','アプリ通知'));
   _setText('shareTargetLabel', __T('Share Target :','공유 대상 :','共享对象 :','共有相手 :'));

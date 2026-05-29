@@ -709,18 +709,18 @@ input:checked+.slider:before{transform:translateX(20px);}
   background:transparent !important;
 }
 
-/* 단색 마킹 5종 — 배경만 변경, 텍스트 색은 그대로 */
-.cal-day.cal-color-pink  {background:#FFB3B3!important;border-radius:50%;}
-.cal-day.cal-color-yellow{background:#F5E84A!important;border-radius:50%;}
-.cal-day.cal-color-green {background:#8FF087!important;border-radius:50%;}
-.cal-day.cal-color-blue  {background:#7EC8F5!important;border-radius:50%;}
-.cal-day.cal-color-purple{background:#C3A8F0!important;border-radius:50%;}
+/* 단색 마킹 5종 — 텍스트 블랙 고정 */
+.cal-day.cal-color-pink  {background:#FFB3B3!important;color:#111!important;border-radius:50%;}
+.cal-day.cal-color-yellow{background:#F5E84A!important;color:#111!important;border-radius:50%;}
+.cal-day.cal-color-green {background:#8FF087!important;color:#111!important;border-radius:50%;}
+.cal-day.cal-color-blue  {background:#7EC8F5!important;color:#111!important;border-radius:50%;}
+.cal-day.cal-color-purple{background:#C3A8F0!important;color:#111!important;border-radius:50%;}
 /* 구버전 호환 */
-.cal-day.cal-color-done  {background:#FFB3B3!important;border-radius:50%;}
-.cal-day.cal-color-red   {background:#F5E84A!important;border-radius:50%;}
+.cal-day.cal-color-done  {background:#FFB3B3!important;color:#111!important;border-radius:50%;}
+.cal-day.cal-color-red   {background:#F5E84A!important;color:#111!important;border-radius:50%;}
 
-/* 분할 마킹 — JS에서 style 인라인으로 gradient 주입 */
-.cal-day.cal-split{border-radius:50%;}
+/* 분할 마킹 — 텍스트 블랙 고정 */
+.cal-day.cal-split{border-radius:50%;color:#111!important;}
 
 /* 메시지 행 */
 .msg-row{display:flex;align-items:flex-end;gap:6px;margin:4px 10px;max-width:100%;}
