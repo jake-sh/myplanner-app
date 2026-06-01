@@ -2425,6 +2425,8 @@ function enterChatApp() {
     document.getElementById('activeChatView').style.display = 'none';
   } else {
     document.getElementById('chatSetup').style.display = 'none';
+    // 진입 시마다 백업 스케줄 (친구 등록 전/후 모두 보장)
+    try { scheduleBackup(); } catch(e) {}
     var f = JSON.parse(localStorage.getItem('friends') || '[]');
     if (f.length === 1) {
       listenFriendChanges();
@@ -2539,7 +2541,7 @@ var _backupInProgress = false;
 function scheduleBackup() {
   if (!myCode) return;
   if (_backupTimer) clearTimeout(_backupTimer);
-  _backupTimer = setTimeout(performBackup, 60000);
+  _backupTimer = setTimeout(performBackup, 3000); // 3초 디바운스
 }
 
 async function performBackup() {
@@ -2547,7 +2549,7 @@ async function performBackup() {
   _backupInProgress = true;
   try {
     var patternHash = await patternToHash(savedPattern);
-    if (!patternHash) return;
+    if (!patternHash) return; // finally에서 _backupInProgress = false 처리됨
     var payload = {};
     BACKUP_KEYS.forEach(function(k) {
       var v = localStorage.getItem(k);
@@ -2603,46 +2605,44 @@ async function tryAutoRestore(inputPattern) {
   // 캐시에 myCode가 살아있으면 자동 복원 흐름 불필요 (호출자가 결정)
   // 이 함수는 myCode 없을 때만 호출된다는 전제
 
-  // 마스터 패턴(0125478)이면 → 그냥 진입.
-  // enterChatApp이 myCode 없으면 chatSetup(코드 입력 화면)을 표시함.
-  // 자동 복원 모달 없음.
-  if (isMasterPattern(inputPattern)) {
-    return { action: 'enter' };
-  }
-
-  // 마스터 아니면 → patternIndex 조회
+  // 마스터 패턴이면 → patternIndex 조회 먼저 시도 (기존 사용자 복원 우선)
+  // 조회 실패 or 없으면 → 신규 진입(chatSetup)으로 폴백
   var hash = await patternToHash(inputPattern);
-  if (!hash) return { action: 'silent' };
+  if (!hash) return { action: 'enter' }; // 해시 실패 시 신규 진입
 
   try {
     var snap = await db.collection('patternIndex').doc(hash).get();
-    if (!snap.exists) return { action: 'silent' };
-    var codes = (snap.data() || {}).codes || [];
-    if (!codes.length) return { action: 'silent' };
+    var codes = snap.exists ? ((snap.data() || {}).codes || []) : [];
+
+    if (codes.length === 0) {
+      // patternIndex에 없음 = 신규 사용자 or 백업 미등록
+      // 마스터 패턴이면 신규 진입, 아니면 조용히 무시
+      return isMasterPattern(inputPattern)
+        ? { action: 'enter' }
+        : { action: 'silent' };
+    }
 
     if (codes.length === 1) {
       // 후보 단독 → 조용히 복원 시도
       var ok = await _restoreCode(codes[0], hash);
       if (ok) return { action: 'enter', restored: true };
-      // backups 문서가 없거나 해시 불일치 (마이그레이션 미완료 케이스)
-      // → users 문서 존재 여부로 합법 사용자 확인 후 진입 허용
+      // backups 문서가 없거나 해시 불일치 → users 문서로 확인
       try {
         var userSnap = await db.collection('users').doc(codes[0]).get();
         if (userSnap.exists) {
-          // users 문서에 myCode 복원 (데이터는 없지만 코드는 살아있음)
           localStorage.setItem('myCode', codes[0]);
-          // 다음 진입 시 정상 백업되도록 즉시 백업 트리거
           setTimeout(function() { try { performBackup(); } catch(e){} }, 1000);
           return { action: 'enter', restored: true };
         }
       } catch(e) {}
-      return { action: 'silent' };
+      return isMasterPattern(inputPattern) ? { action: 'enter' } : { action: 'silent' };
     }
+
     // 후보 여러 명 → 코드 입력 모달
     return { action: 'askCode', source: 'multi', candidates: codes, hash: hash };
   } catch(e) {
     console.log('[RESTORE] index lookup error:', e.message);
-    return { action: 'silent' };
+    return isMasterPattern(inputPattern) ? { action: 'enter' } : { action: 'silent' };
   }
 }
 
@@ -2790,10 +2790,10 @@ function listenFriendChanges() {
     }
   } catch(e) {}
 
-  // 앱 시작 시 한 번 백업 수행 (마지막 백업 6시간 초과 시)
+  // 앱 시작 시 한 번 백업 수행 (마지막 백업 1시간 초과 시)
   try {
     var last = parseInt(localStorage.getItem('_lastBackup') || '0');
-    if (Date.now() - last > 6 * 60 * 60 * 1000) {
+    if (Date.now() - last > 1 * 60 * 60 * 1000) {
       scheduleBackup();
     }
   } catch(e) {}
