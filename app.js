@@ -1500,9 +1500,13 @@ function renderTodoList() {
   document.getElementById('todoCount').textContent = `${todos.filter(t=>t.done).length}/${todos.length}`;
   const el = document.getElementById('todoList');
   if (!todos.length) { el.innerHTML = '<div class="empty-state">' + (__T('No tasks yet','할 일이 없습니다','暂无任务','タスクがありません')) + '</div>'; return; }
-  el.innerHTML = todos.map((t,i) => `
-    <div class="todo-item ${t.done?'todo-done':''}">
-      <div class="todo-check ${t.done?'checked':''}" onclick="toggleTodo(${i})">${t.done?'✓':''}</div>
+  // 원본 인덱스를 보존한 채로 미완료 → 완료 순서로 정렬 (각 그룹 내 원래 순서 유지)
+  const sorted = todos
+    .map((t, i) => ({ t, i }))
+    .sort((a, b) => (a.t.done === b.t.done) ? 0 : a.t.done ? 1 : -1);
+  el.innerHTML = sorted.map(({ t, i }) => `
+    <div class="todo-item ${t.done ? 'todo-done' : ''}">
+      <div class="todo-check ${t.done ? 'checked' : ''}" onclick="toggleTodo(${i})">${t.done ? '✓' : ''}</div>
       <span class="todo-text">${esc(t.text)}</span>
       <button class="todo-del" onclick="deleteTodo(${i})">×</button>
     </div>`).join('');
