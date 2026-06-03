@@ -1519,8 +1519,47 @@ function addTodo() {
   saveTodosToFirestore();
 }
 function toggleTodo(i) {
-  const todos = JSON.parse(localStorage.getItem('todos') || '[]'); todos[i].done = !todos[i].done;
-  localStorage.setItem('todos', JSON.stringify(todos)); renderTodoList();
+  const todos = JSON.parse(localStorage.getItem('todos') || '[]');
+  todos[i].done = !todos[i].done;
+  localStorage.setItem('todos', JSON.stringify(todos));
+
+  // FLIP: First — 현재 각 항목 위치 기록
+  const list = document.getElementById('todoList');
+  const items = Array.from(list.querySelectorAll('.todo-item'));
+  const firstRects = new Map();
+  items.forEach(el => {
+    const key = el.querySelector('.todo-text')?.textContent;
+    if (key) firstRects.set(key, el.getBoundingClientRect().top);
+  });
+
+  // DOM 업데이트 (renderTodoList 내부적으로 재정렬됨)
+  renderTodoList();
+
+  // FLIP: Last — 새 위치 기록 후 Invert + Play
+  const newItems = Array.from(list.querySelectorAll('.todo-item'));
+  newItems.forEach(el => {
+    const key = el.querySelector('.todo-text')?.textContent;
+    if (!key || !firstRects.has(key)) return;
+    const oldTop = firstRects.get(key);
+    const newTop = el.getBoundingClientRect().top;
+    const delta = oldTop - newTop;
+    if (Math.abs(delta) < 2) return; // 이동 없으면 스킵
+
+    // Invert: 이전 위치에서 시작
+    el.style.transition = 'none';
+    el.style.transform = `translateY(${delta}px)`;
+    el.style.opacity = Math.abs(delta) > 60 ? '0.3' : '1';
+
+    // Play: 다음 프레임에 transition 실행
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        el.style.transition = 'transform .35s cubic-bezier(.4,0,.2,1), opacity .25s';
+        el.style.transform = '';
+        el.style.opacity = '';
+      });
+    });
+  });
+
   saveTodosToFirestore();
 }
 function deleteTodo(i) {

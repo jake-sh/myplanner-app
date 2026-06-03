@@ -300,7 +300,8 @@ input:checked+.slider:before{transform:translateX(20px);}
   padding:14px 16px;margin-bottom:8px;
   background:var(--card);border-radius:16px;
   border:1.5px solid #F0F1F8;
-  transition:background .15s;
+  transition:background .15s, transform .35s cubic-bezier(.4,0,.2,1), opacity .25s;
+  will-change:transform, opacity;
 }
 .todo-done .todo-text{text-decoration:line-through;color:#C4C7DC;}
 .todo-check{
