@@ -1529,71 +1529,45 @@ function addTodo() {
 
 function toggleTodo(i) {
   const list = document.getElementById('todoList');
-  const todos = JSON.parse(localStorage.getItem('todos') || '[]');
 
-  // FLIP First: 현재 모든 노드 위치 기록
-  const allNodes = Array.from(list.querySelectorAll('.todo-item'));
+  // FLIP First: 현재 위치를 data-idx 기준으로 기록
   const firstY = new Map();
-  allNodes.forEach(el => firstY.set(el, el.getBoundingClientRect().top));
+  Array.from(list.querySelectorAll('.todo-item')).forEach(el => {
+    firstY.set(el.dataset.idx, el.getBoundingClientRect().top);
+  });
 
-  // 데이터 변경
+  // 데이터 변경 후 재렌더 (innerHTML 교체)
+  const todos = JSON.parse(localStorage.getItem('todos') || '[]');
   todos[i].done = !todos[i].done;
   localStorage.setItem('todos', JSON.stringify(todos));
+  renderTodoList();
 
-  // 변경된 노드의 체크 표시 즉시 갱신
-  const target = allNodes.find(el => el.dataset.idx == i);
-  if (target) {
-    const isDone = todos[i].done;
-    target.className = 'todo-item' + (isDone ? ' todo-done' : '');
-    const chk = target.querySelector('.todo-check');
-    if (chk) { chk.className = 'todo-check' + (isDone ? ' checked' : ''); chk.textContent = isDone ? '✓' : ''; }
-  }
-
-  // 정렬 순서대로 기존 노드 재배치 (innerHTML 교체 없이 DOM 이동)
-  const sorted = todos
-    .map((t, idx) => ({ idx }))
-    .sort((a, b) => {
-      const da = todos[a.idx].done, db_ = todos[b.idx].done;
-      return (da === db_) ? 0 : da ? 1 : -1;
-    });
-  sorted.forEach(({ idx }) => {
-    const el = allNodes.find(n => n.dataset.idx == idx);
-    if (el) list.appendChild(el);
+  // FLIP Last + Invert: 새 노드를 data-idx로 매칭해 이전 위치로 순간 이동
+  const newNodes = Array.from(list.querySelectorAll('.todo-item'));
+  newNodes.forEach(el => {
+    const old = firstY.get(el.dataset.idx);
+    if (old === undefined) return;
+    const delta = old - el.getBoundingClientRect().top;
+    if (Math.abs(delta) < 2) return;
+    el.style.transition = 'none';
+    el.style.transform = `translateY(${delta}px)`;
   });
 
-  // FLIP Last: 재배치 후 새 위치 먼저 전부 측정 (transform 적용 전)
-  const deltas = new Map();
-  allNodes.forEach(el => {
-    deltas.set(el, firstY.get(el) - el.getBoundingClientRect().top);
-  });
-
-  // Invert: 측정 끝난 뒤 일괄 transform 적용
-  allNodes.forEach(el => {
-    if (Math.abs(deltas.get(el)) >= 2) {
-      el.style.transition = 'none';
-      el.style.transform = `translateY(${deltas.get(el)}px)`;
-    }
-  });
-
-  // 강제 reflow — Invert 상태를 브라우저가 페인트하도록
+  // 강제 reflow — Invert 상태 페인트
   list.offsetHeight;
 
   // Play: transition 켜고 원위치로
-  requestAnimationFrame(() => {
-    allNodes.forEach(el => {
-      if (Math.abs(deltas.get(el)) < 2) return;
-      el.style.transition = 'transform .38s cubic-bezier(.4,0,.2,1)';
-      el.style.transform = 'translateY(0)';
-      el.addEventListener('transitionend', function h() {
-        el.removeEventListener('transitionend', h);
-        el.style.transition = '';
-        el.style.transform = '';
-      });
+  newNodes.forEach(el => {
+    const old = firstY.get(el.dataset.idx);
+    if (old === undefined) return;
+    if (!el.style.transform || el.style.transform === 'translateY(0px)') return;
+    el.style.transition = 'transform .4s cubic-bezier(.4,0,.2,1)';
+    el.style.transform = '';
+    el.addEventListener('transitionend', function h() {
+      el.removeEventListener('transitionend', h);
+      el.style.transition = '';
     });
   });
-
-  // 카운트 갱신
-  document.getElementById('todoCount').textContent = `${todos.filter(t=>t.done).length}/${todos.length}`;
 
   saveTodosToFirestore();
 }
