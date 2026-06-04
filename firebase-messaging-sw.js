@@ -1,7 +1,12 @@
 // FCM 백그라운드 메시지 수신 전담 서비스워커
 // 앱이 꺼져있거나 백그라운드일 때 푸시를 받아 알림을 띄운다.
+// SW_VERSION: v370 (갱신 강제용 — 바이트 변경)
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
+
+// 새 SW가 즉시 활성화되어 옛 버전을 교체하도록 강제
+self.addEventListener('install', function() { self.skipWaiting(); });
+self.addEventListener('activate', function(e) { e.waitUntil(self.clients.claim()); });
 
 firebase.initializeApp({
   apiKey: "AIzaSyDmyo0wXdWXXclODKQY9vFMoBXca3ObuvM",
