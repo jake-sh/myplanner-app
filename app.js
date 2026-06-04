@@ -1547,29 +1547,30 @@ function toggleTodo(i) {
   renderTodoList();
 
   // FLIP Last + Invert: 새 노드를 data-idx로 매칭해 이전 위치로 순간 이동
-  const newNodes = Array.from(list.querySelectorAll('.todo-item'));
-  newNodes.forEach(el => {
+  const moving = [];
+  Array.from(list.querySelectorAll('.todo-item')).forEach(el => {
     const old = firstY.get(el.dataset.idx);
     if (old === undefined) return;
     const delta = old - el.getBoundingClientRect().top;
     if (Math.abs(delta) < 2) return;
     el.style.transition = 'none';
     el.style.transform = `translateY(${delta}px)`;
+    moving.push(el);
   });
 
-  // 강제 reflow — Invert 상태 페인트
+  if (!moving.length) { saveTodosToFirestore(); return; }
+
+  // 강제 reflow — Invert 상태를 페인트시킨 뒤 같은 틱에서 Play
   list.offsetHeight;
 
   // Play: transition 켜고 원위치로
-  newNodes.forEach(el => {
-    const old = firstY.get(el.dataset.idx);
-    if (old === undefined) return;
-    if (!el.style.transform || el.style.transform === 'translateY(0px)') return;
+  moving.forEach(el => {
     el.style.transition = 'transform .4s cubic-bezier(.4,0,.2,1)';
-    el.style.transform = '';
+    el.style.transform = 'translateY(0)';
     el.addEventListener('transitionend', function h() {
       el.removeEventListener('transitionend', h);
       el.style.transition = '';
+      el.style.transform = '';
     });
   });
 
