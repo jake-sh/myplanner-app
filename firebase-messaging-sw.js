@@ -14,14 +14,17 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// data-only 메시지 백그라운드 수신 → 알림 표시
+// 백그라운드 메시지 수신
+// 주의: 서버가 'notification' 페이로드를 포함해 보내면 FCM/OS가 자동으로 알림을
+// 1개 표시한다. 이때 여기서 showNotification을 또 호출하면 iOS에서 알림이 2개가 된다
+// (iOS는 tag 병합이 불안정). 따라서 notification 페이로드가 있으면 표시하지 않고,
+// data-only 메시지일 때만 직접 표시한다.
 messaging.onBackgroundMessage(function(payload) {
-  var title = (payload.data && payload.data.title) ||
-              (payload.notification && payload.notification.title) ||
-              '새 메시지';
-  var body = (payload.data && payload.data.body) ||
-             (payload.notification && payload.notification.body) ||
-             '새 알림이 있어요';
+  // notification 페이로드가 있으면 FCM 자동표시에 맡기고 중복 표시하지 않음
+  if (payload.notification) return;
+
+  var title = (payload.data && payload.data.title) || '새 메시지';
+  var body = (payload.data && payload.data.body) || '새 알림이 있어요';
   return self.registration.showNotification(title, {
     body: body,
     icon: '/myplanner-app/icons/icon-192.png',
