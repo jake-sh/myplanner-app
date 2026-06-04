@@ -1548,7 +1548,6 @@ function toggleTodo(i) {
 
   // FLIP Last + Invert: 새 노드를 data-idx로 매칭해 이전 위치로 순간 이동
   const newNodes = Array.from(list.querySelectorAll('.todo-item'));
-  const moving = [];
   newNodes.forEach(el => {
     const old = firstY.get(el.dataset.idx);
     if (old === undefined) return;
@@ -1556,23 +1555,21 @@ function toggleTodo(i) {
     if (Math.abs(delta) < 2) return;
     el.style.transition = 'none';
     el.style.transform = `translateY(${delta}px)`;
-    moving.push(el);
   });
 
-  if (!moving.length) { saveTodosToFirestore(); return; }
+  // 강제 reflow — Invert 상태 페인트
+  list.offsetHeight;
 
-  // 이중 rAF: 브라우저가 Invert 상태를 실제로 페인트한 다음 프레임에 Play
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      moving.forEach(el => {
-        el.style.transition = 'transform .4s cubic-bezier(.4,0,.2,1)';
-        el.style.transform = 'translateY(0)';
-        el.addEventListener('transitionend', function h() {
-          el.removeEventListener('transitionend', h);
-          el.style.transition = '';
-          el.style.transform = '';
-        });
-      });
+  // Play: transition 켜고 원위치로
+  newNodes.forEach(el => {
+    const old = firstY.get(el.dataset.idx);
+    if (old === undefined) return;
+    if (!el.style.transform || el.style.transform === 'translateY(0px)') return;
+    el.style.transition = 'transform .4s cubic-bezier(.4,0,.2,1)';
+    el.style.transform = '';
+    el.addEventListener('transitionend', function h() {
+      el.removeEventListener('transitionend', h);
+      el.style.transition = '';
     });
   });
 
