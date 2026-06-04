@@ -1545,60 +1545,68 @@ function renderTodoList() {
 
 function toggleTodo(i) {
   const todos = JSON.parse(localStorage.getItem('todos') || '[]');
+
+  const list = document.getElementById('todoList');
+  const nodes = Array.from(list.querySelectorAll('.todo-item'));
+
+  // Step 1: 현재 모든 노드의 Y 위치 기록
+  const firstY = {};
+  nodes.forEach(el => { firstY[el.id] = el.getBoundingClientRect().top; });
+
+  // Step 2: 데이터 변경 (DOM은 아직 그대로)
   todos[i].done = !todos[i].done;
   localStorage.setItem('todos', JSON.stringify(todos));
 
-  const list = document.getElementById('todoList');
-  const items = Array.from(list.querySelectorAll('.todo-item'));
-
-  // FLIP Step 1: First — 모든 노드의 현재 Y 위치 스냅샷
-  const firstY = new Map();
-  items.forEach(el => firstY.set(el.id, el.getBoundingClientRect().top));
-
-  // 상태 갱신 (클래스/텍스트만, 순서 변경 없이)
-  const node = document.getElementById('todo-el-' + i);
-  if (node) {
-    const isDone = todos[i].done;
-    node.className = 'todo-item' + (isDone ? ' todo-done' : '');
-    const check = node.querySelector('.todo-check');
-    if (check) { check.className = 'todo-check' + (isDone ? ' checked' : ''); check.textContent = isDone ? '✓' : ''; }
-  }
-
-  // FLIP Step 2: 정렬 순서대로 노드 직접 이동 (appendChild)
+  // Step 3: 변경 후 정렬 순서 계산
   const sorted = todos
     .map((t, idx) => ({ t, idx }))
     .sort((a, b) => (a.t.done === b.t.done) ? 0 : a.t.done ? 1 : -1);
-  sorted.forEach(({ idx }) => {
-    const el = document.getElementById('todo-el-' + idx);
-    if (el) list.appendChild(el); // 이미 마지막이면 no-op, 아니면 이동
-  });
 
-  // FLIP Step 3: Last → Invert → Play
-  // 레이아웃 강제 flush (getBoundingClientRect가 최신 위치 반환하도록)
-  list.getBoundingClientRect();
+  // Step 4: 각 노드가 이동해야 할 목표 Y 계산
+  // sorted 순서대로 실제 노드를 배치했을 때의 Y를 추정
+  // (각 노드 높이 = getBoundingClientRect().height + margin 8px)
+  const itemHeight = nodes.length > 0 ? (nodes[0].getBoundingClientRect().height + 8) : 60;
+  const listTop = list.getBoundingClientRect().top + list.scrollTop;
 
-  Array.from(list.querySelectorAll('.todo-item')).forEach(el => {
-    if (!firstY.has(el.id)) return;
-    const delta = firstY.get(el.id) - el.getBoundingClientRect().top;
-    if (Math.abs(delta) < 1) return;
+  // 현재 화면상 각 노드의 순서 인덱스
+  const currentOrder = {};
+  nodes.forEach((el, idx) => { currentOrder[el.id] = idx; });
 
-    // Invert: transition 없이 이전 위치로 순간 이동
+  // 목표 순서 인덱스
+  const targetOrder = {};
+  sorted.forEach(({ idx }, order) => { targetOrder['todo-el-' + idx] = order; });
+
+  // Step 5: transition으로 슬라이드
+  let maxDuration = 0;
+  nodes.forEach(el => {
+    const cur = currentOrder[el.id];
+    const tgt = targetOrder[el.id];
+    if (cur === undefined || tgt === undefined) return;
+    const delta = (tgt - cur) * itemHeight;
+    if (Math.abs(delta) < 2) return;
+
     el.style.transition = 'none';
-    el.style.transform = `translateY(${delta}px)`;
-    // 강제 reflow — 브라우저가 Invert 상태를 실제로 페인트하게 함
-    el.getBoundingClientRect();
-
-    // Play: transition 켜고 원래 위치로 이동
-    el.style.transition = 'transform .38s cubic-bezier(.4,0,.2,1)';
     el.style.transform = 'translateY(0)';
-    el.addEventListener('transitionend', () => {
-      el.style.transition = '';
-      el.style.transform = '';
-    }, { once: true });
+    el.getBoundingClientRect(); // reflow
+    el.style.transition = `transform .38s cubic-bezier(.4,0,.2,1)`;
+    el.style.transform = `translateY(${delta}px)`;
+    maxDuration = Math.max(maxDuration, 380);
   });
 
-  // todoCount 갱신
-  document.getElementById('todoCount').textContent = `${todos.filter(t=>t.done).length}/${todos.length}`;
+  // Step 6: 체크 상태 시각 업데이트 (이동 중에도 체크 표시)
+  const changedNode = document.getElementById('todo-el-' + i);
+  if (changedNode) {
+    const isDone = todos[i].done;
+    changedNode.className = 'todo-item' + (isDone ? ' todo-done' : '');
+    const check = changedNode.querySelector('.todo-check');
+    if (check) { check.className = 'todo-check' + (isDone ? ' checked' : ''); check.textContent = isDone ? '✓' : ''; }
+  }
+
+  // Step 7: 애니메이션 완료 후 실제 DOM 정리
+  setTimeout(() => {
+    nodes.forEach(el => { el.style.transition = ''; el.style.transform = ''; });
+    renderTodoList();
+  }, maxDuration + 40);
 
   saveTodosToFirestore();
 }
