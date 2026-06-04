@@ -1499,63 +1499,87 @@ function renderTodoList() {
   const todos = JSON.parse(localStorage.getItem('todos') || '[]');
   document.getElementById('todoCount').textContent = `${todos.filter(t=>t.done).length}/${todos.length}`;
   const el = document.getElementById('todoList');
-  if (!todos.length) { el.innerHTML = '<div class="empty-state">' + (__T('No tasks yet','할 일이 없습니다','暂无任务','タスクがありません')) + '</div>'; return; }
-  // 원본 인덱스를 보존한 채로 미완료 → 완료 순서로 정렬 (각 그룹 내 원래 순서 유지)
+  if (!todos.length) {
+    el.innerHTML = '<div class="empty-state">' + (__T('No tasks yet','할 일이 없습니다','暂无任务','タスクがありません')) + '</div>';
+    return;
+  }
+
+  // 원본 인덱스 보존 + 미완료 우선 정렬
   const sorted = todos
     .map((t, i) => ({ t, i }))
     .sort((a, b) => (a.t.done === b.t.done) ? 0 : a.t.done ? 1 : -1);
-  el.innerHTML = sorted.map(({ t, i }) => `
-    <div class="todo-item ${t.done ? 'todo-done' : ''}">
-      <div class="todo-check ${t.done ? 'checked' : ''}" onclick="toggleTodo(${i})">${t.done ? '✓' : ''}</div>
-      <span class="todo-text">${esc(t.text)}</span>
-      <button class="todo-del" onclick="deleteTodo(${i})">×</button>
-    </div>`).join('');
+
+  // 기존 empty-state 제거
+  const existing = el.querySelector('.empty-state');
+  if (existing) existing.remove();
+
+  // 이미 있는 노드는 재사용, 없으면 생성
+  sorted.forEach(({ t, i }) => {
+    const id = 'todo-el-' + i;
+    let node = document.getElementById(id);
+    if (!node) {
+      node = document.createElement('div');
+      node.id = id;
+      node.className = 'todo-item';
+      node.innerHTML = `
+        <div class="todo-check" onclick="toggleTodo(${i})"></div>
+        <span class="todo-text">${esc(t.text)}</span>
+        <button class="todo-del" onclick="deleteTodo(${i})">×</button>`;
+    }
+    // 상태 갱신
+    node.className = 'todo-item' + (t.done ? ' todo-done' : '');
+    const check = node.querySelector('.todo-check');
+    check.className = 'todo-check' + (t.done ? ' checked' : '');
+    check.textContent = t.done ? '✓' : '';
+    // 정렬 순서대로 appendChild (이미 올바른 위치면 no-op)
+    el.appendChild(node);
+  });
+
+  // 삭제된 항목 제거 (todos에 없는 id)
+  Array.from(el.children).forEach(child => {
+    if (!child.id || !child.id.startsWith('todo-el-')) return;
+    const idx = parseInt(child.id.replace('todo-el-', ''));
+    if (isNaN(idx) || idx >= todos.length) child.remove();
+  });
 }
-function addTodo() {
-  const el = document.getElementById('todoInput'); const text = el.value.trim(); if (!text) return;
-  const todos = JSON.parse(localStorage.getItem('todos') || '[]');
-  todos.unshift({ text, done: false });
-  localStorage.setItem('todos', JSON.stringify(todos)); el.value = ''; renderTodoList();
-  saveTodosToFirestore();
-}
+
 function toggleTodo(i) {
   const todos = JSON.parse(localStorage.getItem('todos') || '[]');
   todos[i].done = !todos[i].done;
   localStorage.setItem('todos', JSON.stringify(todos));
 
-  // FLIP: First — 현재 각 항목 위치 기록
   const list = document.getElementById('todoList');
   const items = Array.from(list.querySelectorAll('.todo-item'));
-  const firstRects = new Map();
-  items.forEach(el => {
-    const key = el.querySelector('.todo-text')?.textContent;
-    if (key) firstRects.set(key, el.getBoundingClientRect().top);
-  });
 
-  // DOM 업데이트 (renderTodoList 내부적으로 재정렬됨)
+  // FLIP First: 현재 위치 기록
+  const firsts = new Map();
+  items.forEach(el => firsts.set(el.id, el.getBoundingClientRect().top));
+
+  // DOM 재배치 (기존 노드 재사용)
   renderTodoList();
 
-  // FLIP: Last — 새 위치 기록 후 Invert + Play
+  // FLIP Last→Invert→Play
   const newItems = Array.from(list.querySelectorAll('.todo-item'));
   newItems.forEach(el => {
-    const key = el.querySelector('.todo-text')?.textContent;
-    if (!key || !firstRects.has(key)) return;
-    const oldTop = firstRects.get(key);
-    const newTop = el.getBoundingClientRect().top;
-    const delta = oldTop - newTop;
-    if (Math.abs(delta) < 2) return; // 이동 없으면 스킵
+    if (!firsts.has(el.id)) return;
+    const delta = firsts.get(el.id) - el.getBoundingClientRect().top;
+    if (Math.abs(delta) < 2) return;
 
-    // Invert: 이전 위치에서 시작
     el.style.transition = 'none';
     el.style.transform = `translateY(${delta}px)`;
-    el.style.opacity = Math.abs(delta) > 60 ? '0.3' : '1';
+    el.style.opacity = Math.abs(delta) > 80 ? '0.4' : '1';
 
-    // Play: 다음 프레임에 transition 실행
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        el.style.transition = 'transform .35s cubic-bezier(.4,0,.2,1), opacity .25s';
+        el.style.transition = 'transform .38s cubic-bezier(.4,0,.2,1), opacity .28s';
         el.style.transform = '';
         el.style.opacity = '';
+        // transition 끝나면 인라인 style 정리
+        el.addEventListener('transitionend', () => {
+          el.style.transition = '';
+          el.style.transform = '';
+          el.style.opacity = '';
+        }, { once: true });
       });
     });
   });
