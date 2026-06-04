@@ -1471,14 +1471,18 @@ function openTodo() {
         localStorage.setItem('todos', JSON.stringify(data.todos || []));
         if (!firstLoad && data.updatedBy && data.updatedBy !== myCode) {
           if (localStorage.getItem('notifApp') === 'true') sendNotification(__T('To-Do','할 일','待办','タスク'), __T('New task added','새로운 할 일이 있어요','有新的待办事项','新しいタスクがあります'));
+          // 상대방이 변경한 경우만 재렌더 (내 변경은 toggleTodo가 애니메이션과 함께 이미 처리)
+          renderTodoList();
+        } else if (firstLoad) {
+          renderTodoList();
         }
         firstLoad = false;
+      } else if (firstLoad) {
+        renderTodoList();
+        firstLoad = false;
       }
-      
-      renderTodoList();
     });
   } else {
-    
     renderTodoList();
   }
 }
