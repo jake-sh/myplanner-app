@@ -3770,8 +3770,7 @@ async function handleFileSelect(e) {
         ts: firebase.firestore.Timestamp.now(), deleteAt: null
       });
       hideUploadStatus();
-      const friendSnap = await db.collection('users').doc(activeFriendCode).get();
-      if (friendSnap.exists && friendSnap.data().fcmToken) sendFCMPush(friendSnap.data().fcmToken);
+      // 푸시는 서버 onNewMessage가 자동 발송 (앱 직접 호출 제거 — 중복 방지)
     } catch(err) { hideUploadStatus(); showAlert(__T('Send failed: ','전송 실패: ','发送失败: ','送信失敗: ') + err.message); }
     return;
   }
@@ -3798,8 +3797,7 @@ async function handleFileSelect(e) {
       ts: firebase.firestore.Timestamp.now(), deleteAt: null
     });
     hideUploadStatus();
-    const friendSnap = await db.collection('users').doc(activeFriendCode).get();
-    if (friendSnap.exists && friendSnap.data().fcmToken) sendFCMPush(friendSnap.data().fcmToken);
+    // 푸시는 서버 onNewMessage가 자동 발송 (앱 직접 호출 제거 — 중복 방지)
   } catch(err) { hideUploadStatus(); showAlert(__T('Send failed: ','전송 실패: ','发送失败: ','送信失敗: ') + err.message); }
 }
 
@@ -3816,13 +3814,8 @@ async function sendMessage() {
     ts: firebase.firestore.Timestamp.now(),
     deleteAt: null
   });
-  // 상대방 FCM 토큰 조회 후 푸시
-  try {
-    const friendSnap = await db.collection('users').doc(activeFriendCode).get();
-    if (friendSnap.exists && friendSnap.data().fcmToken) {
-      sendFCMPush(friendSnap.data().fcmToken, __T('New message','새 메시지','新消息','新着メッセージ'), __T('New notification','새 알림이 있어요','有新通知','新着通知があります'));
-    }
-  } catch(e) { console.log('push error:', e.message); }
+  // 푸시는 서버의 onNewMessage(Firestore 트리거)가 자동 발송하므로 앱에서 직접 호출하지 않음
+  // (앱에서 sendFCMPush를 또 호출하면 푸시가 2번 발송되어 알림이 2개가 됨)
 }
 
 async function deleteAllNow() {
