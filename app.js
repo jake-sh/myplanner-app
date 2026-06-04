@@ -1551,38 +1551,54 @@ function toggleTodo(i) {
   const list = document.getElementById('todoList');
   const items = Array.from(list.querySelectorAll('.todo-item'));
 
-  // FLIP First: 현재 위치 기록
-  const firsts = new Map();
-  items.forEach(el => firsts.set(el.id, el.getBoundingClientRect().top));
+  // FLIP Step 1: First — 모든 노드의 현재 Y 위치 스냅샷
+  const firstY = new Map();
+  items.forEach(el => firstY.set(el.id, el.getBoundingClientRect().top));
 
-  // DOM 재배치 (기존 노드 재사용)
-  renderTodoList();
+  // 상태 갱신 (클래스/텍스트만, 순서 변경 없이)
+  const node = document.getElementById('todo-el-' + i);
+  if (node) {
+    const isDone = todos[i].done;
+    node.className = 'todo-item' + (isDone ? ' todo-done' : '');
+    const check = node.querySelector('.todo-check');
+    if (check) { check.className = 'todo-check' + (isDone ? ' checked' : ''); check.textContent = isDone ? '✓' : ''; }
+  }
 
-  // FLIP Last→Invert→Play
-  const newItems = Array.from(list.querySelectorAll('.todo-item'));
-  newItems.forEach(el => {
-    if (!firsts.has(el.id)) return;
-    const delta = firsts.get(el.id) - el.getBoundingClientRect().top;
-    if (Math.abs(delta) < 2) return;
+  // FLIP Step 2: 정렬 순서대로 노드 직접 이동 (appendChild)
+  const sorted = todos
+    .map((t, idx) => ({ t, idx }))
+    .sort((a, b) => (a.t.done === b.t.done) ? 0 : a.t.done ? 1 : -1);
+  sorted.forEach(({ idx }) => {
+    const el = document.getElementById('todo-el-' + idx);
+    if (el) list.appendChild(el); // 이미 마지막이면 no-op, 아니면 이동
+  });
 
+  // FLIP Step 3: Last → Invert → Play
+  // 레이아웃 강제 flush (getBoundingClientRect가 최신 위치 반환하도록)
+  list.getBoundingClientRect();
+
+  Array.from(list.querySelectorAll('.todo-item')).forEach(el => {
+    if (!firstY.has(el.id)) return;
+    const delta = firstY.get(el.id) - el.getBoundingClientRect().top;
+    if (Math.abs(delta) < 1) return;
+
+    // Invert: transition 없이 이전 위치로 순간 이동
     el.style.transition = 'none';
     el.style.transform = `translateY(${delta}px)`;
-    el.style.opacity = Math.abs(delta) > 80 ? '0.4' : '1';
+    // 강제 reflow — 브라우저가 Invert 상태를 실제로 페인트하게 함
+    el.getBoundingClientRect();
 
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        el.style.transition = 'transform .38s cubic-bezier(.4,0,.2,1), opacity .28s';
-        el.style.transform = '';
-        el.style.opacity = '';
-        // transition 끝나면 인라인 style 정리
-        el.addEventListener('transitionend', () => {
-          el.style.transition = '';
-          el.style.transform = '';
-          el.style.opacity = '';
-        }, { once: true });
-      });
-    });
+    // Play: transition 켜고 원래 위치로 이동
+    el.style.transition = 'transform .38s cubic-bezier(.4,0,.2,1)';
+    el.style.transform = 'translateY(0)';
+    el.addEventListener('transitionend', () => {
+      el.style.transition = '';
+      el.style.transform = '';
+    }, { once: true });
   });
+
+  // todoCount 갱신
+  document.getElementById('todoCount').textContent = `${todos.filter(t=>t.done).length}/${todos.length}`;
 
   saveTodosToFirestore();
 }
