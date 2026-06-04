@@ -4167,11 +4167,19 @@ async function initFCM() {
   try {
     if (typeof firebase !== 'undefined' && firebase.messaging && firebase.messaging.isSupported && firebase.messaging.isSupported()) {
       messaging = firebase.messaging();
-      const sw = await navigator.serviceWorker.ready;
+      // FCM 백그라운드 수신 전담 서비스워커 등록 (일반 sw.js와 별개)
+      let fcmSW;
+      try {
+        fcmSW = await navigator.serviceWorker.register('/myplanner-app/firebase-messaging-sw.js');
+        await navigator.serviceWorker.ready;
+      } catch(regErr) {
+        console.log('FCM SW register failed, fallback to default SW:', regErr.message);
+        fcmSW = await navigator.serviceWorker.ready;
+      }
       // getToken이 내부적으로 권한 요청 다이얼로그를 띄울 수 있음 → 메인 튕김 방지 플래그
       _filePickerOpen = true;
       _appWasHidden = false;
-      const token = await messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: sw });
+      const token = await messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: fcmSW });
       setTimeout(function() {
         _filePickerOpen = false;
         _appWasHidden = false;
