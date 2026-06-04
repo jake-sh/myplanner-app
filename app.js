@@ -1503,110 +1503,64 @@ function renderTodoList() {
     el.innerHTML = '<div class="empty-state">' + (__T('No tasks yet','할 일이 없습니다','暂无任务','タスクがありません')) + '</div>';
     return;
   }
-
   // 원본 인덱스 보존 + 미완료 우선 정렬
   const sorted = todos
     .map((t, i) => ({ t, i }))
     .sort((a, b) => (a.t.done === b.t.done) ? 0 : a.t.done ? 1 : -1);
+  el.innerHTML = sorted.map(({ t, i }) => `
+    <div class="todo-item ${t.done ? 'todo-done' : ''}" data-idx="${i}">
+      <div class="todo-check ${t.done ? 'checked' : ''}" onclick="toggleTodo(${i})">${t.done ? '✓' : ''}</div>
+      <span class="todo-text">${esc(t.text)}</span>
+      <button class="todo-del" onclick="deleteTodo(${i})">×</button>
+    </div>`).join('');
+}
 
-  // 기존 empty-state 제거
-  const existing = el.querySelector('.empty-state');
-  if (existing) existing.remove();
-
-  // 이미 있는 노드는 재사용, 없으면 생성
-  sorted.forEach(({ t, i }) => {
-    const id = 'todo-el-' + i;
-    let node = document.getElementById(id);
-    if (!node) {
-      node = document.createElement('div');
-      node.id = id;
-      node.className = 'todo-item';
-      node.innerHTML = `
-        <div class="todo-check" onclick="toggleTodo(${i})"></div>
-        <span class="todo-text">${esc(t.text)}</span>
-        <button class="todo-del" onclick="deleteTodo(${i})">×</button>`;
-    }
-    // 상태 갱신
-    node.className = 'todo-item' + (t.done ? ' todo-done' : '');
-    const check = node.querySelector('.todo-check');
-    check.className = 'todo-check' + (t.done ? ' checked' : '');
-    check.textContent = t.done ? '✓' : '';
-    // 정렬 순서대로 appendChild (이미 올바른 위치면 no-op)
-    el.appendChild(node);
-  });
-
-  // 삭제된 항목 제거 (todos에 없는 id)
-  Array.from(el.children).forEach(child => {
-    if (!child.id || !child.id.startsWith('todo-el-')) return;
-    const idx = parseInt(child.id.replace('todo-el-', ''));
-    if (isNaN(idx) || idx >= todos.length) child.remove();
-  });
+function addTodo() {
+  const el = document.getElementById('todoInput');
+  const text = el.value.trim();
+  if (!text) return;
+  const todos = JSON.parse(localStorage.getItem('todos') || '[]');
+  todos.unshift({ text, done: false });
+  localStorage.setItem('todos', JSON.stringify(todos));
+  el.value = '';
+  renderTodoList();
+  saveTodosToFirestore();
 }
 
 function toggleTodo(i) {
-  const todos = JSON.parse(localStorage.getItem('todos') || '[]');
-
   const list = document.getElementById('todoList');
-  const nodes = Array.from(list.querySelectorAll('.todo-item'));
 
-  // Step 1: 현재 모든 노드의 Y 위치 기록
+  // FLIP First: 현재 각 항목 위치를 data-idx 기준으로 기록
   const firstY = {};
-  nodes.forEach(el => { firstY[el.id] = el.getBoundingClientRect().top; });
+  Array.from(list.querySelectorAll('.todo-item')).forEach(el => {
+    firstY[el.dataset.idx] = el.getBoundingClientRect().top;
+  });
 
-  // Step 2: 데이터 변경 (DOM은 아직 그대로)
+  // 데이터 변경 + 재렌더 (innerHTML 교체)
+  const todos = JSON.parse(localStorage.getItem('todos') || '[]');
   todos[i].done = !todos[i].done;
   localStorage.setItem('todos', JSON.stringify(todos));
+  renderTodoList();
 
-  // Step 3: 변경 후 정렬 순서 계산
-  const sorted = todos
-    .map((t, idx) => ({ t, idx }))
-    .sort((a, b) => (a.t.done === b.t.done) ? 0 : a.t.done ? 1 : -1);
-
-  // Step 4: 각 노드가 이동해야 할 목표 Y 계산
-  // sorted 순서대로 실제 노드를 배치했을 때의 Y를 추정
-  // (각 노드 높이 = getBoundingClientRect().height + margin 8px)
-  const itemHeight = nodes.length > 0 ? (nodes[0].getBoundingClientRect().height + 8) : 60;
-  const listTop = list.getBoundingClientRect().top + list.scrollTop;
-
-  // 현재 화면상 각 노드의 순서 인덱스
-  const currentOrder = {};
-  nodes.forEach((el, idx) => { currentOrder[el.id] = idx; });
-
-  // 목표 순서 인덱스
-  const targetOrder = {};
-  sorted.forEach(({ idx }, order) => { targetOrder['todo-el-' + idx] = order; });
-
-  // Step 5: transition으로 슬라이드
-  let maxDuration = 0;
-  nodes.forEach(el => {
-    const cur = currentOrder[el.id];
-    const tgt = targetOrder[el.id];
-    if (cur === undefined || tgt === undefined) return;
-    const delta = (tgt - cur) * itemHeight;
+  // FLIP Last→Invert→Play: 새 노드를 data-idx로 매칭
+  Array.from(list.querySelectorAll('.todo-item')).forEach(el => {
+    const key = el.dataset.idx;
+    if (firstY[key] === undefined) return;
+    const delta = firstY[key] - el.getBoundingClientRect().top;
     if (Math.abs(delta) < 2) return;
 
     el.style.transition = 'none';
-    el.style.transform = 'translateY(0)';
-    el.getBoundingClientRect(); // reflow
-    el.style.transition = `transform .38s cubic-bezier(.4,0,.2,1)`;
     el.style.transform = `translateY(${delta}px)`;
-    maxDuration = Math.max(maxDuration, 380);
+    el.getBoundingClientRect(); // 강제 reflow
+
+    el.style.transition = 'transform .38s cubic-bezier(.4,0,.2,1)';
+    el.style.transform = 'translateY(0)';
+    el.addEventListener('transitionend', function h() {
+      el.removeEventListener('transitionend', h);
+      el.style.transition = '';
+      el.style.transform = '';
+    });
   });
-
-  // Step 6: 체크 상태 시각 업데이트 (이동 중에도 체크 표시)
-  const changedNode = document.getElementById('todo-el-' + i);
-  if (changedNode) {
-    const isDone = todos[i].done;
-    changedNode.className = 'todo-item' + (isDone ? ' todo-done' : '');
-    const check = changedNode.querySelector('.todo-check');
-    if (check) { check.className = 'todo-check' + (isDone ? ' checked' : ''); check.textContent = isDone ? '✓' : ''; }
-  }
-
-  // Step 7: 애니메이션 완료 후 실제 DOM 정리
-  setTimeout(() => {
-    nodes.forEach(el => { el.style.transition = ''; el.style.transform = ''; });
-    renderTodoList();
-  }, maxDuration + 40);
 
   saveTodosToFirestore();
 }
