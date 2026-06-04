@@ -1,4 +1,4 @@
-const CACHE = 'myplanner-v369';
+const CACHE = 'myplanner-v370';
 const PRECACHE = ['./', './index.html', './app.js', './style.css', './manifest.json'];
 
 self.addEventListener('install', e => {
@@ -49,22 +49,10 @@ self.addEventListener('fetch', e => {
   );
 });
 
-self.addEventListener('push', e => {
-  const data = e.data?.json() || {};
-  e.waitUntil(
-    // 앱이 포그라운드면 알림 안 띄움
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
-      const isVisible = clients.some(c => c.visibilityState === 'visible');
-      if (isVisible) return; // 앱 보고 있으면 푸시 무시
-      return self.registration.showNotification(data.title || '새 메시지', {
-        body: data.body || '새 알림이 있어요',
-        icon: '/myplanner-app/icons/icon-192.png',
-        tag: 'planner-notification',
-        renotify: true,
-      });
-    })
-  );
-});
+// push 이벤트 핸들러 제거됨.
+// FCM 푸시 알림은 서버(sendpush)의 notification 페이로드 자동표시로 일원화한다.
+// 여기서 showNotification을 호출하면 자동표시와 중복되어 알림이 2개가 된다(특히 iOS).
+// (firebase-messaging-sw.js의 onBackgroundMessage도 동일 이유로 표시하지 않음)
 
 self.addEventListener('message', e => {
   if (e.data?.type === 'SHOW_NOTIFICATION') {

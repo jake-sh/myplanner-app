@@ -15,23 +15,14 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // 백그라운드 메시지 수신
-// 주의: 서버가 'notification' 페이로드를 포함해 보내면 FCM/OS가 자동으로 알림을
-// 1개 표시한다. 이때 여기서 showNotification을 또 호출하면 iOS에서 알림이 2개가 된다
-// (iOS는 tag 병합이 불안정). 따라서 notification 페이로드가 있으면 표시하지 않고,
-// data-only 메시지일 때만 직접 표시한다.
+// 서버(sendpush)가 보내는 메시지에 notification 페이로드가 포함되어 있어,
+// iOS/FCM이 자동으로 알림을 1개 표시한다("일정 알림 / 새 메시지가 있습니다").
+// 여기서 showNotification을 추가로 호출하면 알림이 2개가 되므로(특히 iOS),
+// onBackgroundMessage에서는 어떤 알림도 직접 띄우지 않는다.
+// → 모든 백그라운드 알림 표시는 서버 notification 페이로드의 FCM 자동표시에 일임.
 messaging.onBackgroundMessage(function(payload) {
-  // notification 페이로드가 있으면 FCM 자동표시에 맡기고 중복 표시하지 않음
-  if (payload.notification) return;
-
-  var title = (payload.data && payload.data.title) || '새 메시지';
-  var body = (payload.data && payload.data.body) || '새 알림이 있어요';
-  return self.registration.showNotification(title, {
-    body: body,
-    icon: '/myplanner-app/icons/icon-192.png',
-    badge: '/myplanner-app/icons/icon-192.png',
-    tag: 'planner-notification',
-    renotify: true
-  });
+  // 의도적으로 아무 알림도 띄우지 않음 (중복 방지)
+  return;
 });
 
 // 알림 클릭 시 앱 열기/포커스
