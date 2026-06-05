@@ -4192,6 +4192,46 @@ async function initFCM() {
   }
 }
 
+// 포그라운드 복귀 시 FCM 토큰을 재확인하여 서버에 반영
+// (FCM 토큰은 주기적으로 갱신되며, 앱이 백그라운드에서 OS에 의해 정리되면
+//  토큰이 무효화될 수 있음 → 앱 활성화 때마다 최신 토큰 + 갱신 시각을 서버에 기록)
+let _lastTokenRefresh = 0;
+async function refreshFCMToken() {
+  try {
+    if (!messaging || !myCode) return;
+    // 과도한 호출 방지: 마지막 갱신 후 1분 이내면 skip
+    const now = Date.now();
+    if (now - _lastTokenRefresh < 60 * 1000) return;
+    _lastTokenRefresh = now;
+
+    let fcmSW;
+    try { fcmSW = await navigator.serviceWorker.getRegistration('/myplanner-app/firebase-messaging-sw.js'); } catch(e) {}
+    if (!fcmSW) { try { fcmSW = await navigator.serviceWorker.ready; } catch(e) {} }
+
+    const token = await messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: fcmSW });
+    if (token) {
+      fcmToken = token;
+      localStorage.setItem('fcmToken', token);
+      // 토큰이 같아도 tokenUpdatedAt을 갱신해 "최근까지 살아있는 토큰"임을 서버에 기록
+      // (단일 필드 덮어쓰기이므로 토큰 중복 등록 위험 없음)
+      await db.collection('users').doc(myCode).set({
+        fcmToken: token,
+        tokenUpdatedAt: firebase.firestore.Timestamp.now()
+      }, { merge: true });
+      console.log('FCM token refreshed');
+    }
+  } catch(e) {
+    console.log('FCM token refresh error:', e.message);
+  }
+}
+
+// 앱이 포그라운드로 돌아올 때마다 토큰 신선도 확인
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'visible') {
+    refreshFCMToken();
+  }
+});
+
 // Render 서버로 FCM 푸시 전송
 async function sendFCMPush(targetToken, title, body) {
   if (title == null) title = __T('New message','새 메시지','新消息','新着メッセージ');
