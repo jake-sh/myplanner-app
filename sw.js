@@ -1,4 +1,4 @@
-const CACHE = 'myplanner-v374';
+const CACHE = 'myplanner-v375';
 const PRECACHE = ['./', './index.html', './app.js', './style.css', './manifest.json'];
 
 self.addEventListener('install', e => {
@@ -21,6 +21,23 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
+
+  // Firebase/Google API 요청은 SW가 절대 가로채지 않고 네트워크로 직행한다.
+  // (인증 토큰 갱신, Firestore 쓰기 등이 SW를 거치며 변형/실패하면
+  //  미사용 후 "URI Too Long", 인증 실패, 동기화 누락이 발생함)
+  const host = url.hostname;
+  if (host.includes('googleapis.com') ||
+      host.includes('firebaseio.com') ||
+      host.includes('firebaseinstallations') ||
+      host.includes('firebase') ||
+      host.includes('google.com') ||
+      host.includes('gstatic.com') ||
+      host.includes('firestore') ||
+      host.includes('identitytoolkit') ||
+      host.includes('securetoken')) {
+    return; // respondWith 호출 안 함 → 브라우저 기본 네트워크 처리
+  }
+
   // share_target으로 들어온 요청은 캐시 우회 + 쿼리스트링 유지
   // (manifest의 share_target action이 './' 이므로 origin/scope 루트로 들어옴)
   const isShareTarget = e.request.method === 'GET' &&
@@ -37,7 +54,11 @@ self.addEventListener('fetch', e => {
     e.respondWith(fetch(e.request).catch(() => caches.match('/myplanner-app/index.html')));
     return;
   }
-  // 나머지는 cache-first
+  // GET이 아닌 요청(POST/PUT/PATCH/DELETE 등 쓰기)은 캐시 대상이 아니므로 손대지 않음
+  if (e.request.method !== 'GET') {
+    return;
+  }
+  // 나머지(동일 출처 GET)는 cache-first
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).then(resp => {
       if (resp && resp.status === 200 && e.request.url.startsWith(self.location.origin)) {
