@@ -1,4 +1,4 @@
-const CACHE = 'myplanner-v375';
+const CACHE = 'myplanner-v376';
 const PRECACHE = ['./', './index.html', './app.js', './style.css', './manifest.json'];
 
 self.addEventListener('install', e => {
@@ -43,9 +43,15 @@ self.addEventListener('fetch', e => {
   const isShareTarget = e.request.method === 'GET' &&
     (url.searchParams.has('title') || url.searchParams.has('text') || url.searchParams.has('url'));
   if (isShareTarget) {
-    // 캐시된 index.html을 그대로 응답하고, 쿼리스트링은 클라이언트의 location.search로 살아있음
+    // 캐시된 index.html을 응답하고, 쿼리스트링은 클라이언트의 location.search로 살아있음.
+    // 캐시 miss(장시간 미사용으로 캐시 정리됨) 시에도 절대 원본 긴 URL을 서버로 보내지 않는다
+    // — GitHub Pages가 긴 쿼리스트링을 414 "URI Too Long"으로 거부하기 때문.
+    // 쿼리를 뗀 ./index.html만 네트워크로 요청한다 (주소창 쿼리스트링은 유지됨).
     e.respondWith(
-      caches.match('./index.html').then(c => c || caches.match('./')).then(c => c || fetch(e.request))
+      caches.match('./index.html')
+        .then(c => c || caches.match('./'))
+        .then(c => c || fetch('./index.html'))
+        .catch(() => fetch('./index.html'))
     );
     return;
   }
