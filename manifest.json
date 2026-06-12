@@ -20,9 +20,9 @@
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
   "share_target": {
-    "action": "./",
-    "method": "GET",
-    "enctype": "application/x-www-form-urlencoded",
+    "action": "./share-receiver",
+    "method": "POST",
+    "enctype": "multipart/form-data",
     "params": {
       "title": "title",
       "text": "text",
