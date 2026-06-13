@@ -2079,17 +2079,42 @@ window.openMemo = function() {
 
 // ── 공유 인텐트 → 메모 자동 저장 ─────────────────────────────
 // 다른 앱에서 "공유하기 → my planner" 선택 시 호출됨.
-// manifest.json의 share_target이 GET ?title=&text=&url= 로 들어옴.
-// 1) 텍스트 추출 (text > url > title 우선순위)
-// 2) 첫 줄에서 토큰 10개까지 자동 제목 추출 (기존 메모 입력 로직과 동일)
-// 3) localStorage 'memos'에 즉시 unshift 저장
-// 4) 화면을 띄우지 않고 URL을 깨끗이 정리한 뒤 창 닫기 (원래 앱으로 복귀)
-function handleShareIntent() {
+// [신규] manifest share_target이 POST ./share-receiver → SW가 formData를
+//        Cache('share-incoming')에 저장 후 ./?share=1 로 redirect.
+//        긴 텍스트도 URL에 안 실리므로 "URI Too Long" 없음.
+// [호환] 구버전 GET ?title=&text=&url= 방식도 계속 처리.
+async function handleShareIntent() {
   try {
     const params = new URLSearchParams(window.location.search);
-    const sharedTitle = (params.get('title') || '').trim();
-    const sharedText  = (params.get('text')  || '').trim();
-    const sharedUrl   = (params.get('url')   || '').trim();
+
+    let sharedTitle = '', sharedText = '', sharedUrl = '';
+
+    if (params.has('share')) {
+      // POST 방식: SW가 Cache에 저장해둔 페이로드를 읽음
+      // (SW의 저장이 redirect보다 약간 늦을 수 있으므로 최대 5회 재시도)
+      try {
+        const cache = await caches.open('share-incoming');
+        let resp = null;
+        for (let attempt = 0; attempt < 5; attempt++) {
+          resp = await cache.match('shared-payload');
+          if (resp) break;
+          await new Promise(r => setTimeout(r, 200));
+        }
+        if (resp) {
+          const payload = await resp.json();
+          sharedTitle = (payload.title || '').trim();
+          sharedText  = (payload.text  || '').trim();
+          sharedUrl   = (payload.url   || '').trim();
+          // 읽은 즉시 삭제 (중복 저장 방지)
+          await cache.delete('shared-payload');
+        }
+      } catch(e) {}
+    } else {
+      // 구버전 GET 방식
+      sharedTitle = (params.get('title') || '').trim();
+      sharedText  = (params.get('text')  || '').trim();
+      sharedUrl   = (params.get('url')   || '').trim();
+    }
 
     // 공유 파라미터가 하나도 없으면 일반 실행 → 종료
     if (!sharedTitle && !sharedText && !sharedUrl) return false;
@@ -4138,6 +4163,34 @@ window.addEventListener('focus', function() {
   clearAllNotifications();
   setBadge(0);
   unreadCount = 0;
+});
+
+// ── 채팅 리스너 일시정지/재개 ─────────────────────────────────
+// 채팅 화면은 Firestore onSnapshot의 열린 HTTP 스트림이 살아있는 유일한 화면.
+// 이 상태에서 share_target 네비게이션(기존 PWA 창 재사용)이 일어나면 열린 연결
+// 경합으로 요청이 SW fetch를 우회해 GitHub Pages로 직행 → 405/414 오류 발생.
+// → 앱이 hidden 되는 순간 채팅 리스너를 해제해 연결을 깨끗이 하고,
+//   visible 복귀 시 재연결한다 (채팅 캐시 즉시표시가 있어 깜빡임 없음.
+//   hidden 동안 새 메시지는 FCM 푸시가 담당).
+let _chatPaused = false;
+document.addEventListener('visibilitychange', function() {
+  try {
+    if (document.visibilityState === 'hidden') {
+      if (chatRoomId && messageListener) {
+        messageListener(); messageListener = null;
+        if (roomListener) { roomListener(); roomListener = null; }
+        _chatPaused = true;
+      }
+    } else if (document.visibilityState === 'visible') {
+      if (_chatPaused && chatRoomId) {
+        _chatPaused = false;
+        listenMessages();
+        listenRoomSettings();
+      } else {
+        _chatPaused = false;
+      }
+    }
+  } catch(e) {}
 });
 
 // 앱 처음 로드 시에도 클리어

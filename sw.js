@@ -1,4 +1,4 @@
-const CACHE = 'myplanner-v376';
+const CACHE = 'myplanner-v378';
 const PRECACHE = ['./', './index.html', './app.js', './style.css', './manifest.json'];
 
 self.addEventListener('install', e => {
@@ -38,8 +38,35 @@ self.addEventListener('fetch', e => {
     return; // respondWith 호출 안 함 → 브라우저 기본 네트워크 처리
   }
 
+  // ── POST share_target 수신 ──────────────────────────────────
+  // manifest의 share_target이 POST ./share-receiver 로 들어옴.
+  // 긴 텍스트도 URL이 아닌 body(formData)에 실리므로 "URI Too Long"이 없다.
+  // formData를 꺼내 Cache에 임시 저장 후, 짧은 URL로 redirect → 클라이언트가 읽어감.
+  if (e.request.method === 'POST' && url.pathname.endsWith('/share-receiver')) {
+    e.respondWith((async () => {
+      try {
+        const formData = await e.request.formData();
+        const payload = {
+          title: formData.get('title') || '',
+          text: formData.get('text') || '',
+          url: formData.get('url') || '',
+          ts: Date.now()
+        };
+        const cache = await caches.open('share-incoming');
+        await cache.put('shared-payload', new Response(JSON.stringify(payload), {
+          headers: { 'Content-Type': 'application/json' }
+        }));
+      } catch(err) {
+        // formData 파싱 실패해도 앱은 띄움
+      }
+      // 짧은 URL로 redirect (303: POST → GET 전환)
+      return Response.redirect('./?share=1', 303);
+    })());
+    return;
+  }
+
   // share_target으로 들어온 요청은 캐시 우회 + 쿼리스트링 유지
-  // (manifest의 share_target action이 './' 이므로 origin/scope 루트로 들어옴)
+  // (구버전 GET 방식 호환 유지 — manifest 갱신 전 기기 대응)
   const isShareTarget = e.request.method === 'GET' &&
     (url.searchParams.has('title') || url.searchParams.has('text') || url.searchParams.has('url'));
   if (isShareTarget) {
