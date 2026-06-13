@@ -4213,14 +4213,33 @@ async function initFCM() {
   try {
     if (typeof firebase !== 'undefined' && firebase.messaging && firebase.messaging.isSupported && firebase.messaging.isSupported()) {
       messaging = firebase.messaging();
+      // 옛 버전에서 넓은 scope(/myplanner-app/)로 등록된 FCM SW가 있으면 해제.
+      // (그대로 두면 메인 sw.js의 fetch를 계속 가로채 공유 POST 405가 지속됨)
+      try {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        for (const r of regs) {
+          const u = (r.active && r.active.scriptURL) || '';
+          if (u.includes('firebase-messaging-sw') &&
+              r.scope.endsWith('/myplanner-app/')) {
+            await r.unregister();
+            console.log('old wide-scope FCM SW unregistered');
+          }
+        }
+      } catch(e) {}
       // FCM 백그라운드 수신 전담 서비스워커 등록 (일반 sw.js와 별개)
+      // 중요: scope를 좁게 제한한다. scope를 기본값(/myplanner-app/)으로 두면
+      // 메인 sw.js와 scope가 겹쳐 FCM SW가 fetch를 가로채는데, FCM SW에는
+      // share-receiver POST 핸들러가 없어 공유 POST가 서버로 직행 → 405 발생.
+      // 좁은 scope로 등록하면 fetch는 계속 sw.js가 담당하고 FCM 푸시 수신은 정상 동작.
       let fcmSW;
       try {
-        fcmSW = await navigator.serviceWorker.register('/myplanner-app/firebase-messaging-sw.js');
-        await navigator.serviceWorker.ready;
+        fcmSW = await navigator.serviceWorker.register(
+          '/myplanner-app/firebase-messaging-sw.js',
+          { scope: '/myplanner-app/firebase-cloud-messaging-push-scope' }
+        );
       } catch(regErr) {
         console.log('FCM SW register failed, fallback to default SW:', regErr.message);
-        fcmSW = await navigator.serviceWorker.ready;
+        try { fcmSW = await navigator.serviceWorker.getRegistration('/myplanner-app/'); } catch(e) {}
       }
       // getToken이 내부적으로 권한 요청 다이얼로그를 띄울 수 있음 → 메인 튕김 방지 플래그
       _filePickerOpen = true;
