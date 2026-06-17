@@ -2990,30 +2990,66 @@ async function addFriendByCode() {
   if (code === myCode) { showAlert(__T('You cannot add yourself','자신의 코드는 추가할 수 없습니다','不能添加自己的代码','自分のコードは追加できません')); return; }
   if (friends.includes(code)) { showAlert(__T('Already added','이미 추가된 친구입니다','已添加','既に追加された友達です')); return; }
 
-  // 존재하는 사용자인지 확인
-  const snap = await db.collection('users').doc(code).get();
-  if (!snap.exists) {
-    var _lang = localStorage.getItem('lang') || 'ko';
-    var _msg;
-    if (_lang === 'en') _msg = '"' + code + '" is not a registered user';
-    else if (_lang === 'zh') _msg = '"' + code + '" 是未注册的用户';
-    else if (_lang === 'ja') _msg = '"' + code + '" は登録されていないユーザーです';
-    else _msg = '"' + code + '" 는 등록되지 않은 사용자예요';
-    showAlert(_msg);
-    return;
+  // [먹통 수정 v382] 탭 즉시 피드백 → 응답 지연을 "먹통"으로 오인하지 않게 함
+  var _afBtn = document.getElementById('addFriendBtn');
+  var _afBtnText = _afBtn ? _afBtn.textContent : '';
+  function _afBusy(on) {
+    if (!_afBtn) return;
+    _afBtn.disabled = on;
+    _afBtn.style.opacity = on ? '0.55' : '';
+    _afBtn.textContent = on ? __T('Adding...','추가 중...','添加中...','追加中...') : _afBtnText;
+  }
+  _afBusy(true);
+
+  // [먹통 수정 v382] 익명 인증을 능동 재시도하고 실패 사유(에러코드)를 화면에 노출.
+  // (인증 미완료 상태에서 Firestore 접근 시 거부되어 함수가 통째로 죽으면 버튼이 먹통으로 보임)
+  if (!currentUser) {
+    try {
+      const cred = await auth.signInAnonymously();
+      currentUser = (cred && cred.user) || currentUser;
+    } catch (authErr) {
+      _afBusy(false);
+      showAlert(__T('Auth failed','인증 실패','认证失败','認証失敗') + ' (' + (authErr && (authErr.code || authErr.message) || 'unknown') + ')');
+      return;
+    }
   }
 
-  friends.push(code); localStorage.setItem('friends', JSON.stringify(friends));
-  await db.collection('users').doc(myCode).set({ friends: firebase.firestore.FieldValue.arrayUnion(code) }, { merge: true });
-  await db.collection('users').doc(code).set({ friends: firebase.firestore.FieldValue.arrayUnion(myCode) }, { merge: true });
-  renderFriendList(); closeAddFriend();
-  var _lang2 = localStorage.getItem('lang') || 'ko';
-  var _addMsg;
-  if (_lang2 === 'en') _addMsg = code + ' has been added';
-  else if (_lang2 === 'zh') _addMsg = code + ' 已添加';
-  else if (_lang2 === 'ja') _addMsg = code + ' を追加しました';
-  else _addMsg = code + ' 추가되었습니다';
-  showAlert(_addMsg);
+  // [먹통 수정 v382] Firestore 접근을 try/catch로 감싸 실패 사유(에러코드)를 화면에 드러냄
+  try {
+    // 존재하는 사용자인지 확인
+    const snap = await db.collection('users').doc(code).get();
+    if (!snap.exists) {
+      _afBusy(false);
+      var _lang = localStorage.getItem('lang') || 'ko';
+      var _msg;
+      if (_lang === 'en') _msg = '"' + code + '" is not a registered user';
+      else if (_lang === 'zh') _msg = '"' + code + '" 是未注册的用户';
+      else if (_lang === 'ja') _msg = '"' + code + '" は登録されていないユーザーです';
+      else _msg = '"' + code + '" 는 등록되지 않은 사용자예요';
+      showAlert(_msg);
+      return;
+    }
+
+    // 서버 쓰기를 먼저 성공시킨 뒤 로컬 반영 (실패 시 로컬 불일치 방지)
+    await db.collection('users').doc(myCode).set({ friends: firebase.firestore.FieldValue.arrayUnion(code) }, { merge: true });
+    await db.collection('users').doc(code).set({ friends: firebase.firestore.FieldValue.arrayUnion(myCode) }, { merge: true });
+    if (!friends.includes(code)) friends.push(code);
+    localStorage.setItem('friends', JSON.stringify(friends));
+    renderFriendList();
+    _afBusy(false);
+    closeAddFriend();
+    var _lang2 = localStorage.getItem('lang') || 'ko';
+    var _addMsg;
+    if (_lang2 === 'en') _addMsg = code + ' has been added';
+    else if (_lang2 === 'zh') _addMsg = code + ' 已添加';
+    else if (_lang2 === 'ja') _addMsg = code + ' を追加しました';
+    else _addMsg = code + ' 추가되었습니다';
+    showAlert(_addMsg);
+  } catch (e) {
+    _afBusy(false);
+    // 에러코드를 함께 노출 → permission-denied(보안규칙) / unavailable(네트워크) 등 즉시 판별
+    showAlert(__T('Failed to add friend','친구 추가 실패','添加好友失败','友達追加失敗') + ' (' + (e && (e.code || e.message) || 'unknown') + ')');
+  }
 }
 
 function renderMyQr() {
