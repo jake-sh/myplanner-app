@@ -1,4 +1,4 @@
-const CACHE = 'myplanner-v389';
+const CACHE = 'myplanner-v3810';
 const PRECACHE = ['./', './index.html', './app.js', './style.css', './manifest.json'];
 
 self.addEventListener('install', e => {
@@ -116,6 +116,7 @@ self.addEventListener('message', e => {
       self.registration.showNotification(e.data.title || '알림', {
         body: e.data.body || '',
         icon: '/myplanner-app/icons/icon-192.png',
+        badge: '/myplanner-app/icons/icon-badge.png',
         tag: 'planner-notification'
       });
     });

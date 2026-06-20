@@ -1,6 +1,6 @@
 // FCM 백그라운드 메시지 수신 전담 서비스워커
 // 앱이 꺼져있거나 백그라운드일 때 푸시를 받아 알림을 띄운다.
-// SW_VERSION: v389 (data-only 방식 — onBackgroundMessage 유지)
+// SW_VERSION: v3810 (data-only 방식 — onBackgroundMessage 유지)
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
 
@@ -30,7 +30,7 @@ messaging.onBackgroundMessage(function(payload) {
   return self.registration.showNotification(title, {
     body: body,
     icon: '/myplanner-app/icons/icon-192.png',
-    badge: '/myplanner-app/icons/icon-192.png',
+    badge: '/myplanner-app/icons/icon-badge.png',
     tag: 'planner-notification',
     renotify: true
   });
