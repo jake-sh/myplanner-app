@@ -4286,6 +4286,22 @@ async function initFCM() {
         console.log('FCM SW register failed, fallback to default SW:', regErr.message);
         try { fcmSW = await navigator.serviceWorker.getRegistration('/myplanner-app/'); } catch(e) {}
       }
+      // SW가 active 상태가 되기 전에 getToken을 호출하면 Firebase가 의도한
+      // SW에 푸시 구독을 제대로 묶지 못할 수 있음 → activate까지 명시적으로 대기.
+      if (fcmSW && !fcmSW.active) {
+        await new Promise(function(resolve) {
+          var worker = fcmSW.installing || fcmSW.waiting;
+          if (!worker) { resolve(); return; }
+          var timeout = setTimeout(resolve, 5000);
+          worker.addEventListener('statechange', function onState() {
+            if (worker.state === 'activated') {
+              clearTimeout(timeout);
+              worker.removeEventListener('statechange', onState);
+              resolve();
+            }
+          });
+        });
+      }
       _fcmSW = fcmSW; // refreshFCMToken이 동일한 SW를 재사용하도록 저장
       // getToken이 내부적으로 권한 요청 다이얼로그를 띄울 수 있음 → 메인 튕김 방지 플래그
       _filePickerOpen = true;
