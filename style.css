@@ -954,6 +954,11 @@ body.dark-mode #titlePlanner { color:inherit; }
   min-height: 0;
   overflow: hidden;
 }
+/* 키패드가 열려 있는 동안: 제스처 내비 안전영역 패딩이 중복 여백처럼 보여
+   입력창이 키패드 위에 떠 보이므로 끈다. (헤더/메시지 목록은 그대로 유지) */
+#activeChatView.kb-open .chat-input-bar {
+  padding-bottom: 10px;
+}
 
 /* 선택된 테마 버튼 테두리 */
 .theme-btn.selected {
