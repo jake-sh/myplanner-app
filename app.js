@@ -1121,10 +1121,12 @@ function applyDarkMode() {
   } else {
     document.body.classList.remove('dark-mode');
   }
-  // 상태바(theme-color)를 실제 배경색과 맞춤. 고정된 색(#4A90D9)을 쓰면
-  // 본문과 다른 색의 띠가 상단에 분리되어 보임 (Android standalone PWA에서 특히 두드러짐).
+  // 상태바(theme-color)를 헤더 배경색(--card)과 정확히 맞춤. 미묘하게라도
+  // 색이 다르면 상태바와 헤더 사이에 경계선처럼 보임 (Android standalone PWA).
+  // 라이트: .plan-header/.sub-header 기본 배경 #FFFFFF
+  // 다크: body.dark-mode .plan-header/.sub-header 오버라이드 #000000
   var themeMeta = document.querySelector('meta[name="theme-color"]');
-  if (themeMeta) themeMeta.setAttribute('content', enabled ? '#1a1a1a' : '#F8F9FF');
+  if (themeMeta) themeMeta.setAttribute('content', enabled ? '#000000' : '#FFFFFF');
   var toggle = document.getElementById('darkModeToggle');
   if (toggle) toggle.checked = enabled;
   applyIconStyle();
