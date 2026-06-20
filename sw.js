@@ -103,10 +103,10 @@ self.addEventListener('fetch', e => {
   );
 });
 
-// push 이벤트 핸들러 제거됨.
-// FCM 푸시 알림은 서버(sendpush)의 notification 페이로드 자동표시로 일원화한다.
-// 여기서 showNotification을 호출하면 자동표시와 중복되어 알림이 2개가 된다(특히 iOS).
-// (firebase-messaging-sw.js의 onBackgroundMessage도 동일 이유로 표시하지 않음)
+// push 이벤트 핸들러 없음 (sw.js는 FCM 알림 표시 담당 아님).
+// FCM 백그라운드 알림은 firebase-messaging-sw.js의 onBackgroundMessage가 전담.
+// 서버는 data-only 페이로드로 전송 → FCM 자동표시 없음 → onBackgroundMessage 한 곳에서만 표시.
+// (이전에 sw.js push 핸들러 + onBackgroundMessage 양쪽에서 표시해 2개 오던 문제 수정됨)
 
 self.addEventListener('message', e => {
   if (e.data?.type === 'SHOW_NOTIFICATION') {

@@ -4243,6 +4243,7 @@ const FCM_SERVER = 'https://sendpush-zd5g5jmsha-uc.a.run.app';
 
 let fcmToken = localStorage.getItem('fcmToken') || null;
 let messaging = null;
+let _fcmSW = null; // initFCM에서 등록한 FCM SW registration 참조 (refreshFCMToken에서 재사용)
 
 // FCM 초기화 및 토큰 발급
 async function initFCM() {
@@ -4277,6 +4278,7 @@ async function initFCM() {
         console.log('FCM SW register failed, fallback to default SW:', regErr.message);
         try { fcmSW = await navigator.serviceWorker.getRegistration('/myplanner-app/'); } catch(e) {}
       }
+      _fcmSW = fcmSW; // refreshFCMToken이 동일한 SW를 재사용하도록 저장
       // getToken이 내부적으로 권한 요청 다이얼로그를 띄울 수 있음 → 메인 튕김 방지 플래그
       _filePickerOpen = true;
       _appWasHidden = false;
@@ -4312,9 +4314,10 @@ async function refreshFCMToken() {
     if (now - _lastTokenRefresh < 60 * 1000) return;
     _lastTokenRefresh = now;
 
-    let fcmSW;
-    try { fcmSW = await navigator.serviceWorker.getRegistration('/myplanner-app/firebase-messaging-sw.js'); } catch(e) {}
-    if (!fcmSW) { try { fcmSW = await navigator.serviceWorker.ready; } catch(e) {} }
+    // initFCM에서 저장한 SW를 최우선 사용. 없으면 scope URL로 조회 (파일명이 아닌 scope임에 주의)
+    let fcmSW = _fcmSW;
+    if (!fcmSW) { try { fcmSW = await navigator.serviceWorker.getRegistration('/myplanner-app/firebase-cloud-messaging-push-scope'); } catch(e) {} }
+    if (!fcmSW) { try { fcmSW = await navigator.serviceWorker.getRegistration('/myplanner-app/'); } catch(e) {} }
 
     const token = await messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: fcmSW });
     if (token) {
