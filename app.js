@@ -3356,14 +3356,11 @@ async function _doConfirmChangeCode(newCode) {
 // 키패드 올라올때 채팅 스크롤 유지
 if (window.visualViewport) {
   function onViewportChange() {
-    var chatView = document.getElementById('activeChatView');
     var list = document.getElementById('messageList');
-    if (!chatView || !list) return;
-
-    var vv = window.visualViewport;
-    // 키패드 올라와도 top/height 정확히 맞춤
-    chatView.style.top    = vv.offsetTop + 'px';
-    chatView.style.height = vv.height + 'px';
+    if (!list) return;
+    // CSS #activeChatView { height:100dvh } 가 키패드 크기 변화를 이미 반영함.
+    // 여기서 top/height를 visualViewport 값으로 또 덮어쓰면 dvh 계산과
+    // 어긋나 입력창이 키패드 위에 뜨는 문제가 생기므로 강제 지정하지 않음.
 
     setTimeout(function() {
       var contentH = list.scrollHeight;
