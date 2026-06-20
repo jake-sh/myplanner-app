@@ -1121,6 +1121,10 @@ function applyDarkMode() {
   } else {
     document.body.classList.remove('dark-mode');
   }
+  // 상태바(theme-color)를 실제 배경색과 맞춤. 고정된 색(#4A90D9)을 쓰면
+  // 본문과 다른 색의 띠가 상단에 분리되어 보임 (Android standalone PWA에서 특히 두드러짐).
+  var themeMeta = document.querySelector('meta[name="theme-color"]');
+  if (themeMeta) themeMeta.setAttribute('content', enabled ? '#1a1a1a' : '#F8F9FF');
   var toggle = document.getElementById('darkModeToggle');
   if (toggle) toggle.checked = enabled;
   applyIconStyle();
