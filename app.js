@@ -2893,8 +2893,11 @@ function listenFriendChanges() {
     localStorage.setItem('friends', JSON.stringify(friends));
 
     // stale shareTarget 정리
+    // 캐시(fromCache) 스냅샷은 일시적으로 일부 친구가 빠진 상태로 올 수 있어
+    // (멀티탭/오프라인 쓰기 동기화 지연 등) shareTarget을 영구 삭제하면 안 됨.
+    // 서버에서 확정된 데이터일 때만 정리한다.
     var st = localStorage.getItem('shareTarget');
-    if (st && friends.indexOf(st) < 0) {
+    if (st && friends.indexOf(st) < 0 && !snap.metadata.fromCache) {
       localStorage.removeItem('shareTarget');
     }
     // 사라진 친구로부터 받았던 메모 제거
