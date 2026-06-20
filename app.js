@@ -4201,6 +4201,25 @@ window.addEventListener('focus', function() {
   unreadCount = 0;
 });
 
+// ── iOS 키보드 대응 (visualViewport) ──────────────────────────
+// iOS Safari/PWA는 키보드가 올라와도 100vh가 줄지 않음.
+// visualViewport.height로 실제 보이는 높이를 감지해 채팅 입력바를 키보드 위로 밀어올린다.
+(function() {
+  if (!window.visualViewport) return;
+  var lastBottom = 0;
+  function onViewportResize() {
+    var bar = document.getElementById('activeChatView');
+    if (!bar) return;
+    var keyboardHeight = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
+    if (keyboardHeight < 0) keyboardHeight = 0;
+    if (Math.abs(keyboardHeight - lastBottom) < 2) return;
+    lastBottom = keyboardHeight;
+    bar.style.paddingBottom = keyboardHeight > 10 ? keyboardHeight + 'px' : '';
+  }
+  window.visualViewport.addEventListener('resize', onViewportResize);
+  window.visualViewport.addEventListener('scroll', onViewportResize);
+})();
+
 // ── 채팅 리스너 일시정지/재개 ─────────────────────────────────
 // 채팅 화면은 Firestore onSnapshot의 열린 HTTP 스트림이 살아있는 유일한 화면.
 // 이 상태에서 share_target 네비게이션(기존 PWA 창 재사용)이 일어나면 열린 연결
