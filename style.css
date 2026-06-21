@@ -76,7 +76,7 @@ html,body{height:100%;font-size:18px;font-family:'Open Sans',sans-serif;font-wei
   display:flex;align-items:center;justify-content:space-between;
   height:calc(68px + env(safe-area-inset-top));
   padding:env(safe-area-inset-top) 20px 0;
-  background:var(--card);
+  background:var(--bg);
   flex-shrink:0;
 }
 .plan-title{font-size:28px;font-family:'CherryBombOne',cursive;color:var(--primary);letter-spacing:0;font-weight:normal;user-select:none;-webkit-user-select:none;}
@@ -90,7 +90,7 @@ body:not(.dark-mode) .plan-title{color:var(--primary) !important;}
 }
 
 .plan-date-banner{
-  background:var(--card);
+  background:var(--bg);
   padding:14px 20px 10px;
   display:flex;justify-content:space-between;align-items:center;
   flex-shrink:0;
