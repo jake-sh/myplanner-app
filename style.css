@@ -1009,7 +1009,9 @@ body.dark-mode .style-select-btn.active {
   will-change: opacity;
   transform: translateZ(0);
   isolation: isolate;
-  contain: layout style paint;
+  /* contain:paint는 box-shadow를 박스 밖으로 못 나가게 잘라버려
+     날씨 위젯과 동일하게 준 그림자가 안 보이는 원인이었음 → paint 제외 */
+  contain: layout style;
 }
 
 /* TAG 화면 */
