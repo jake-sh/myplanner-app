@@ -148,9 +148,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // 4. 나머지 비동기
   setTimeout(function() {
+    applyIconStyle();
     if (t) { applyMenuTheme(t); applyThemeBtnBorder(t); }
     else { applyThemeBtnBorder('#6C63FF'); }
-    applyIconStyle();
     applyLang();
     loadWeather();
   }, 100);
@@ -747,6 +747,7 @@ function applyClothesIcon(en) {
 function setIconStyle(style) {
   localStorage.setItem('iconStyle', style);
   applyIconStyle();
+  applyMenuTheme(localStorage.getItem('themeColor') || THEME_COLORS[0]);
   applyClothesIcon();
   updateIconStyleBtns();
 }
@@ -757,6 +758,9 @@ function setSvgColor(mode) {
     randomizeSvgColors(true);
   }
   applyIconStyle();
+  // theme-color-cards 클래스가 막 바뀌었으므로 카드 배경 인라인 스타일도
+  // 다시 계산해야 함 (applyMenuTheme이 인라인 style을 직접 설정/해제함)
+  applyMenuTheme(localStorage.getItem('themeColor') || THEME_COLORS[0]);
   updateSvgColorBtns();
 }
 
@@ -1223,8 +1227,15 @@ function applyMenuTheme(c) {
     '#E8F8F5','#E8F4FF','#FFE8EE','#FFF8E8',
     '#FFF0E8','#EDFBF0','#EEE8FF','#F5E8FF','#E8EEFF'
   ];
+  // SVG+Theme Color 모드(theme-color-cards)일 땐 인라인 색을 지워
+  // CSS(#menuGrid.theme-color-cards .menu-item{background:var(--card)})가
+  // 적용되도록 한다. 인라인 style은 CSS보다 항상 우선하므로 비워야 함.
+  var menuGridEl = document.getElementById('menuGrid');
+  var useThemeColorCards = menuGridEl && menuGridEl.classList.contains('theme-color-cards');
   items.forEach(function(item, i) {
-    if (isGray) {
+    if (useThemeColorCards) {
+      item.style.background = '';
+    } else if (isGray) {
       item.style.background = '#F0F1F4';
     } else {
       item.style.background = pastelColors[i] || '#fff';
