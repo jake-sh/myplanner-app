@@ -93,7 +93,6 @@ body:not(.dark-mode) .plan-title{color:var(--primary) !important;}
   background:var(--card);
   padding:14px 20px 10px;
   display:flex;justify-content:space-between;align-items:center;
-  border-bottom:1px solid #F0F1F8;
   flex-shrink:0;
 }
 .plan-date{font-size:16px;font-weight:700;color:var(--text);}
@@ -810,7 +809,6 @@ body.dark-mode .plan-header {
 }
 body.dark-mode .plan-date-banner {
   background:#000000;
-  border-color:#2A2A2A;
 }
 body.dark-mode .sub-header {
   background:#000000;
