@@ -133,8 +133,7 @@ body:not(.dark-mode) .plan-title{color:var(--primary) !important;}
   display:flex;align-items:center;gap:12px;
   height:calc(68px + env(safe-area-inset-top));
   padding:env(safe-area-inset-top) 20px 0;
-  background:var(--card);
-  border-bottom:1px solid #F0F1F8;
+  background:var(--bg);
   flex-shrink:0;
 }
 .back-btn{background:none;border:none;color:var(--primary);cursor:pointer;padding:6px;min-width:36px;display:flex;align-items:center;justify-content:center;border-radius:10px;transition:opacity .15s;white-space:nowrap;}
@@ -276,7 +275,7 @@ input:checked+.slider:before{transform:translateX(20px);}
 .empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#C4C7DC;font-size:15px;font-weight:600;text-align:center;gap:10px;padding:40px 20px;line-height:1.8;}
 
 /* ══ 할 일 ══ */
-.todo-add-bar{display:flex;gap:0;padding:12px 12px;background:var(--card);border-bottom:1px solid #F0F1F8;flex-shrink:0;box-sizing:border-box;width:100%;}
+.todo-add-bar{display:flex;gap:0;padding:12px 12px;background:var(--bg);flex-shrink:0;box-sizing:border-box;width:100%;}
 .todo-add-input{
   flex:1;min-width:0;padding:12px 14px;
   border:1.5px solid #ECEEF8;border-right:none;
@@ -812,7 +811,6 @@ body.dark-mode .plan-date-banner {
 }
 body.dark-mode .sub-header {
   background:#000000;
-  border-color:#2A2A2A;
 }
 body.dark-mode .screen {
   background:#000000;
@@ -839,7 +837,6 @@ body.dark-mode .settings-select {
 }
 body.dark-mode .todo-add-bar {
   background:#000000;
-  border-color:#2A2A2A;
 }
 body.dark-mode .todo-add-input {
   background:#1A1A1A;
