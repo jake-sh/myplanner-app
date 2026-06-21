@@ -1,6 +1,6 @@
 // FCM 백그라운드 메시지 수신 전담 서비스워커
 // 앱이 꺼져있거나 백그라운드일 때 푸시를 받아 알림을 띄운다.
-// SW_VERSION: v3100 (data-only 방식 — onBackgroundMessage 유지)
+// SW_VERSION: v400 (data-only 방식 — onBackgroundMessage 유지)
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
 
@@ -34,6 +34,17 @@ messaging.onBackgroundMessage(function(payload) {
     tag: 'planner-notification',
     renotify: true
   });
+});
+
+// 앱이 열리거나 포커스될 때 메인 페이지에서 알림 정리를 요청함.
+// 이 알림은 이 SW(self.registration)에서 표시했으므로 여기서 닫아야
+// 메인 sw.js의 registration.getNotifications()로는 보이지 않아 안 지워짐.
+self.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'CLEAR_NOTIFICATIONS') {
+    self.registration.getNotifications().then(function(notifications) {
+      notifications.forEach(function(n) { n.close(); });
+    });
+  }
 });
 
 // 알림 클릭 시 앱 열기/포커스

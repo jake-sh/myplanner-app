@@ -4172,12 +4172,25 @@ let swReg = null;
 // SW 준비
 // 앱 열리거나 포커스 될 때 알림 자동 닫기
 async function clearAllNotifications() {
-  // SW postMessage 방식
+  // SW postMessage 방식 (메인 sw.js)
   const sw = await getSW();
   if (sw && sw.active) {
     sw.active.postMessage({ type: 'CLEAR_NOTIFICATIONS' });
   }
-  // 직접 Notification API로도 닫기 (iOS 대응)
+  // 푸시 알림은 firebase-messaging-sw.js(별도 narrow-scope SW)가
+  // self.registration.showNotification으로 띄움 → 메인 sw.js의
+  // registration.getNotifications()로는 보이지 않아 안 지워짐.
+  // _fcmSW(initFCM에서 등록한 registration)에도 직접 메시지/조회한다.
+  if (_fcmSW && _fcmSW.active) {
+    _fcmSW.active.postMessage({ type: 'CLEAR_NOTIFICATIONS' });
+  }
+  try {
+    if (_fcmSW) {
+      const notifs = await _fcmSW.getNotifications();
+      notifs.forEach(n => n.close());
+    }
+  } catch(e) {}
+  // 직접 Notification API로도 닫기 (iOS 대응, 메인 scope)
   if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
     try {
       const reg = await navigator.serviceWorker.getRegistration();
@@ -4246,6 +4259,9 @@ document.addEventListener('visibilitychange', function() {
   } catch(e) {}
 });
 
+// clearAllNotifications가 참조하므로 initFCM보다 먼저 선언 필요
+let _fcmSW = null; // initFCM에서 등록한 FCM SW registration 참조 (refreshFCMToken에서 재사용)
+
 // 앱 처음 로드 시에도 클리어
 clearAllNotifications();
 
@@ -4260,7 +4276,6 @@ const FCM_SERVER = 'https://sendpush-zd5g5jmsha-uc.a.run.app';
 
 let fcmToken = localStorage.getItem('fcmToken') || null;
 let messaging = null;
-let _fcmSW = null; // initFCM에서 등록한 FCM SW registration 참조 (refreshFCMToken에서 재사용)
 
 // FCM 초기화 및 토큰 발급
 async function initFCM() {
