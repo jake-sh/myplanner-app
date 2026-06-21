@@ -125,7 +125,6 @@ body:not(.dark-mode) .plan-title{color:var(--primary) !important;}
 .menu-item:nth-child(7){background:var(--pastel-lavender);}
 .menu-item:nth-child(8){background:var(--pastel-purple);}
 .menu-item:nth-child(9){background:var(--pastel-blue);}
-.menu-item:nth-child(n){border:none;}
 .menu-item.active{opacity:0.7;box-shadow:none;}
 .menu-icon{font-size:30px;}
 .menu-label{font-size:12px;font-weight:700;color:var(--text);opacity:0.75;}
