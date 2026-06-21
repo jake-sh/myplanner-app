@@ -111,8 +111,8 @@ body:not(.dark-mode) .plan-title{color:var(--primary) !important;}
   display:flex;flex-direction:column;
   align-items:center;justify-content:center;gap:8px;
   cursor:pointer;
-  box-shadow:0 2px 12px rgba(108,99,255,0.08);
-  border:1.5px solid #F0F1F8;
+  box-shadow:0 4px 12px rgba(0,0,0,0.10);
+  border:1.5px solid rgba(0,0,0,0.06);
   transition:transform .15s,box-shadow .15s;
   -webkit-user-select:none;
 }
