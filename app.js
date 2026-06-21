@@ -847,6 +847,13 @@ function applyIconStyle() {
   // 테마색 미적용시 적용할 색상
   var themeIconColor = (isDark && isGray) ? '#9ca3af' : themeColor;
 
+  // 라이트모드+SVG+Theme Color일 때만 카드 배경을 화이트(날씨 카드와 동일)로,
+  // Individual일 때는 기존 파스텔 랜덤 배경으로 전환
+  var menuGridEl = document.getElementById('menuGrid');
+  if (menuGridEl) {
+    menuGridEl.classList.toggle('theme-color-cards', style === 'svg' && colorMode === 'off');
+  }
+
   document.querySelectorAll('#menuGrid .menu-item').forEach(function(item, i) {
     var iconEl = item.querySelector('.menu-icon');
     if (!iconEl) return;
