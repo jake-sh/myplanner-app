@@ -1534,13 +1534,14 @@ function renderTodoList() {
   var _sp = todos.filter(t=>getTodoStatus(t)==='pending').length;
   var _sd = todos.filter(t=>getTodoStatus(t)==='doing').length;
   var _sc = todos.filter(t=>getTodoStatus(t)==='done').length;
-  document.getElementById('todoCount').textContent = `${_sc}/${todos.length}`;
+  var _total = todos.length;
+  document.getElementById('todoCount').textContent = `${_sc}/${_total}`;
   var _ep = document.getElementById('todoStatPending');
   var _ed = document.getElementById('todoStatDoing');
   var _ec = document.getElementById('todoStatDone');
   if (_ep) _ep.textContent = _sp;
-  if (_ed) _ed.textContent = _sd;
-  if (_ec) _ec.textContent = _sc;
+  if (_ed) _ed.textContent = _sd + '/' + (_sp + _sd);
+  if (_ec) _ec.textContent = _sc + '/' + _total;
   const el = document.getElementById('todoList');
   if (!todos.length) {
     el.innerHTML = '<div class="empty-state">' + (__T('No tasks yet','할 일이 없습니다','暂无任务','タスクがありません')) + '</div>';
