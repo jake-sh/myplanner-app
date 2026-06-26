@@ -1,4 +1,4 @@
-const CACHE = 'myplanner-v421';
+const CACHE = 'myplanner-v432';
 const PRECACHE = ['./', './index.html', './app.js', './style.css', './manifest.json'];
 
 self.addEventListener('install', e => {
