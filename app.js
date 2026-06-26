@@ -1547,8 +1547,8 @@ function renderTodoList() {
     var ownerClass = (!t.owner || t.owner === myCode) ? 'todo-mine' : 'todo-theirs';
     return `
     <div class="todo-item ${stateClass} ${ownerClass}" data-idx="${i}" data-longpress="0">
-      <div class="todo-check ${s !== 'pending' ? 'checked' : ''}" onclick="toggleTodo(${i})">${s !== 'pending' ? '✓' : ''}</div>
-      <span class="todo-text" data-idx="${i}">${esc(t.text)}</span>
+      <div class="todo-check ${s !== 'pending' ? 'checked' : ''}" onclick="toggleTodo(${i},'check')">${s !== 'pending' ? '✓' : ''}</div>
+      <span class="todo-text" data-idx="${i}" onclick="todoTextClick(event,${i})">${esc(t.text)}</span>
       <button class="todo-del" onclick="deleteTodo(${i})">×</button>
     </div>`;
   }).join('');
@@ -1587,7 +1587,16 @@ function addTodo() {
   saveTodosToFirestore();
 }
 
-function toggleTodo(i) {
+function todoTextClick(e, i) {
+  // 편집 중이면 클릭 무시 (contenteditable 진입 후 발생하는 click)
+  if (e.target.isContentEditable && e.target.contentEditable === 'true') return;
+  // done 상태일 때만 → doing으로 복귀
+  var todos = JSON.parse(localStorage.getItem('todos') || '[]');
+  var cur = todos[i].status || (todos[i].done ? 'done' : 'pending');
+  if (cur === 'done') toggleTodo(i, 'text');
+}
+
+function toggleTodo(i, from) {
   const list = document.getElementById('todoList');
 
   // FLIP First: 현재 위치를 data-idx 기준으로 기록
@@ -1598,9 +1607,14 @@ function toggleTodo(i) {
 
   // 데이터 변경 후 재렌더 (innerHTML 교체)
   const todos = JSON.parse(localStorage.getItem('todos') || '[]');
-  // 3단계 순환: pending → doing → done → pending
   var cur = todos[i].status || (todos[i].done ? 'done' : 'pending');
-  todos[i].status = cur === 'pending' ? 'doing' : cur === 'doing' ? 'done' : 'pending';
+  if (cur === 'done') {
+    // 완료 상태: 체크→수행전, 텍스트→수행중
+    todos[i].status = (from === 'text') ? 'doing' : 'pending';
+  } else {
+    // pending → doing → done 순환
+    todos[i].status = cur === 'pending' ? 'doing' : 'done';
+  }
   delete todos[i].done; // 구버전 필드 제거
   localStorage.setItem('todos', JSON.stringify(todos));
   renderTodoList();
