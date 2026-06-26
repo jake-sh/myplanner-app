@@ -1537,17 +1537,21 @@ function renderTodoList() {
     el.innerHTML = '<div class="empty-state">' + (__T('No tasks yet','할 일이 없습니다','暂无任务','タスクがありません')) + '</div>';
     return;
   }
-  // 정렬: pending → doing → done
-  const ORDER = { pending: 0, doing: 1, done: 2 };
+  // 정렬: pending/doing 제자리, done만 하단으로
+  const ORDER = { pending: 0, doing: 0, done: 1 };
   const sorted = todos
     .map((t, i) => ({ t, i, s: getTodoStatus(t) }))
     .sort((a, b) => ORDER[a.s] - ORDER[b.s]);
-  el.innerHTML = sorted.map(({ t, i, s }) => `
-    <div class="todo-item ${s === 'done' ? 'todo-done' : s === 'doing' ? 'todo-doing' : ''}" data-idx="${i}">
+  el.innerHTML = sorted.map(({ t, i, s }) => {
+    var stateClass = s === 'done' ? 'todo-done' : s === 'doing' ? 'todo-doing' : '';
+    var ownerClass = (!t.owner || t.owner === myCode) ? 'todo-mine' : 'todo-theirs';
+    return `
+    <div class="todo-item ${stateClass} ${ownerClass}" data-idx="${i}">
       <div class="todo-check ${s !== 'pending' ? 'checked' : ''}" onclick="toggleTodo(${i})">${s !== 'pending' ? '✓' : ''}</div>
       <span class="todo-text">${esc(t.text)}</span>
       <button class="todo-del" onclick="deleteTodo(${i})">×</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function addTodo() {
@@ -1555,7 +1559,7 @@ function addTodo() {
   const text = el.value.trim();
   if (!text) return;
   const todos = JSON.parse(localStorage.getItem('todos') || '[]');
-  todos.unshift({ text, status: 'pending' });
+  todos.unshift({ text, status: 'pending', owner: myCode });
   localStorage.setItem('todos', JSON.stringify(todos));
   el.value = '';
   renderTodoList();
