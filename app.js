@@ -1523,21 +1523,28 @@ async function saveTodosToFirestore() {
   }
 }
 
+function getTodoStatus(t) {
+  // 하위호환: 구버전 done:true/false → status 변환
+  if (t.status) return t.status;
+  return t.done ? 'done' : 'pending';
+}
+
 function renderTodoList() {
   const todos = JSON.parse(localStorage.getItem('todos') || '[]');
-  document.getElementById('todoCount').textContent = `${todos.filter(t=>t.done).length}/${todos.length}`;
+  document.getElementById('todoCount').textContent = `${todos.filter(t=>getTodoStatus(t)==='done').length}/${todos.length}`;
   const el = document.getElementById('todoList');
   if (!todos.length) {
     el.innerHTML = '<div class="empty-state">' + (__T('No tasks yet','할 일이 없습니다','暂无任务','タスクがありません')) + '</div>';
     return;
   }
-  // 원본 인덱스 보존 + 미완료 우선 정렬
+  // 정렬: pending → doing → done
+  const ORDER = { pending: 0, doing: 1, done: 2 };
   const sorted = todos
-    .map((t, i) => ({ t, i }))
-    .sort((a, b) => (a.t.done === b.t.done) ? 0 : a.t.done ? 1 : -1);
-  el.innerHTML = sorted.map(({ t, i }) => `
-    <div class="todo-item ${t.done ? 'todo-done' : ''}" data-idx="${i}">
-      <div class="todo-check ${t.done ? 'checked' : ''}" onclick="toggleTodo(${i})">${t.done ? '✓' : ''}</div>
+    .map((t, i) => ({ t, i, s: getTodoStatus(t) }))
+    .sort((a, b) => ORDER[a.s] - ORDER[b.s]);
+  el.innerHTML = sorted.map(({ t, i, s }) => `
+    <div class="todo-item ${s === 'done' ? 'todo-done' : s === 'doing' ? 'todo-doing' : ''}" data-idx="${i}">
+      <div class="todo-check ${s !== 'pending' ? 'checked' : ''}" onclick="toggleTodo(${i})">${s !== 'pending' ? '✓' : ''}</div>
       <span class="todo-text">${esc(t.text)}</span>
       <button class="todo-del" onclick="deleteTodo(${i})">×</button>
     </div>`).join('');
@@ -1548,7 +1555,7 @@ function addTodo() {
   const text = el.value.trim();
   if (!text) return;
   const todos = JSON.parse(localStorage.getItem('todos') || '[]');
-  todos.unshift({ text, done: false });
+  todos.unshift({ text, status: 'pending' });
   localStorage.setItem('todos', JSON.stringify(todos));
   el.value = '';
   renderTodoList();
@@ -1566,7 +1573,10 @@ function toggleTodo(i) {
 
   // 데이터 변경 후 재렌더 (innerHTML 교체)
   const todos = JSON.parse(localStorage.getItem('todos') || '[]');
-  todos[i].done = !todos[i].done;
+  // 3단계 순환: pending → doing → done → pending
+  var cur = todos[i].status || (todos[i].done ? 'done' : 'pending');
+  todos[i].status = cur === 'pending' ? 'doing' : cur === 'doing' ? 'done' : 'pending';
+  delete todos[i].done; // 구버전 필드 제거
   localStorage.setItem('todos', JSON.stringify(todos));
   renderTodoList();
 
@@ -5200,17 +5210,21 @@ function applyLang() {
   _setText('notifSectionLabel', __T('Notifications','알림','通知','通知'));
   _setText('langLabel', __T('Language','언어','语言','言語'));
   _setText('infoLabel', __T('Info','정보','信息','情報'));
-  // SW 캐시명에서 버전 자동 추출 → appVersionText 동기화
+  // SW 캐시명에서 버전 자동 추출 → appVersionText + mainVersionText 동기화
+  // 버전 규칙: myplanner-v410 → v4.1.0 (십진법, 3자리 숫자 그대로 점 없이 올라감)
+  // 예) v409→v4.0.9, v410→v4.1.0, v411→v4.1.1, v500→v5.0.0
   (async function() {
     try {
       var keys = await caches.keys();
       var ver = keys.find(function(k){ return k.indexOf('myplanner-') === 0; });
       if (ver) {
         var num = ver.replace('myplanner-v','');
-        // v347 → v3.4.7 형식으로 변환
+        // 3자리 숫자: 첫째자리.둘째자리.셋째자리
         var formatted = 'v' + num[0] + '.' + num[1] + '.' + num.slice(2);
-        var el = document.getElementById('appVersionText');
-        if (el) el.textContent = 'my planner ' + formatted;
+        var elSettings = document.getElementById('appVersionText');
+        if (elSettings) elSettings.textContent = 'my planner ' + formatted;
+        var elMain = document.getElementById('mainVersionText');
+        if (elMain) elMain.textContent = formatted;
       }
     } catch(e) {}
   })();
