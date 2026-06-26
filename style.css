@@ -301,7 +301,7 @@ input:checked+.slider:before{transform:translateX(20px);}
   transition:background .15s;
 }
 .todo-done .todo-text{text-decoration:line-through;color:#C4C7DC;}
-.todo-done.todo-theirs .todo-text{text-decoration:line-through;color:#c8a020;}
+.todo-done.todo-theirs .todo-text{text-decoration:line-through;color:#F5C842;}
 .todo-doing .todo-check{background:var(--primary);border-color:var(--primary);}
 .todo-check{
   width:26px;height:26px;border-radius:50%;
@@ -864,6 +864,7 @@ body.dark-mode .todo-mine .todo-text { color:#F1F1F1; }
 body.dark-mode .todo-theirs .todo-text { color:#F5C842; }
 body.dark-mode .todo-doing .todo-text { color:#F1F1F1; }
 body.dark-mode .todo-done .todo-text { text-decoration:line-through;color:#555; }
+body.dark-mode .todo-done.todo-theirs .todo-text { text-decoration:line-through;color:#F5C842; }
 body.dark-mode .todo-del { color:#444; }
 body.dark-mode .memo-list,
 body.dark-mode .todo-list,
