@@ -1546,32 +1546,86 @@ function renderTodoList() {
     var stateClass = s === 'done' ? 'todo-done' : s === 'doing' ? 'todo-doing' : '';
     var ownerClass = (!t.owner || t.owner === myCode) ? 'todo-mine' : 'todo-theirs';
     return `
-    <div class="todo-item ${stateClass} ${ownerClass}" data-idx="${i}" data-longpress="0">
-      <div class="todo-check ${s !== 'pending' ? 'checked' : ''}" onclick="toggleTodo(${i},'check')">${s !== 'pending' ? '✓' : ''}</div>
-      <span class="todo-text" data-idx="${i}" onclick="todoTextClick(event,${i})">${esc(t.text)}</span>
+    <div class="todo-item ${stateClass} ${ownerClass}" data-idx="${i}">
+      <div class="todo-check ${s !== 'pending' ? 'checked' : ''}" onclick="todoCheckClick(${i})">${s !== 'pending' ? '✓' : ''}</div>
+      <span class="todo-text" data-idx="${i}">${esc(t.text)}</span>
       <button class="todo-del" onclick="deleteTodo(${i})">×</button>
     </div>`;
   }).join('');
-  // 롱프레스 이벤트 바인딩
+
+  // 각 아이템에 드래그·롱프레스 이벤트 바인딩
   el.querySelectorAll('.todo-item').forEach(function(item) {
+    var span = item.querySelector('.todo-text');
+    var idx = parseInt(item.dataset.idx);
+
+    // ── 롱프레스 (편집) ────────────────────────────
     var _lpt = null;
     function _lpStart(e) {
-      // 체크버튼·삭제버튼은 제외
       if (e.target.classList.contains('todo-check') || e.target.classList.contains('todo-del')) return;
       _lpt = setTimeout(function() {
         _lpt = null;
-        var span = item.querySelector('.todo-text');
-        if (!span || span.isContentEditable) return;
+        if (!span || span.contentEditable === 'true') return;
+        _dragCancelled = true; // 롱프레스 확정 → 드래그 무효화
         startTodoEdit(span);
       }, 500);
     }
     function _lpEnd() { if (_lpt) { clearTimeout(_lpt); _lpt = null; } }
-    item.addEventListener('touchstart', _lpStart, { passive: true });
-    item.addEventListener('touchend', _lpEnd);
-    item.addEventListener('touchmove', _lpEnd);
-    item.addEventListener('mousedown', _lpStart);
-    item.addEventListener('mouseup', _lpEnd);
-    item.addEventListener('mouseleave', _lpEnd);
+
+    // ── 텍스트 좌→우 드래그 ────────────────────────
+    var _dragStartX = null, _dragCancelled = false;
+    var DRAG_THRESHOLD = 40; // px
+
+    function _dragTouchStart(e) {
+      if (e.target.classList.contains('todo-check') || e.target.classList.contains('todo-del')) return;
+      if (span && span.contentEditable === 'true') return;
+      _dragStartX = e.touches[0].clientX;
+      _dragCancelled = false;
+      _lpStart(e);
+    }
+    function _dragTouchMove(e) {
+      _lpEnd();
+      if (_dragStartX === null || _dragCancelled) return;
+      var dx = e.touches[0].clientX - _dragStartX;
+      var dy = Math.abs(e.touches[0].clientY - (e.touches[0].clientY)); // 수직 허용
+      if (dx > DRAG_THRESHOLD) {
+        _dragCancelled = true;
+        _dragStartX = null;
+        todoSwipe(idx);
+      }
+    }
+    function _dragTouchEnd() {
+      _lpEnd();
+      _dragStartX = null;
+    }
+
+    // 마우스 드래그 (PC)
+    var _mouseStartX = null;
+    function _mouseDown(e) {
+      if (e.target.classList.contains('todo-check') || e.target.classList.contains('todo-del')) return;
+      if (span && span.contentEditable === 'true') return;
+      _mouseStartX = e.clientX;
+      _dragCancelled = false;
+      _lpStart(e);
+    }
+    function _mouseMove(e) {
+      if (_mouseStartX === null || _dragCancelled) return;
+      var dx = e.clientX - _mouseStartX;
+      if (dx > DRAG_THRESHOLD) {
+        _lpEnd();
+        _dragCancelled = true;
+        _mouseStartX = null;
+        todoSwipe(idx);
+      }
+    }
+    function _mouseUp() { _lpEnd(); _mouseStartX = null; }
+
+    item.addEventListener('touchstart', _dragTouchStart, { passive: true });
+    item.addEventListener('touchmove', _dragTouchMove, { passive: true });
+    item.addEventListener('touchend', _dragTouchEnd);
+    item.addEventListener('mousedown', _mouseDown);
+    item.addEventListener('mousemove', _mouseMove);
+    item.addEventListener('mouseup', _mouseUp);
+    item.addEventListener('mouseleave', _mouseUp);
   });
 }
 
@@ -1587,39 +1641,53 @@ function addTodo() {
   saveTodosToFirestore();
 }
 
-function todoTextClick(e, i) {
-  // 편집 중이면 클릭 무시 (contenteditable 진입 후 발생하는 click)
-  if (e.target.isContentEditable && e.target.contentEditable === 'true') return;
-  // done 상태일 때만 → doing으로 복귀
+// 체크 클릭: pending↔doing 토글(이동없음) / done→pending(이동)
+function todoCheckClick(i) {
   var todos = JSON.parse(localStorage.getItem('todos') || '[]');
   var cur = todos[i].status || (todos[i].done ? 'done' : 'pending');
-  if (cur === 'done') toggleTodo(i, 'text');
+  if (cur === 'pending') {
+    todos[i].status = 'doing';  // 수행전→수행중 (이동없음)
+    delete todos[i].done;
+    localStorage.setItem('todos', JSON.stringify(todos));
+    renderTodoList();
+    saveTodosToFirestore();
+    return;
+  }
+  if (cur === 'doing') {
+    todos[i].status = 'pending'; // 수행중→수행전 (이동없음)
+    delete todos[i].done;
+    localStorage.setItem('todos', JSON.stringify(todos));
+    renderTodoList();
+    saveTodosToFirestore();
+    return;
+  }
+  // done → pending (이동 있음 → FLIP 애니메이션)
+  todos[i].status = 'pending';
+  delete todos[i].done;
+  localStorage.setItem('todos', JSON.stringify(todos));
+  flipTodoRender();
+  saveTodosToFirestore();
 }
 
-function toggleTodo(i, from) {
-  const list = document.getElementById('todoList');
+// 텍스트 좌→우 스와이프: pending/doing→done(이동) / done→doing(이동)
+function todoSwipe(i) {
+  var todos = JSON.parse(localStorage.getItem('todos') || '[]');
+  var cur = todos[i].status || (todos[i].done ? 'done' : 'pending');
+  todos[i].status = (cur === 'done') ? 'doing' : 'done'; // 토글
+  delete todos[i].done;
+  localStorage.setItem('todos', JSON.stringify(todos));
+  flipTodoRender();
+  saveTodosToFirestore();
+}
 
-  // FLIP First: 현재 위치를 data-idx 기준으로 기록
+// FLIP 애니메이션 포함 재렌더 (이동이 있는 경우)
+function flipTodoRender() {
+  const list = document.getElementById('todoList');
   const firstY = new Map();
   Array.from(list.querySelectorAll('.todo-item')).forEach(el => {
     firstY.set(el.dataset.idx, el.getBoundingClientRect().top);
   });
-
-  // 데이터 변경 후 재렌더 (innerHTML 교체)
-  const todos = JSON.parse(localStorage.getItem('todos') || '[]');
-  var cur = todos[i].status || (todos[i].done ? 'done' : 'pending');
-  if (cur === 'done') {
-    // 완료 상태: 체크→수행전, 텍스트→수행중
-    todos[i].status = (from === 'text') ? 'doing' : 'pending';
-  } else {
-    // pending → doing → done 순환
-    todos[i].status = cur === 'pending' ? 'doing' : 'done';
-  }
-  delete todos[i].done; // 구버전 필드 제거
-  localStorage.setItem('todos', JSON.stringify(todos));
   renderTodoList();
-
-  // FLIP Last + Invert: 새 노드를 data-idx로 매칭해 이전 위치로 순간 이동
   const moving = [];
   Array.from(list.querySelectorAll('.todo-item')).forEach(el => {
     const old = firstY.get(el.dataset.idx);
@@ -1630,13 +1698,8 @@ function toggleTodo(i, from) {
     el.style.transform = `translateY(${delta}px)`;
     moving.push(el);
   });
-
-  if (!moving.length) { saveTodosToFirestore(); return; }
-
-  // 강제 reflow — Invert 상태를 페인트시킨 뒤 같은 틱에서 Play
+  if (!moving.length) return;
   list.offsetHeight;
-
-  // Play: transition 켜고 원위치로
   moving.forEach(el => {
     el.style.transition = 'transform .4s cubic-bezier(.4,0,.2,1)';
     el.style.transform = 'translateY(0)';
@@ -1646,9 +1709,13 @@ function toggleTodo(i, from) {
       el.style.transform = '';
     });
   });
-
-  saveTodosToFirestore();
 }
+
+function toggleTodo(i, from) {
+  // 하위호환용 — 내부적으로 더 이상 사용 안 함
+  todoCheckClick(i);
+}
+
 function startTodoEdit(span) {
   var idx = parseInt(span.dataset.idx);
   var item = span.closest('.todo-item');
