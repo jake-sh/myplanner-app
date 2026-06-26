@@ -1581,13 +1581,15 @@ function renderTodoList() {
     function _lpEnd() { if (_lpt) { clearTimeout(_lpt); _lpt = null; } }
 
     // ── 텍스트 좌→우 드래그 ────────────────────────
-    var _dragStartX = null, _dragCancelled = false;
-    var DRAG_THRESHOLD = 40; // px
+    // 수평 40px 이상 && 수평이동 > 수직이동*2 일 때만 스와이프로 인식
+    var _dragStartX = null, _dragStartY = null, _dragCancelled = false;
+    var DRAG_X = 40;  // 최소 수평 이동 px
 
     function _dragTouchStart(e) {
       if (e.target.classList.contains('todo-check') || e.target.classList.contains('todo-del')) return;
       if (span && span.contentEditable === 'true') return;
       _dragStartX = e.touches[0].clientX;
+      _dragStartY = e.touches[0].clientY;
       _dragCancelled = false;
       _lpStart(e);
     }
@@ -1595,38 +1597,46 @@ function renderTodoList() {
       _lpEnd();
       if (_dragStartX === null || _dragCancelled) return;
       var dx = e.touches[0].clientX - _dragStartX;
-      var dy = Math.abs(e.touches[0].clientY - (e.touches[0].clientY)); // 수직 허용
-      if (dx > DRAG_THRESHOLD) {
+      var dy = Math.abs(e.touches[0].clientY - _dragStartY);
+      // 수직이동이 수평보다 크면 스크롤로 판단 → 취소
+      if (dy > dx) { _dragCancelled = true; return; }
+      if (dx > DRAG_X) {
         _dragCancelled = true;
         _dragStartX = null;
+        _dragStartY = null;
         todoSwipe(idx);
       }
     }
     function _dragTouchEnd() {
       _lpEnd();
       _dragStartX = null;
+      _dragStartY = null;
     }
 
     // 마우스 드래그 (PC)
-    var _mouseStartX = null;
+    var _mouseStartX = null, _mouseStartY = null;
     function _mouseDown(e) {
       if (e.target.classList.contains('todo-check') || e.target.classList.contains('todo-del')) return;
       if (span && span.contentEditable === 'true') return;
       _mouseStartX = e.clientX;
+      _mouseStartY = e.clientY;
       _dragCancelled = false;
       _lpStart(e);
     }
     function _mouseMove(e) {
       if (_mouseStartX === null || _dragCancelled) return;
       var dx = e.clientX - _mouseStartX;
-      if (dx > DRAG_THRESHOLD) {
+      var dy = Math.abs(e.clientY - _mouseStartY);
+      if (dy > dx) { _dragCancelled = true; return; }
+      if (dx > DRAG_X) {
         _lpEnd();
         _dragCancelled = true;
         _mouseStartX = null;
+        _mouseStartY = null;
         todoSwipe(idx);
       }
     }
-    function _mouseUp() { _lpEnd(); _mouseStartX = null; }
+    function _mouseUp() { _lpEnd(); _mouseStartX = null; _mouseStartY = null; }
 
     item.addEventListener('touchstart', _dragTouchStart, { passive: true });
     item.addEventListener('touchmove', _dragTouchMove, { passive: true });
