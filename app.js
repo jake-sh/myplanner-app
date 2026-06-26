@@ -1581,9 +1581,12 @@ function renderTodoList() {
     function _lpEnd() { if (_lpt) { clearTimeout(_lpt); _lpt = null; } }
 
     // ── 텍스트 좌→우 드래그 ────────────────────────
-    // 수평 40px 이상 && 수평이동 > 수직이동*2 일 때만 스와이프로 인식
+    // 판정 규칙:
+    //   1) 수직이동 10px 초과 → 즉시 스크롤로 확정, 이후 수평이동 무시
+    //   2) 수평(우측) 40px 달성 시점에 수직이동이 15px 미만이어야 스와이프 인식
     var _dragStartX = null, _dragStartY = null, _dragCancelled = false;
-    var DRAG_X = 40;  // 최소 수평 이동 px
+    var SWIPE_X = 40;   // 수평 임계
+    var CANCEL_Y = 10;  // 이 값 초과하면 스크롤로 확정
 
     function _dragTouchStart(e) {
       if (e.target.classList.contains('todo-check') || e.target.classList.contains('todo-del')) return;
@@ -1598,9 +1601,10 @@ function renderTodoList() {
       if (_dragStartX === null || _dragCancelled) return;
       var dx = e.touches[0].clientX - _dragStartX;
       var dy = Math.abs(e.touches[0].clientY - _dragStartY);
-      // 수직이동이 수평보다 크면 스크롤로 판단 → 취소
-      if (dy > dx) { _dragCancelled = true; return; }
-      if (dx > DRAG_X) {
+      // 수직 이동이 CANCEL_Y 초과하면 스크롤 확정 → 영구 취소
+      if (dy > CANCEL_Y) { _dragCancelled = true; return; }
+      // 우측으로 SWIPE_X 이상, 그리고 그 시점의 수직이동이 CANCEL_Y 이하
+      if (dx > SWIPE_X) {
         _dragCancelled = true;
         _dragStartX = null;
         _dragStartY = null;
@@ -1627,8 +1631,8 @@ function renderTodoList() {
       if (_mouseStartX === null || _dragCancelled) return;
       var dx = e.clientX - _mouseStartX;
       var dy = Math.abs(e.clientY - _mouseStartY);
-      if (dy > dx) { _dragCancelled = true; return; }
-      if (dx > DRAG_X) {
+      if (dy > CANCEL_Y) { _dragCancelled = true; return; }
+      if (dx > SWIPE_X) {
         _lpEnd();
         _dragCancelled = true;
         _mouseStartX = null;
