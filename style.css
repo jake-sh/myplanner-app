@@ -315,6 +315,9 @@ input:checked+.slider:before{transform:translateX(20px);}
 .todo-mine .todo-text{color:var(--text,#1A1A2E);}
 .todo-theirs .todo-text{color:#F5C842;}
 .todo-del{background:none;border:none;color:#E2E4F0;font-size:20px;cursor:pointer;padding:0 4px;line-height:1;}
+.todo-item-editing{border-color:var(--primary) !important;background:var(--card) !important;}
+.todo-text.todo-editing{outline:none;cursor:text;caret-color:var(--primary);}
+.todo-text[contenteditable="true"]{-webkit-user-select:text;user-select:text;}
 .todo-del:active{color:var(--danger);}
 .todo-count{font-size:13px;color:var(--subtext);font-weight:700;margin-left:auto;}
 

@@ -1546,12 +1546,33 @@ function renderTodoList() {
     var stateClass = s === 'done' ? 'todo-done' : s === 'doing' ? 'todo-doing' : '';
     var ownerClass = (!t.owner || t.owner === myCode) ? 'todo-mine' : 'todo-theirs';
     return `
-    <div class="todo-item ${stateClass} ${ownerClass}" data-idx="${i}">
+    <div class="todo-item ${stateClass} ${ownerClass}" data-idx="${i}" data-longpress="0">
       <div class="todo-check ${s !== 'pending' ? 'checked' : ''}" onclick="toggleTodo(${i})">${s !== 'pending' ? '✓' : ''}</div>
-      <span class="todo-text">${esc(t.text)}</span>
+      <span class="todo-text" data-idx="${i}">${esc(t.text)}</span>
       <button class="todo-del" onclick="deleteTodo(${i})">×</button>
     </div>`;
   }).join('');
+  // 롱프레스 이벤트 바인딩
+  el.querySelectorAll('.todo-item').forEach(function(item) {
+    var _lpt = null;
+    function _lpStart(e) {
+      // 체크버튼·삭제버튼은 제외
+      if (e.target.classList.contains('todo-check') || e.target.classList.contains('todo-del')) return;
+      _lpt = setTimeout(function() {
+        _lpt = null;
+        var span = item.querySelector('.todo-text');
+        if (!span || span.isContentEditable) return;
+        startTodoEdit(span);
+      }, 500);
+    }
+    function _lpEnd() { if (_lpt) { clearTimeout(_lpt); _lpt = null; } }
+    item.addEventListener('touchstart', _lpStart, { passive: true });
+    item.addEventListener('touchend', _lpEnd);
+    item.addEventListener('touchmove', _lpEnd);
+    item.addEventListener('mousedown', _lpStart);
+    item.addEventListener('mouseup', _lpEnd);
+    item.addEventListener('mouseleave', _lpEnd);
+  });
 }
 
 function addTodo() {
@@ -1614,6 +1635,49 @@ function toggleTodo(i) {
 
   saveTodosToFirestore();
 }
+function startTodoEdit(span) {
+  var idx = parseInt(span.dataset.idx);
+  var item = span.closest('.todo-item');
+  // 편집 모드 진입
+  span.contentEditable = 'true';
+  span.classList.add('todo-editing');
+  item.classList.add('todo-item-editing');
+  // 커서를 텍스트 끝으로
+  span.focus();
+  var range = document.createRange();
+  range.selectNodeContents(span);
+  range.collapse(false);
+  var sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+
+  function commit() {
+    span.contentEditable = 'false';
+    span.classList.remove('todo-editing');
+    item.classList.remove('todo-item-editing');
+    var newText = span.textContent.trim();
+    if (!newText) { renderTodoList(); return; }
+    var todos = JSON.parse(localStorage.getItem('todos') || '[]');
+    if (todos[idx] && newText !== todos[idx].text) {
+      todos[idx].text = newText;
+      localStorage.setItem('todos', JSON.stringify(todos));
+      saveTodosToFirestore();
+    }
+    span.removeEventListener('blur', commit);
+    span.removeEventListener('keydown', onKey);
+  }
+  function onKey(e) {
+    if (e.key === 'Enter') { e.preventDefault(); commit(); }
+    if (e.key === 'Escape') {
+      var todos = JSON.parse(localStorage.getItem('todos') || '[]');
+      span.textContent = todos[idx] ? todos[idx].text : '';
+      commit();
+    }
+  }
+  span.addEventListener('blur', commit);
+  span.addEventListener('keydown', onKey);
+}
+
 function deleteTodo(i) {
   const todos = JSON.parse(localStorage.getItem('todos') || '[]'); todos.splice(i,1);
   localStorage.setItem('todos', JSON.stringify(todos)); renderTodoList();
