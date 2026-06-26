@@ -1535,7 +1535,7 @@ function renderTodoList() {
   var _sd = todos.filter(t=>getTodoStatus(t)==='doing').length;
   var _sc = todos.filter(t=>getTodoStatus(t)==='done').length;
   var _total = todos.length;
-  var _elCount = document.getElementById('todoCount'); if (_elCount) _elCount.textContent = `${_sc}/${_total}`;
+  document.getElementById('todoCount').textContent = `${_sc}/${_total}`;
   var _ep = document.getElementById('todoStatPending');
   var _ed = document.getElementById('todoStatDoing');
   var _ec = document.getElementById('todoStatDone');
