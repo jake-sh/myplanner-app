@@ -35,7 +35,7 @@
 /* 앱 타이틀은 언어 무관 항상 CherryBombOne — 크기도 고정 */
 :lang(ja) .plan-title, :lang(zh) .plan-title,
 :lang(en) .plan-title, :lang(ko) .plan-title {
-  font-family: 'CherryBombOne', cursive !important;
+  font-family: 'Wilzten', cursive !important;
   font-size: 28px !important;
 }
 
@@ -79,7 +79,7 @@ html,body{height:100%;font-size:18px;font-family:'Open Sans',sans-serif;font-wei
   background:var(--bg);
   flex-shrink:0;
 }
-.plan-title{font-size:28px;font-family:'CherryBombOne',cursive;color:var(--primary);letter-spacing:0;font-weight:normal;user-select:none;-webkit-user-select:none;}
+.plan-title{font-size:28px;font-family:'Wilzten',cursive;color:var(--primary);letter-spacing:0;font-weight:normal;user-select:none;-webkit-user-select:none;}
 body:not(.dark-mode) .plan-title{color:var(--primary) !important;}
 .icon-btn{
   width:40px;height:40px;
@@ -310,7 +310,7 @@ input:checked+.slider:before{transform:translateX(20px);}
 /* 수행중 체크: 테마색 / 완료 체크: 그레이 #646464 (테마 무관) */
 .todo-doing .todo-check{background:var(--primary) !important;border-color:var(--primary) !important;}
 .todo-done .todo-check,
-.todo-check.done-check{background:#646464 !important;border-color:#646464 !important;}
+.todo-check.done-check{background:#3C3C3C !important;border-color:#3C3C3C !important;}
 .todo-check{
   width:26px;height:26px;border-radius:50%;
   border:2px solid #DDDFF0;
