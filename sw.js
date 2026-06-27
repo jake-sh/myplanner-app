@@ -1,4 +1,4 @@
-const CACHE = 'myplanner-v439';
+const CACHE = 'myplanner-v440';
 const PRECACHE = ['./', './index.html', './app.js', './style.css', './manifest.json'];
 
 self.addEventListener('install', e => {
@@ -91,7 +91,26 @@ self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') {
     return;
   }
-  // 나머지(동일 출처 GET)는 cache-first
+  // 핵심 자산(html/css/js)은 network-first → 항상 최신 반영, 오프라인시 캐시 폴백
+  // (cache-first면 한번 캐시된 옛 style.css/app.js가 계속 서빙되어 변경이 안 보임)
+  const isCore = url.pathname.endsWith('.css') ||
+                 url.pathname.endsWith('.js') ||
+                 url.pathname.endsWith('.html') ||
+                 url.pathname === '/' || url.pathname.endsWith('/');
+  if (isCore && e.request.url.startsWith(self.location.origin)) {
+    e.respondWith(
+      fetch(e.request).then(resp => {
+        if (resp && resp.status === 200) {
+          const clone = resp.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return resp;
+      }).catch(() => caches.match(e.request).then(cached => cached || new Response('offline')))
+    );
+    return;
+  }
+
+  // 나머지(폰트·이미지 등)는 cache-first
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).then(resp => {
       if (resp && resp.status === 200 && e.request.url.startsWith(self.location.origin)) {
