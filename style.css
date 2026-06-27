@@ -306,10 +306,11 @@ input:checked+.slider:before{transform:translateX(20px);}
   transition:background .15s;
 }
 .todo-done .todo-text{text-decoration:line-through;color:#C4C7DC;}
-.todo-done .todo-check{background:#646464 !important;border-color:#646464 !important;}
-.todo-check.done-check{background:#646464 !important;border-color:#646464 !important;}
 .todo-done.todo-theirs .todo-text{text-decoration:line-through;color:#F5C842;}
-.todo-doing .todo-check{background:var(--primary);border-color:var(--primary);}
+/* 수행중 체크: 테마색 / 완료 체크: 그레이 #646464 (테마 무관) */
+.todo-doing .todo-check{background:var(--primary) !important;border-color:var(--primary) !important;}
+.todo-done .todo-check,
+.todo-check.done-check{background:#646464 !important;border-color:#646464 !important;}
 .todo-check{
   width:26px;height:26px;border-radius:50%;
   border:2px solid #DDDFF0;
