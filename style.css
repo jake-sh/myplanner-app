@@ -5,6 +5,13 @@
   font-style: normal;
 }
 
+@font-face {
+  font-family: 'Wilzten';
+  src: url('Wilzten.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 /* 일본어: GamjaFlower */
 /* 한국어: Noto Sans KR */
 :lang(ko) body, :lang(ko) input, :lang(ko) textarea,
