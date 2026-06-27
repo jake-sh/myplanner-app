@@ -306,8 +306,8 @@ input:checked+.slider:before{transform:translateX(20px);}
   transition:background .15s;
 }
 .todo-done .todo-text{text-decoration:line-through;color:#C4C7DC;}
-.todo-done .todo-check{background:#6B7280 !important;border-color:#6B7280 !important;}
-.todo-check.done-check{background:#6B7280 !important;border-color:#6B7280 !important;}
+.todo-done .todo-check{background:#646464 !important;border-color:#646464 !important;}
+.todo-check.done-check{background:#646464 !important;border-color:#646464 !important;}
 .todo-done.todo-theirs .todo-text{text-decoration:line-through;color:#F5C842;}
 .todo-doing .todo-check{background:var(--primary);border-color:var(--primary);}
 .todo-check{
