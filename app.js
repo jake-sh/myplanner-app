@@ -1557,7 +1557,7 @@ function renderTodoList() {
     var ownerClass = (!t.owner || t.owner === myCode) ? 'todo-mine' : 'todo-theirs';
     return `
     <div class="todo-item ${stateClass} ${ownerClass}" data-idx="${i}">
-      <div class="todo-check ${s !== 'pending' ? 'checked' : ''}" onclick="todoCheckClick(${i})">${s !== 'pending' ? '✓' : ''}</div>
+      <div class="todo-check ${s === 'doing' ? 'checked' : s === 'done' ? 'done-check' : ''}" onclick="todoCheckClick(${i})">${s !== 'pending' ? '✓' : ''}</div>
       <span class="todo-text" data-idx="${i}">${esc(t.text)}</span>
       <button class="todo-del" onclick="deleteTodo(${i})">×</button>
     </div>`;
