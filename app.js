@@ -4539,7 +4539,12 @@ async function initFCM() {
       if (token) {
         fcmToken = token;
         localStorage.setItem('fcmToken', token);
-        if (myCode) await db.collection('users').doc(myCode).set({ fcmToken: token }, { merge: true });
+        if (myCode) await db.collection('users').doc(myCode).set({
+          fcmToken: token,
+          lang: localStorage.getItem('lang') || 'ko',
+          notifApp: localStorage.getItem('notifApp') !== 'false',
+          notifEvent: localStorage.getItem('notifEvent') !== 'false'
+        }, { merge: true });
         console.log('FCM token saved');
       }
     } else {
@@ -4576,6 +4581,9 @@ async function refreshFCMToken() {
       // (단일 필드 덮어쓰기이므로 토큰 중복 등록 위험 없음)
       await db.collection('users').doc(myCode).set({
         fcmToken: token,
+        lang: localStorage.getItem('lang') || 'ko',
+        notifApp: localStorage.getItem('notifApp') !== 'false',
+        notifEvent: localStorage.getItem('notifEvent') !== 'false',
         tokenUpdatedAt: firebase.firestore.Timestamp.now()
       }, { merge: true });
       console.log('FCM token refreshed');
@@ -4611,7 +4619,7 @@ async function sendFCMPush(targetToken, title, body) {
 let lastNotifTime = 0;
 // 로컬 알림 표시 (iOS/Android 공통)
 async function sendNotification(title, body) {
-  if (!notifEnabled) return;
+  // 알림 종류별 on/off는 호출부에서 notifApp/notifEnabled로 이미 판단함 (분리 운영)
   if (Notification.permission !== 'granted') return;
   if (document.visibilityState === 'visible') return;
   // 중복 방지 (3초 내 같은 알림 차단)
@@ -4646,6 +4654,8 @@ function toggleSettingsNotif(type, enabled) {
     localStorage.setItem('notifEnabled', enabled ? 'true' : 'false');
   }
   // 'app' = 일반 앱 알림 마스터. 채팅 알림과 무관.
+  // 서버(Cloud Function)가 내 토글 상태를 보고 푸시 발송 여부를 판단하도록 동기화
+  if (myCode) { try { db.collection('users').doc(myCode).set({ ['notif' + type.charAt(0).toUpperCase() + type.slice(1)]: enabled }, { merge: true }); } catch(e) {} }
 }
 
 function showUploadStatus(text) {
@@ -5326,6 +5336,8 @@ function setLang(lang) {
     var htmlLangMap = { en: 'en', ko: 'ko', zh: 'zh', ja: 'ja' };
     document.documentElement.setAttribute('lang', htmlLangMap[lang] || 'ko');
   } catch(e) {}
+  // 서버(Cloud Function)가 푸시 문구를 내 언어로 보낼 수 있도록 기록
+  if (myCode) { try { db.collection('users').doc(myCode).set({ lang: lang }, { merge: true }); } catch(e) {} }
   applyLang();
   renderWeatherUI(_weatherCache);
 }
