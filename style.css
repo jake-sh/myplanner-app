@@ -1072,3 +1072,273 @@ body.dark-mode #tagList > div:not(.empty-state) {
   user-select: none !important;
   -webkit-user-select: none !important;
 }
+
+/* ══ 하단 탭 바 ══ */
+.bottom-tab-bar {
+  display: flex;
+  align-items: stretch;
+  background: var(--card);
+  border-top: 1px solid rgba(0,0,0,0.07);
+  padding-bottom: env(safe-area-inset-bottom);
+  flex-shrink: 0;
+  z-index: 10;
+}
+body.dark-mode .bottom-tab-bar {
+  background: #111111;
+  border-top-color: #222;
+}
+.acc-screen .bottom-tab-bar {
+  background: #111111;
+  border-top-color: #222;
+}
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 10px 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--subtext);
+  font-size: 10px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: color .15s;
+  min-height: 56px;
+}
+.tab-item.tab-active {
+  color: var(--primary);
+}
+.acc-screen .tab-item {
+  color: #555;
+}
+.acc-screen .tab-item.tab-active {
+  color: #ffffff;
+}
+.tab-item svg {
+  flex-shrink: 0;
+}
+
+/* ══ 계정 화면 ══ */
+.acc-screen {
+  background: #0D0D0D;
+  color: #F1F5F9;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.acc-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 28px 22px 24px;
+}
+
+.acc-user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.acc-name {
+  font-size: 30px;
+  font-weight: 800;
+  color: #F1F5F9;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+
+.acc-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.acc-star {
+  color: #F59E0B;
+  font-size: 14px;
+}
+
+.acc-rating {
+  font-size: 14px;
+  font-weight: 700;
+  color: #F1F5F9;
+  background: #1E1E1E;
+  padding: 2px 10px;
+  border-radius: 20px;
+}
+
+.acc-rating-label {
+  font-size: 12px;
+  color: #64748B;
+  margin-left: 2px;
+}
+
+.acc-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #1E1E1E;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1.5px solid #2A2A2A;
+}
+
+/* 빠른 액션 그리드 */
+.acc-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 0 16px 20px;
+}
+
+.acc-quick-btn {
+  background: #1A1A1A;
+  border-radius: 16px;
+  padding: 18px 8px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  border: 1px solid #2A2A2A;
+  transition: opacity .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.acc-quick-btn:active {
+  opacity: 0.6;
+}
+
+.acc-quick-icon {
+  color: #A0AEC0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.acc-quick-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #CBD5E0;
+  text-align: center;
+}
+
+/* 배너 */
+.acc-banner {
+  margin: 0 16px 8px;
+  background: #1A1A1A;
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #2A2A2A;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.acc-banner:active {
+  opacity: 0.7;
+}
+
+.acc-banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.acc-banner-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #F1F5F9;
+}
+
+.acc-banner-desc {
+  font-size: 12px;
+  color: #64748B;
+  line-height: 1.4;
+}
+
+.acc-banner-icon {
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+/* 구분선 */
+.acc-divider {
+  height: 1px;
+  background: #1E1E1E;
+  margin: 12px 0;
+}
+
+/* 메뉴 목록 */
+.acc-menu-list {
+  display: flex;
+  flex-direction: column;
+  padding: 0 6px;
+}
+
+.acc-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 16px;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: background .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.acc-menu-item:active {
+  background: #1A1A1A;
+}
+
+.acc-menu-icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #1A1A1A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #94A3B8;
+  border: 1px solid #2A2A2A;
+}
+
+.acc-menu-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.acc-menu-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #E2E8F0;
+}
+
+.acc-menu-sub {
+  font-size: 12px;
+  color: #64748B;
+}
+
+.acc-menu-chevron {
+  color: #333;
+  flex-shrink: 0;
+}
+
+/* planApp 탭바 공간 확보 */
+#planApp .bottom-tab-bar {
+  margin-top: auto;
+}

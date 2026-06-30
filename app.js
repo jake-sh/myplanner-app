@@ -1140,6 +1140,8 @@ function applyDarkMode() {
   if (themeMeta) themeMeta.setAttribute('content', enabled ? '#000000' : '#FFFFFF');
   var toggle = document.getElementById('darkModeToggle');
   if (toggle) toggle.checked = enabled;
+  var accToggle = document.getElementById('accDarkToggle');
+  if (accToggle) accToggle.checked = enabled;
   applyIconStyle();
   // 타이틀 색상 처리
   var themeColor = localStorage.getItem('themeColor') || '#6C63FF';
@@ -5662,6 +5664,8 @@ function applyLang() {
   try { if (typeof updateAutoDeleteLabel === 'function') updateAutoDeleteLabel(); } catch(e) {}
   // 폰트 사이즈 버튼 텍스트
   try { if (typeof updateFontSizeBtns === 'function') updateFontSizeBtns(); } catch(e) {}
+  // 계정 화면 탭/레이블 갱신
+  try { if (typeof _accApplyLang === 'function') _accApplyLang(); } catch(e) {}
 }
 
 function _setText(id, text) {
@@ -5671,3 +5675,102 @@ function _setText(id, text) {
 
 // 앱 로드 시 적용
 setTimeout(applyLang, 300);
+
+// ── ACCOUNT SCREEN ─────────────────────────────────
+function openAccountScreen() {
+  _updateAccountScreen();
+  showScreen('accountScreen');
+}
+
+function _updateAccountScreen() {
+  // 사용자 이름 (닉네임 or 'my planner')
+  var nameEl = document.getElementById('accUserName');
+  if (nameEl) {
+    var titleMy = document.getElementById('titleMy');
+    var titlePlanner = document.getElementById('titlePlanner');
+    var name = (titleMy && titlePlanner)
+      ? (titleMy.textContent + titlePlanner.textContent).trim()
+      : 'my planner';
+    nameEl.textContent = name || 'my planner';
+  }
+
+  // 할일 완료율 계산
+  var ratingEl = document.getElementById('accRating');
+  if (ratingEl) {
+    try {
+      var todos = JSON.parse(localStorage.getItem('todos') || '[]');
+      if (todos.length > 0) {
+        var done = todos.filter(function(t) { return t.status === 'done'; }).length;
+        var pct = Math.round(done / todos.length * 100);
+        ratingEl.textContent = pct + '%';
+      } else {
+        ratingEl.textContent = '--';
+      }
+    } catch(e) {
+      ratingEl.textContent = '--';
+    }
+  }
+
+  // 다크 모드 토글 동기화
+  var dt = document.getElementById('accDarkToggle');
+  if (dt) dt.checked = localStorage.getItem('darkMode') === 'true';
+
+  // 버전 표시
+  var verEl = document.getElementById('accMenuVersion');
+  if (verEl) verEl.textContent = 'my planner v4.4.4';
+
+  // 언어별 텍스트 업데이트
+  _accApplyLang();
+}
+
+function _accApplyLang() {
+  var t = function(en, ko, zh, ja) { return __T(en, ko, zh, ja); };
+  _setText('accCompletionLabel', t('completion','완료율','完成率','完了率'));
+  _setText('accQuickSettings', t('Settings','설정','设置','設定'));
+  _setText('accQuickBackup', t('Backup','백업','备份','バックアップ'));
+  _setText('accQuickStats', t('Stats','통계','统计','統計'));
+  _setText('accBannerTitle', t('Data Backup','데이터 백업','数据备份','データバックアップ'));
+  _setText('accBannerDesc', t('Safely back up your memos, tasks & calendar','메모·할일·달력을 안전하게 백업하세요','安全备份备忘录、任务和日历','メモ・タスク・カレンダーを安全にバックアップ'));
+  _setText('accMenuSettings', t('Settings','설정','设置','設定'));
+  _setText('accMenuMemo', t('Memo','메모','备忘录','メモ'));
+  _setText('accMenuBackup', t('Backup & Restore','데이터 백업 · 복구','备份与恢复','バックアップ・復元'));
+  _setText('accMenuBackupSub', t('Save your data to the cloud','클라우드에 데이터 저장하기','将数据保存到云端','データをクラウドに保存'));
+  _setText('accMenuDark', t('Dark Mode','다크 모드','深色模式','ダークモード'));
+  _setText('accMenuAbout', t('About','앱 정보','关于','アプリ情報'));
+
+  // 탭 바 레이블
+  _setText('tabHomeLabel', t('Home','홈','首页','ホーム'));
+  _setText('tabTasksLabel', t('Tasks','할 일','任务','タスク'));
+  _setText('tabCalendarLabel', t('Calendar','달력','日历','カレンダー'));
+  _setText('tabAccountLabel', t('Account','계정','账户','アカウント'));
+  _setText('accTabHomeLabel', t('Home','홈','首页','ホーム'));
+  _setText('accTabTasksLabel', t('Tasks','할 일','任务','タスク'));
+  _setText('accTabCalendarLabel', t('Calendar','달력','日历','カレンダー'));
+  _setText('accTabAccountLabel', t('Account','계정','账户','アカウント'));
+}
+
+function accToggleDarkMode() {
+  var dt = document.getElementById('accDarkToggle');
+  if (dt) {
+    dt.checked = !dt.checked;
+    setDarkMode(dt.checked);
+  }
+}
+
+function openAccBackup() {
+  showAlert(__T(
+    'To backup or restore, enter the chat section and use Settings → Backup.',
+    '백업/복구는 채팅 섹션 → 설정에서 이용하세요.',
+    '请在聊天部分 → 设置中使用备份/恢复。',
+    'チャットセクション → 設定でバックアップ/復元をご利用ください。'
+  ));
+}
+
+function accShowAbout() {
+  showAlert('my planner v4.4.4\n\n' + __T(
+    'A planner app with tasks, calendar, memos & more.',
+    '할일·달력·메모를 한곳에서 관리하는 플래너 앱입니다.',
+    '在一个地方管理任务、日历和备忘录的规划应用。',
+    'タスク・カレンダー・メモをまとめて管理するプランナーアプリです。'
+  ));
+}
