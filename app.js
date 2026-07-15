@@ -15,8 +15,8 @@ const storage = firebase.storage();
 let currentUser = null;
 let _authReady = false;
 auth.onAuthStateChanged(async user => {
-  // 익명이거나 @myplanner.app 이메일이 아닌 경우 → 무효 세션 강제 로그아웃
-  if (user && (user.isAnonymous || !user.email || !user.email.endsWith('@myplanner.app'))) {
+  // @myplanner.app 이메일이 아닌 경우 → 무효 세션 강제 로그아웃
+  if (user && (!user.email || !user.email.endsWith('@myplanner.app'))) {
     try { await auth.signOut(); } catch(e) {}
     return;
   }
@@ -3442,17 +3442,10 @@ async function addFriendByCode() {
   }
   _afBusy(true);
 
-  // [먹통 수정 v382] 익명 인증을 능동 재시도하고 실패 사유(에러코드)를 화면에 노출.
-  // (인증 미완료 상태에서 Firestore 접근 시 거부되어 함수가 통째로 죽으면 버튼이 먹통으로 보임)
   if (!currentUser) {
-    try {
-      const cred = await auth.signInAnonymously();
-      currentUser = (cred && cred.user) || currentUser;
-    } catch (authErr) {
-      _afBusy(false);
-      showAlert(__T('Auth failed','인증 실패','认证失败','認証失敗') + ' (' + (authErr && (authErr.code || authErr.message) || 'unknown') + ')');
-      return;
-    }
+    _afBusy(false);
+    showAlert(__T('Login required','로그인이 필요합니다','请先登录','ログインが必要です'));
+    return;
   }
 
   // [먹통 수정 v382] Firestore 접근을 try/catch로 감싸 실패 사유(에러코드)를 화면에 드러냄
