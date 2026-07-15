@@ -318,9 +318,14 @@ function showScreen(id) {
   // 로그인 안 된 상태에서 보호 화면 접근 시 loginScreen으로 강제 전환
   if (!currentUser && _PROTECTED_SCREENS.indexOf(id) >= 0) id = 'loginScreen';
   var target = document.getElementById(id);
-  if (!target) return; // 엘리먼트 없으면 무시 (구버전 HTML 캐시 대응)
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  if (!target) return;
+  // 인라인 display:flex 가 CSS display:none을 덮어쓰는 문제 → display를 직접 강제 제어
+  document.querySelectorAll('.screen').forEach(function(s) {
+    s.classList.remove('active');
+    s.style.display = 'none';
+  });
   target.classList.add('active');
+  target.style.display = '';  // 인라인 제거 → CSS .screen.active{display:flex} 적용
   if (id !== 'planApp') {
     history.pushState({ screen: id }, '', '');
   }
