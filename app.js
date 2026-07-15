@@ -418,13 +418,20 @@ window.addEventListener('popstate', function(e) {
 });
 
 // 키보드가 올라올 때 로그인 화면이 가려지지 않도록 bottom 조정 (iOS 대응)
+// 필드 전환 시 키보드가 잠깐 내렸다 올라오는 깜빡임 방지를 위해 200ms 디바운스 적용
 if (window.visualViewport) {
+  var _kbTimer = null;
   window.visualViewport.addEventListener('resize', function() {
     var ls = document.getElementById('loginScreen');
     if (!ls) return;
     var kbH = Math.max(0, window.innerHeight - window.visualViewport.height);
-    // 150px 이상 줄어든 경우만 키보드로 판정 (주소창 등 브라우저 크롬은 100px 미만)
-    ls.style.bottom = kbH > 150 ? kbH + 'px' : '';
+    if (kbH > 150) {
+      if (_kbTimer) { clearTimeout(_kbTimer); _kbTimer = null; }
+      ls.style.bottom = kbH + 'px';
+    } else {
+      if (_kbTimer) clearTimeout(_kbTimer);
+      _kbTimer = setTimeout(function() { ls.style.bottom = ''; _kbTimer = null; }, 200);
+    }
   });
 }
 
