@@ -14,6 +14,11 @@ const storage = firebase.storage();
 
 let currentUser = null;
 auth.onAuthStateChanged(async user => {
+  // 익명 세션은 로그인으로 인정하지 않음 → 로그아웃 후 로그인 화면
+  if (user && user.isAnonymous) {
+    await auth.signOut();
+    return;
+  }
   currentUser = user;
   if (!user) {
     if (document.readyState !== 'loading') showScreen('loginScreen');
