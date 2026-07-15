@@ -15,9 +15,9 @@ const storage = firebase.storage();
 let currentUser = null;
 let _authReady = false;
 auth.onAuthStateChanged(async user => {
-  // 익명 세션은 로그인으로 인정하지 않음 → 로그아웃 후 로그인 화면
-  if (user && user.isAnonymous) {
-    await auth.signOut();
+  // 익명이거나 @myplanner.app 이메일이 아닌 경우 → 무효 세션 강제 로그아웃
+  if (user && (user.isAnonymous || !user.email || !user.email.endsWith('@myplanner.app'))) {
+    try { await auth.signOut(); } catch(e) {}
     return;
   }
   currentUser = user;
@@ -630,7 +630,7 @@ document.addEventListener('visibilitychange', function() {
     if (isAutoLockOn()) el.style.display = 'block';
   } else {
     if (isAutoLockOn()) {
-      showScreen('planApp');
+      showScreen(currentUser ? 'planApp' : 'loginScreen');
       setTimeout(function() { el.style.display = 'none'; }, 600);
     } else {
       el.style.display = 'none';
@@ -646,7 +646,7 @@ window.addEventListener('pageshow', function(e) {
   var el = document.getElementById('privacyScreen');
   if (el) el.style.display = 'none';
   if (e.persisted && isAutoLockOn()) {
-    showScreen('planApp');
+    showScreen(currentUser ? 'planApp' : 'loginScreen');
   }
 });
 var _appWasHidden = false;
@@ -678,7 +678,7 @@ window.addEventListener('focus', function() {
   }
   if (_appWasHidden) {
     _appWasHidden = false;
-    if (isAutoLockOn()) showScreen('planApp');
+    if (isAutoLockOn()) showScreen(currentUser ? 'planApp' : 'loginScreen');
   }
 });
 
