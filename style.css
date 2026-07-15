@@ -1147,3 +1147,20 @@ body.dark-mode .login-btn-secondary {
   border-color: #3A3A3A;
   color: #F1F1F1;
 }
+.login-autologin-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text, #1A1A1A);
+  cursor: pointer;
+}
+.login-link-btn {
+  background: none;
+  border: none;
+  color: var(--primary, #6C63FF);
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}

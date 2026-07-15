@@ -81,6 +81,17 @@ let editingMemoIndex = null;
 // ── 로그인 (ID → 내부적으로 id@myplanner.app 이메일로 변환) ────────────────
 function _idToEmail(id) { return id.trim().toLowerCase() + '@myplanner.app'; }
 
+function _getAutoLogin() {
+  return localStorage.getItem('autoLogin') !== 'false';
+}
+
+async function _setPersistence() {
+  var auto = document.getElementById('autoLoginCheck') && document.getElementById('autoLoginCheck').checked;
+  localStorage.setItem('autoLogin', auto ? 'true' : 'false');
+  var p = auto ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION;
+  try { await auth.setPersistence(p); } catch(e) {}
+}
+
 async function loginWithId() {
   var id = (document.getElementById('loginId').value || '').trim();
   var pw = document.getElementById('loginPw').value || '';
@@ -89,6 +100,7 @@ async function loginWithId() {
   if (!id || !pw) { msgEl.textContent = 'ID와 비밀번호를 입력하세요.'; return; }
   try {
     document.getElementById('loginBtn').disabled = true;
+    await _setPersistence();
     await auth.signInWithEmailAndPassword(_idToEmail(id), pw);
   } catch(e) {
     var code = e.code || '';
@@ -104,13 +116,16 @@ async function loginWithId() {
 async function registerWithId() {
   var id = (document.getElementById('loginId').value || '').trim();
   var pw = document.getElementById('loginPw').value || '';
+  var pw2 = (document.getElementById('loginPw2').value || '');
   var msgEl = document.getElementById('loginMsg');
   msgEl.textContent = '';
   if (!id || !pw) { msgEl.textContent = 'ID와 비밀번호를 입력하세요.'; return; }
   if (!/^[a-z0-9_]{3,20}$/.test(id)) { msgEl.textContent = 'ID는 영문 소문자·숫자·밑줄, 3~20자로 입력하세요.'; return; }
   if (pw.length < 6) { msgEl.textContent = '비밀번호는 6자 이상이어야 합니다.'; return; }
+  if (pw !== pw2) { msgEl.textContent = '비밀번호가 일치하지 않습니다.'; return; }
   try {
     document.getElementById('registerBtn').disabled = true;
+    await _setPersistence();
     await auth.createUserWithEmailAndPassword(_idToEmail(id), pw);
   } catch(e) {
     var code = e.code || '';
@@ -121,6 +136,28 @@ async function registerWithId() {
     }
     document.getElementById('registerBtn').disabled = false;
   }
+}
+
+// 로그인/회원가입 모드 전환
+function switchToRegister() {
+  document.getElementById('loginPw2Wrap').style.display = '';
+  document.getElementById('loginBtn').style.display = 'none';
+  document.getElementById('registerBtn').style.display = '';
+  document.getElementById('loginSwitchRow').innerHTML = '이미 계정이 있으신가요? <button class="login-link-btn" onclick="switchToLogin()">로그인</button>';
+  document.getElementById('loginMsg').textContent = '';
+}
+function switchToLogin() {
+  document.getElementById('loginPw2Wrap').style.display = 'none';
+  document.getElementById('loginBtn').style.display = '';
+  document.getElementById('registerBtn').style.display = 'none';
+  document.getElementById('loginSwitchRow').innerHTML = '계정이 없으신가요? <button class="login-link-btn" onclick="switchToRegister()">회원가입</button>';
+  document.getElementById('loginMsg').textContent = '';
+}
+
+function initLoginScreen() {
+  var autoCheck = document.getElementById('autoLoginCheck');
+  if (autoCheck) autoCheck.checked = _getAutoLogin();
+  switchToLogin();
 }
 
 async function logoutApp() {
@@ -239,6 +276,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
     return;
   }
+  initLoginScreen();
   showScreen('loginScreen');
 
   // 3-1. 공유 인텐트 처리 (다른 앱에서 텍스트 공유로 들어온 경우)
@@ -326,7 +364,8 @@ function showScreen(id) {
   });
   target.classList.add('active');
   target.style.display = '';  // 인라인 제거 → CSS .screen.active{display:flex} 적용
-  if (id !== 'planApp') {
+  // loginScreen과 planApp은 히스토리 스택에 쌓지 않음 (뒤로가기 → 앱 종료)
+  if (id !== 'planApp' && id !== 'loginScreen') {
     history.pushState({ screen: id }, '', '');
   }
 }
@@ -338,9 +377,8 @@ window.addEventListener('popstate', function(e) {
     closeImgViewer();
     return;
   }
-  // 뒤로가기 누르면 메인 화면으로
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('planApp').classList.add('active');
+  // 뒤로가기 → 메인(또는 로그인) 화면으로
+  showScreen(currentUser ? 'planApp' : 'loginScreen');
 });
 
 // ── PATTERN ────────────────────────────────────────

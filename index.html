@@ -11,22 +11,29 @@
   <meta name="apple-mobile-web-app-title" content="my planner"/>
   <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png"/>
   <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png"/>
-  <link rel="stylesheet" href="style.css?v=450"/>
+  <link rel="stylesheet" href="style.css?v=451"/>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400&family=Noto+Sans+KR:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet"/>
 </head>
 <body>
 
 <!-- ===== 로그인 ===== -->
-<div id="loginScreen" class="screen active" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;background:var(--bg,#F8F9FF);">
+<div id="loginScreen" class="screen active" style="align-items:center;justify-content:center;background:var(--bg,#F8F9FF);">
   <div class="login-box">
     <div class="login-title">
-      <span id="loginTitleMy" style="font-family:'Wilzten',cursive;font-weight:normal;font-size:2.2rem;">my</span><span id="loginTitlePlanner" style="font-family:'Wilzten',cursive;font-weight:normal;font-size:2.2rem;">planner</span>
+      <span style="font-family:'Wilzten',cursive;font-weight:normal;font-size:2.2rem;color:var(--primary);">my</span><span style="font-family:'Wilzten',cursive;font-weight:normal;font-size:2.2rem;color:var(--primary);">planner</span>
     </div>
     <div id="loginMsg" class="login-msg"></div>
     <input type="text" id="loginId" class="login-input" placeholder="ID" autocomplete="username" autocapitalize="none" spellcheck="false"/>
     <input type="password" id="loginPw" class="login-input" placeholder="비밀번호 (6자 이상)" autocomplete="current-password"/>
+    <div id="loginPw2Wrap" style="display:none;">
+      <input type="password" id="loginPw2" class="login-input" placeholder="비밀번호 확인" autocomplete="new-password"/>
+    </div>
+    <label class="login-autologin-row">
+      <input type="checkbox" id="autoLoginCheck" checked/> 자동로그인
+    </label>
     <button id="loginBtn" class="login-btn" onclick="loginWithId()">로그인</button>
-    <button id="registerBtn" class="login-btn login-btn-secondary" onclick="registerWithId()">회원가입</button>
+    <button id="registerBtn" class="login-btn login-btn-secondary" onclick="registerWithId()" style="display:none;">회원가입</button>
+    <div id="loginSwitchRow" class="login-hint" style="text-align:center;margin-top:4px;"></div>
     <div class="login-hint">ID: 영문 소문자·숫자·밑줄, 3~20자</div>
   </div>
 </div>
@@ -91,7 +98,7 @@
     </div>
   </div>
   <!-- 캐시버전 표기 (개발용) -->
-  <div id="mainVersionText" style="text-align:center;font-size:10px;color:#aaa;opacity:0.35;pointer-events:none;margin-top:-22px;margin-bottom:8px;letter-spacing:0.5px;user-select:none;">v4.5.0</div>
+  <div id="mainVersionText" style="text-align:center;font-size:10px;color:#aaa;opacity:0.35;pointer-events:none;margin-top:-22px;margin-bottom:8px;letter-spacing:0.5px;user-select:none;">v4.5.1</div>
 </div>
 
 <!-- ===== PLAN SETTINGS ===== -->
@@ -138,7 +145,7 @@
     </div>
     <div class="settings-section">
       <div class="settings-label" id="infoLabel">정보</div>
-      <div class="settings-desc" id="appVersionText">my planner v4.5.0</div>
+      <div class="settings-desc" id="appVersionText">my planner v4.5.1</div>
     </div>
     <div class="settings-section">
       <button onclick="logoutApp()" class="logout-btn" id="logoutBtn">로그아웃</button>
@@ -674,7 +681,7 @@ try {
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script src="app.js?v=450"></script>
+<script src="app.js?v=451"></script>
 
 <!-- 이미지 뷰어 -->
 <div id="imgViewer" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:9999;flex-direction:column;align-items:center;justify-content:center;">
