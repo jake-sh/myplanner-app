@@ -23,8 +23,8 @@ auth.onAuthStateChanged(async user => {
   currentUser = user;
   _authReady = true;
   if (!user) {
-    // DOM 준비 여부 무관하게 loginScreen 표시
-    var fn = function() { showScreen('loginScreen'); };
+    // DOM 준비 여부 무관하게 loginScreen 표시 (필드 초기화 포함)
+    var fn = function() { initLoginScreen(); showScreen('loginScreen'); };
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', fn, { once: true });
     } else { fn(); }
