@@ -143,20 +143,38 @@ function switchToRegister() {
   document.getElementById('loginPw2Wrap').style.display = '';
   document.getElementById('loginBtn').style.display = 'none';
   document.getElementById('registerBtn').style.display = '';
-  document.getElementById('loginSwitchRow').innerHTML = '이미 계정이 있으신가요? <button class="login-link-btn" onclick="switchToLogin()">로그인</button>';
+  var _aRow = document.querySelector('.login-autologin-row'); if (_aRow) _aRow.style.display = 'none';
+  document.getElementById('loginSwitchRow').innerHTML = __T(
+    'Already have an account? <button class="login-link-btn" onclick="switchToLogin()">Login</button>',
+    '이미 계정이 있으신가요? <button class="login-link-btn" onclick="switchToLogin()">로그인</button>',
+    '已有账号？<button class="login-link-btn" onclick="switchToLogin()">登录</button>',
+    'すでにアカウントをお持ちですか？<button class="login-link-btn" onclick="switchToLogin()">ログイン</button>');
   document.getElementById('loginMsg').textContent = '';
 }
 function switchToLogin() {
   document.getElementById('loginPw2Wrap').style.display = 'none';
   document.getElementById('loginBtn').style.display = '';
   document.getElementById('registerBtn').style.display = 'none';
-  document.getElementById('loginSwitchRow').innerHTML = '계정이 없으신가요? <button class="login-link-btn" onclick="switchToRegister()">회원가입</button>';
+  var _aRow = document.querySelector('.login-autologin-row'); if (_aRow) _aRow.style.display = '';
+  document.getElementById('loginSwitchRow').innerHTML = __T(
+    'No account? <button class="login-link-btn" onclick="switchToRegister()">Register</button>',
+    '계정이 없으신가요? <button class="login-link-btn" onclick="switchToRegister()">회원가입</button>',
+    '没有账号？<button class="login-link-btn" onclick="switchToRegister()">注册</button>',
+    'アカウントがない？<button class="login-link-btn" onclick="switchToRegister()">新規登録</button>');
   document.getElementById('loginMsg').textContent = '';
 }
 
 function initLoginScreen() {
   var autoCheck = document.getElementById('autoLoginCheck');
   if (autoCheck) autoCheck.checked = _getAutoLogin();
+  var loginIdEl = document.getElementById('loginId');
+  if (loginIdEl) loginIdEl.value = '';
+  var loginPwEl2 = document.getElementById('loginPw');
+  if (loginPwEl2) loginPwEl2.value = '';
+  var loginPw2El2 = document.getElementById('loginPw2');
+  if (loginPw2El2) loginPw2El2.value = '';
+  var _lb = document.getElementById('loginBtn'); if (_lb) _lb.disabled = false;
+  var _rb = document.getElementById('registerBtn'); if (_rb) _rb.disabled = false;
   switchToLogin();
 }
 
@@ -398,6 +416,18 @@ window.addEventListener('popstate', function(e) {
   // 뒤로가기 → 메인(또는 로그인) 화면으로
   showScreen(currentUser ? 'planApp' : 'loginScreen');
 });
+
+// 키보드가 올라올 때 로그인 화면이 가려지지 않도록 bottom 조정
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', function() {
+    var ls = document.getElementById('loginScreen');
+    if (!ls) return;
+    var kbH = Math.max(0, window.innerHeight - window.visualViewport.height);
+    ls.style.bottom = kbH > 50 ? kbH + 'px' : '';
+    ls.style.justifyContent = kbH > 50 ? 'flex-start' : '';
+    ls.style.paddingTop = kbH > 50 ? '20px' : '';
+  });
+}
 
 // ── PATTERN ────────────────────────────────────────
 function dotStart(e, dot) {
@@ -1252,6 +1282,11 @@ function applyTitle() {
     var plannerColor = localStorage.getItem('titlePlannerColor');
     if (plannerColor) plannerEl.style.color = plannerColor;
   }
+  // 로그인 화면 타이틀 동기화
+  var loginMyEl = document.getElementById('loginTitleMy');
+  var loginPlannerEl = document.getElementById('loginTitlePlanner');
+  if (loginMyEl) { loginMyEl.textContent = myVal; loginMyEl.setAttribute('style', 'font-size:' + myActual + 'px;'); var mc2 = localStorage.getItem('titleMyColor'); if (mc2) loginMyEl.style.color = mc2; }
+  if (loginPlannerEl) { loginPlannerEl.textContent = plannerVal; loginPlannerEl.setAttribute('style', 'font-size:' + plannerActual + 'px;'); var pc2 = localStorage.getItem('titlePlannerColor'); if (pc2) loginPlannerEl.style.color = pc2; }
 }
 
 function initTitleInputs() {
@@ -5746,6 +5781,14 @@ function applyLang() {
   _setText('notifEventLabel', __T('Event Alerts','이벤트 알림','事件提醒','イベント通知'));
   _setText('notifAppLabel', __T('App Alerts','앱 알림','应用提醒','アプリ通知'));
   _setText('shareTargetLabel', __T('Share Target :','공유 대상 :','共享对象 :','共有相手 :'));
+  // 로그아웃 / 계정삭제
+  _setText('logoutBtn', __T('Logout','로그아웃','退出登录','ログアウト'));
+  _setText('deleteAccountBtn', __T('Delete Account','계정 삭제','删除账户','アカウント削除'));
+  // 로그인 화면 placeholder 갱신
+  var _lpw = document.getElementById('loginPw');
+  if (_lpw) _lpw.placeholder = __T('Password (6+ chars)','비밀번호 (6자 이상)','密码 (6位以上)','パスワード (6文字以上)');
+  var _lpw2 = document.getElementById('loginPw2');
+  if (_lpw2) _lpw2.placeholder = __T('Confirm Password','비밀번호 확인','确认密码','パスワード確認');
   _setText('shareTargetBtn', __T('Change','변경','更改','変更'));
   _setText('shareTargetModalTitle', __T('Select Share Target','공유 대상 선택','选择共享对象','共有相手を選択'));
   _setText('shareReqTitle',       __T('Share Request','공유 요청','共享请求','共有リクエスト'));

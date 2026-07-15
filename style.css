@@ -1171,6 +1171,9 @@ body.dark-mode .login-btn-secondary {
   font-size: 13px;
   cursor: pointer;
   text-decoration: underline;
-  padding: 6px 0 0 0;
+  padding: 0;
   display: block;
+  margin: 20px auto 0;
+  text-align: center;
 }
+.login-box { flex-shrink: 0; }
