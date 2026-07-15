@@ -13,6 +13,7 @@ const auth = firebase.auth();
 const storage = firebase.storage();
 
 let currentUser = null;
+let _authReady = false;
 auth.onAuthStateChanged(async user => {
   // 익명 세션은 로그인으로 인정하지 않음 → 로그아웃 후 로그인 화면
   if (user && user.isAnonymous) {
@@ -20,12 +21,20 @@ auth.onAuthStateChanged(async user => {
     return;
   }
   currentUser = user;
+  _authReady = true;
   if (!user) {
-    if (document.readyState !== 'loading') showScreen('loginScreen');
+    // DOM 준비 여부 무관하게 loginScreen 표시
+    var fn = function() { showScreen('loginScreen'); };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', fn, { once: true });
+    } else { fn(); }
     return;
   }
   await linkUidToMyCode(user.uid);
-  if (document.readyState !== 'loading') showScreen('planApp');
+  var fn2 = function() { showScreen('planApp'); };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', fn2, { once: true });
+  } else { fn2(); }
 });
 
 // ── STATE ──────────────────────────────────────────
@@ -222,8 +231,8 @@ window.addEventListener('DOMContentLoaded', () => {
   // 2. 날짜/시계
   updatePlanDate();
   startClock();
-  // 3. 화면 표시 (인증 상태에 따라 결정, onAuthStateChanged가 최종 처리)
-  showScreen(currentUser ? 'planApp' : 'loginScreen');
+  // 3. 화면 표시 — 항상 loginScreen 먼저, onAuthStateChanged가 planApp으로 전환
+  showScreen('loginScreen');
 
   // 3-1. 공유 인텐트 처리 (다른 앱에서 텍스트 공유로 들어온 경우)
   // 메인 화면을 띄운 직후에 호출 → 백그라운드 동작처럼 보이며 즉시 닫힘 시도
