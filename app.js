@@ -418,20 +418,18 @@ window.addEventListener('popstate', function(e) {
 });
 
 // 키보드가 올라올 때 로그인 화면이 가려지지 않도록 bottom 조정 (iOS 대응)
-// 필드 전환 시 키보드가 잠깐 내렸다 올라오는 깜빡임 방지를 위해 200ms 디바운스 적용
+// 모든 resize 이벤트를 150ms 디바운스 — 필드 전환 중 kbH 미세 변동으로 인한 깜빡임 방지
 if (window.visualViewport) {
   var _kbTimer = null;
   window.visualViewport.addEventListener('resize', function() {
     var ls = document.getElementById('loginScreen');
     if (!ls) return;
-    var kbH = Math.max(0, window.innerHeight - window.visualViewport.height);
-    if (kbH > 150) {
-      if (_kbTimer) { clearTimeout(_kbTimer); _kbTimer = null; }
-      ls.style.bottom = kbH + 'px';
-    } else {
-      if (_kbTimer) clearTimeout(_kbTimer);
-      _kbTimer = setTimeout(function() { ls.style.bottom = ''; _kbTimer = null; }, 200);
-    }
+    if (_kbTimer) clearTimeout(_kbTimer);
+    _kbTimer = setTimeout(function() {
+      _kbTimer = null;
+      var kbH = Math.max(0, window.innerHeight - window.visualViewport.height);
+      ls.style.bottom = kbH > 150 ? kbH + 'px' : '';
+    }, 150);
   });
 }
 
