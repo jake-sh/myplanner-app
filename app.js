@@ -417,15 +417,14 @@ window.addEventListener('popstate', function(e) {
   showScreen(currentUser ? 'planApp' : 'loginScreen');
 });
 
-// 키보드가 올라올 때 로그인 화면이 가려지지 않도록 bottom 조정
+// 키보드가 올라올 때 로그인 화면이 가려지지 않도록 bottom 조정 (iOS 대응)
 if (window.visualViewport) {
   window.visualViewport.addEventListener('resize', function() {
     var ls = document.getElementById('loginScreen');
     if (!ls) return;
     var kbH = Math.max(0, window.innerHeight - window.visualViewport.height);
-    ls.style.bottom = kbH > 50 ? kbH + 'px' : '';
-    ls.style.justifyContent = kbH > 50 ? 'flex-start' : '';
-    ls.style.paddingTop = kbH > 50 ? '20px' : '';
+    // 150px 이상 줄어든 경우만 키보드로 판정 (주소창 등 브라우저 크롬은 100px 미만)
+    ls.style.bottom = kbH > 150 ? kbH + 'px' : '';
   });
 }
 
@@ -1282,11 +1281,11 @@ function applyTitle() {
     var plannerColor = localStorage.getItem('titlePlannerColor');
     if (plannerColor) plannerEl.style.color = plannerColor;
   }
-  // 로그인 화면 타이틀 동기화
+  // 로그인 화면 타이틀 동기화 (폰트 패밀리 유지)
   var loginMyEl = document.getElementById('loginTitleMy');
   var loginPlannerEl = document.getElementById('loginTitlePlanner');
-  if (loginMyEl) { loginMyEl.textContent = myVal; loginMyEl.setAttribute('style', 'font-size:' + myActual + 'px;'); var mc2 = localStorage.getItem('titleMyColor'); if (mc2) loginMyEl.style.color = mc2; }
-  if (loginPlannerEl) { loginPlannerEl.textContent = plannerVal; loginPlannerEl.setAttribute('style', 'font-size:' + plannerActual + 'px;'); var pc2 = localStorage.getItem('titlePlannerColor'); if (pc2) loginPlannerEl.style.color = pc2; }
+  if (loginMyEl) { loginMyEl.textContent = myVal; loginMyEl.setAttribute('style', "font-family:'Wilzten',cursive;font-weight:normal;font-size:" + myActual + 'px;'); var mc2 = localStorage.getItem('titleMyColor'); loginMyEl.style.color = mc2 || 'var(--primary)'; }
+  if (loginPlannerEl) { loginPlannerEl.textContent = plannerVal; loginPlannerEl.setAttribute('style', "font-family:'Wilzten',cursive;font-weight:normal;font-size:" + plannerActual + 'px;'); var pc2 = localStorage.getItem('titlePlannerColor'); loginPlannerEl.style.color = pc2 || 'var(--primary)'; }
 }
 
 function initTitleInputs() {
@@ -5784,11 +5783,19 @@ function applyLang() {
   // 로그아웃 / 계정삭제
   _setText('logoutBtn', __T('Logout','로그아웃','退出登录','ログアウト'));
   _setText('deleteAccountBtn', __T('Delete Account','계정 삭제','删除账户','アカウント削除'));
-  // 로그인 화면 placeholder 갱신
+  // 로그인 화면 버튼 / placeholder / 라벨 갱신
+  _setText('loginBtn', __T('Login','로그인','登录','ログイン'));
+  _setText('registerBtn', __T('Register','회원가입','注册','新規登録'));
   var _lpw = document.getElementById('loginPw');
   if (_lpw) _lpw.placeholder = __T('Password (6+ chars)','비밀번호 (6자 이상)','密码 (6位以上)','パスワード (6文字以上)');
   var _lpw2 = document.getElementById('loginPw2');
   if (_lpw2) _lpw2.placeholder = __T('Confirm Password','비밀번호 확인','确认密码','パスワード確認');
+  // 자동로그인 라벨 (label 내 텍스트 노드 교체)
+  var _aRow = document.querySelector('.login-autologin-row');
+  if (_aRow) { Array.from(_aRow.childNodes).forEach(function(n) { if (n.nodeType === 3 && n.textContent.trim()) n.textContent = ' ' + __T('Auto Login','자동로그인','自动登录','自動ログイン'); }); }
+  // ID 형식 힌트
+  var _hints = document.querySelectorAll('#loginScreen .login-hint');
+  if (_hints.length) _hints[_hints.length - 1].textContent = __T('ID: lowercase letters, numbers, underscore (3-20)','ID: 영문 소문자·숫자·밑줄, 3~20자','ID: 小写字母·数字·下划线 (3~20位)','ID: 英小文字·数字·_(3~20文字)');
   _setText('shareTargetBtn', __T('Change','변경','更改','変更'));
   _setText('shareTargetModalTitle', __T('Select Share Target','공유 대상 선택','选择共享对象','共有相手を選択'));
   _setText('shareReqTitle',       __T('Share Request','공유 요청','共享请求','共有リクエスト'));
