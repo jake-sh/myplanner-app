@@ -1164,3 +1164,13 @@ body.dark-mode .login-btn-secondary {
   text-decoration: underline;
   padding: 0;
 }
+.delete-account-btn {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 6px 0 0 0;
+  display: block;
+}

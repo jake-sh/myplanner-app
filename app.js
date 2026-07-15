@@ -165,6 +165,24 @@ async function logoutApp() {
   try { await auth.signOut(); } catch(e) {}
 }
 
+async function deleteAccount() {
+  if (!confirm('계정을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
+  if (!currentUser) return;
+  try {
+    // userCodes 매핑 삭제
+    await db.collection('userCodes').doc(currentUser.uid).delete().catch(function(){});
+    // Firebase Auth 계정 삭제 (최근 로그인 필요 — 세션이 살아있으면 가능)
+    await currentUser.delete();
+  } catch(e) {
+    if (e.code === 'auth/requires-recent-login') {
+      showAlert('보안을 위해 재로그인 후 계정 삭제가 가능합니다.\n로그아웃 후 다시 로그인해 주세요.');
+      await auth.signOut();
+    } else {
+      showAlert('계정 삭제 실패: ' + (e.message || e.code));
+    }
+  }
+}
+
 async function linkUidToMyCode(uid) {
   if (!uid) return;
   try {
