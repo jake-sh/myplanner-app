@@ -313,7 +313,16 @@ window.addEventListener('DOMContentLoaded', () => {
     return;
   }
   initLoginScreen();
-  showScreen('loginScreen');
+  // 자동로그인 + 이전 로그인 이력 있으면 loginScreen 건너뜀 (onAuthStateChanged가 planApp을 표시)
+  // → 로그인화면 깜빡임 방지
+  if (_getAutoLogin() && localStorage.getItem('myCode')) {
+    document.querySelectorAll('.screen').forEach(function(s) {
+      s.classList.remove('active');
+      s.style.display = 'none';
+    });
+  } else {
+    showScreen('loginScreen');
+  }
 
   // 3-1. 공유 인텐트 처리 (다른 앱에서 텍스트 공유로 들어온 경우)
   // 메인 화면을 띄운 직후에 호출 → 백그라운드 동작처럼 보이며 즉시 닫힘 시도
@@ -400,8 +409,10 @@ function showScreen(id) {
   });
   target.classList.add('active');
   target.style.display = '';  // 인라인 제거 → CSS .screen.active{display:flex} 적용
-  // loginScreen과 planApp은 히스토리 스택에 쌓지 않음 (뒤로가기 → 앱 종료)
-  if (id !== 'planApp' && id !== 'loginScreen') {
+  if (id === 'planApp') {
+    // planApp은 replaceState → 뒤로가기 한 번에 앱 종료
+    history.replaceState({ screen: 'planApp' }, '', '');
+  } else if (id !== 'loginScreen') {
     history.pushState({ screen: id }, '', '');
   }
 }
@@ -413,6 +424,8 @@ window.addEventListener('popstate', function(e) {
     closeImgViewer();
     return;
   }
+  // state 없음 = 히스토리 초기 진입점 → 가로채지 않고 앱 종료 허용
+  if (!e.state || !e.state.screen) return;
   // 뒤로가기 → 메인(또는 로그인) 화면으로
   showScreen(currentUser ? 'planApp' : 'loginScreen');
 });
