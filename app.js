@@ -410,8 +410,14 @@ function showScreen(id) {
   target.classList.add('active');
   target.style.display = '';  // 인라인 제거 → CSS .screen.active{display:flex} 적용
   if (id === 'planApp') {
-    // planApp은 replaceState → 뒤로가기 한 번에 앱 종료
-    history.replaceState({ screen: 'planApp' }, '', '');
+    // 최초 진입(또는 loginScreen 이후): sentinel + planApp 2개 push
+    // 재진입(서브화면 뒤로가기): replaceState
+    if (!history.state || history.state.screen !== 'planApp') {
+      history.pushState({ screen: '_sentinel' }, '', '');
+      history.pushState({ screen: 'planApp' }, '', '');
+    } else {
+      history.replaceState({ screen: 'planApp' }, '', '');
+    }
   } else if (id !== 'loginScreen') {
     history.pushState({ screen: id }, '', '');
   }
@@ -424,7 +430,14 @@ window.addEventListener('popstate', function(e) {
     closeImgViewer();
     return;
   }
-  // state 없음 = 히스토리 초기 진입점 → 가로채지 않고 앱 종료 허용
+  // sentinel = 메인화면에서 뒤로가기 → 앱 백그라운드 유지
+  if (e.state && e.state.screen === '_sentinel') {
+    if (currentUser) {
+      history.pushState({ screen: 'planApp' }, '', '');
+    }
+    // 로그아웃 상태면 push 안 함 → 다음 뒤로가기에서 앱 종료
+    return;
+  }
   if (!e.state || !e.state.screen) return;
   // 뒤로가기 → 메인(또는 로그인) 화면으로
   showScreen(currentUser ? 'planApp' : 'loginScreen');
