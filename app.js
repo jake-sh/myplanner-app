@@ -306,7 +306,10 @@ function updatePlanDate() {
 }
 
 // ── SCREEN ─────────────────────────────────────────
+var _PROTECTED_SCREENS = ['planApp','todoScreen','memoScreen','memoEditorScreen','calendarScreen','statsScreen','chatApp','settingsScreen','tagScreen','planFeature','patternSetup'];
 function showScreen(id) {
+  // 로그인 안 된 상태에서 보호 화면 접근 시 loginScreen으로 강제 전환
+  if (!currentUser && _PROTECTED_SCREENS.indexOf(id) >= 0) id = 'loginScreen';
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   if (id !== 'planApp') {
