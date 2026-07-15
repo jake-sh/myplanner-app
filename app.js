@@ -231,7 +231,14 @@ window.addEventListener('DOMContentLoaded', () => {
   // 2. 날짜/시계
   updatePlanDate();
   startClock();
-  // 3. 화면 표시 — 항상 loginScreen 먼저, onAuthStateChanged가 planApp으로 전환
+  // 3. 화면 표시 — loginScreen 엘리먼트 없으면 구버전 HTML 캐시 → 강제 재로드
+  if (!document.getElementById('loginScreen')) {
+    if (!sessionStorage.getItem('_forceReloaded')) {
+      sessionStorage.setItem('_forceReloaded', '1');
+      window.location.href = window.location.href.split('?')[0] + '?_r=' + Date.now();
+    }
+    return;
+  }
   showScreen('loginScreen');
 
   // 3-1. 공유 인텐트 처리 (다른 앱에서 텍스트 공유로 들어온 경우)
@@ -310,8 +317,10 @@ var _PROTECTED_SCREENS = ['planApp','todoScreen','memoScreen','memoEditorScreen'
 function showScreen(id) {
   // 로그인 안 된 상태에서 보호 화면 접근 시 loginScreen으로 강제 전환
   if (!currentUser && _PROTECTED_SCREENS.indexOf(id) >= 0) id = 'loginScreen';
+  var target = document.getElementById(id);
+  if (!target) return; // 엘리먼트 없으면 무시 (구버전 HTML 캐시 대응)
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+  target.classList.add('active');
   if (id !== 'planApp') {
     history.pushState({ screen: id }, '', '');
   }
