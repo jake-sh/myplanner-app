@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 인증된 사용자의 myCode를 userCodes 컬렉션에서 조회
+    function getMyCode() {
+      return get(/databases/$(database)/documents/userCodes/$(request.auth.uid)).data.myCode;
+    }
+
+    // 공유 문서 ID(sid)에 내 코드가 포함되어 있는지 확인
+    function isParty(sid, sep) {
+      let parts = sid.split(sep);
+      let mc = getMyCode();
+      return parts[0] == mc || parts[1] == mc;
+    }
+
+    // UID ↔ myCode 매핑 (자기 자신만 읽기/쓰기)
+    match /userCodes/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // 사용자 프로필 (자기 코드만)
+    match /users/{code} {
+      allow read, write: if request.auth != null && getMyCode() == code;
+    }
+
+    // 할 일 공유 문서 (codeA_todo_codeB)
+    match /todos/{sid} {
+      allow read, write: if request.auth != null && isParty(sid, '_todo_');
+    }
+
+    // 메모 공유 문서 (codeA_memo_codeB)
+    match /memos_shared/{sid} {
+      allow read, write: if request.auth != null && isParty(sid, '_memo_');
+    }
+
+    // 달력 공유 문서 (codeA_cal_codeB)
+    match /calendars/{sid} {
+      allow read, write: if request.auth != null && isParty(sid, '_cal_');
+    }
+
+    // 통계 공유 문서 (codeA_stat_codeB)
+    match /stats/{sid} {
+      allow read, write: if request.auth != null && isParty(sid, '_stat_');
+    }
+
+    // 채팅방 (codeA_codeB)
+    match /rooms/{roomId} {
+      allow read, write: if request.auth != null && isParty(roomId, '_');
+      match /messages/{msgId} {
+        allow read, write: if request.auth != null && isParty(roomId, '_');
+      }
+    }
+
+    // 친구 요청 (to/from 필드로 관여 여부 확인)
+    match /shareRequests/{docId} {
+      allow read: if request.auth != null && (
+        resource.data.to == getMyCode() || resource.data.from == getMyCode()
+      );
+      allow write: if request.auth != null && (
+        request.resource.data.to == getMyCode() || request.resource.data.from == getMyCode()
+      );
+      allow delete: if request.auth != null;
+    }
+
+    // 백업 (자기 코드만)
+    match /backups/{code} {
+      allow read, write: if request.auth != null && getMyCode() == code;
+    }
+
+    // 패턴 인덱스 (인증된 사용자 누구나 — 코드 복원용)
+    match /patternIndex/{hash} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

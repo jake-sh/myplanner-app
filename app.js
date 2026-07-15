@@ -12,9 +12,16 @@ const db = firebase.firestore();
 const auth = firebase.auth();
 const storage = firebase.storage();
 
-auth.signInAnonymously().catch(e => console.log('Auth error:', e));
 let currentUser = null;
-auth.onAuthStateChanged(user => { currentUser = user; });
+auth.onAuthStateChanged(async user => {
+  currentUser = user;
+  if (!user) {
+    if (document.readyState !== 'loading') showScreen('loginScreen');
+    return;
+  }
+  await linkUidToMyCode(user.uid);
+  if (document.readyState !== 'loading') showScreen('planApp');
+});
 
 // ── STATE ──────────────────────────────────────────
 const DEFAULT_PATTERN = [0,1,2,5,4,7,8];
@@ -57,6 +64,73 @@ let deleteTimers = {}, countdownTimers = {}, qrScanner = null;
 let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
 let editingMemoIndex = null;
 
+// ── 로그인 (ID → 내부적으로 id@myplanner.app 이메일로 변환) ────────────────
+function _idToEmail(id) { return id.trim().toLowerCase() + '@myplanner.app'; }
+
+async function loginWithId() {
+  var id = (document.getElementById('loginId').value || '').trim();
+  var pw = document.getElementById('loginPw').value || '';
+  var msgEl = document.getElementById('loginMsg');
+  msgEl.textContent = '';
+  if (!id || !pw) { msgEl.textContent = 'ID와 비밀번호를 입력하세요.'; return; }
+  try {
+    document.getElementById('loginBtn').disabled = true;
+    await auth.signInWithEmailAndPassword(_idToEmail(id), pw);
+  } catch(e) {
+    var code = e.code || '';
+    if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+      msgEl.textContent = 'ID 또는 비밀번호가 올바르지 않습니다.';
+    } else {
+      msgEl.textContent = '로그인 실패: ' + (e.message || code);
+    }
+    document.getElementById('loginBtn').disabled = false;
+  }
+}
+
+async function registerWithId() {
+  var id = (document.getElementById('loginId').value || '').trim();
+  var pw = document.getElementById('loginPw').value || '';
+  var msgEl = document.getElementById('loginMsg');
+  msgEl.textContent = '';
+  if (!id || !pw) { msgEl.textContent = 'ID와 비밀번호를 입력하세요.'; return; }
+  if (!/^[a-z0-9_]{3,20}$/.test(id)) { msgEl.textContent = 'ID는 영문 소문자·숫자·밑줄, 3~20자로 입력하세요.'; return; }
+  if (pw.length < 6) { msgEl.textContent = '비밀번호는 6자 이상이어야 합니다.'; return; }
+  try {
+    document.getElementById('registerBtn').disabled = true;
+    await auth.createUserWithEmailAndPassword(_idToEmail(id), pw);
+  } catch(e) {
+    var code = e.code || '';
+    if (code === 'auth/email-already-in-use') {
+      msgEl.textContent = '이미 사용 중인 ID입니다.';
+    } else {
+      msgEl.textContent = '회원가입 실패: ' + (e.message || code);
+    }
+    document.getElementById('registerBtn').disabled = false;
+  }
+}
+
+async function logoutApp() {
+  if (!confirm('로그아웃하시겠습니까?')) return;
+  try { await auth.signOut(); } catch(e) {}
+}
+
+async function linkUidToMyCode(uid) {
+  if (!uid) return;
+  try {
+    var snap = await db.collection('userCodes').doc(uid).get();
+    if (snap.exists && snap.data().myCode) {
+      var stored = snap.data().myCode;
+      if (stored !== myCode) {
+        myCode = stored;
+        localStorage.setItem('myCode', myCode);
+      }
+    } else if (myCode) {
+      await db.collection('userCodes').doc(uid).set({ myCode: myCode });
+      await db.collection('users').doc(myCode).set({ uid: uid }, { merge: true });
+    }
+  } catch(e) { console.log('[linkUid] error:', e.message); }
+}
+
 // ── localStorage.setItem 래퍼: 백업 대상 키 변경 시 자동 백업 스케줄 ──
 // BACKUP_KEYS는 아래쪽에 정의되어 있어 런타임 참조 시점엔 존재함
 (function() {
@@ -65,10 +139,15 @@ let editingMemoIndex = null;
     var result = origSetItem.apply(this, arguments);
     try {
       // myCode가 있고, 백업 대상 키인 경우에만 스케줄
-      if (this === window.localStorage && typeof myCode !== 'undefined' && myCode &&
-          typeof BACKUP_KEYS !== 'undefined' && BACKUP_KEYS.indexOf(key) >= 0 &&
-          typeof scheduleBackup === 'function') {
-        scheduleBackup();
+      if (this === window.localStorage) {
+        if (key === 'myCode' && value && currentUser && typeof linkUidToMyCode === 'function') {
+          linkUidToMyCode(currentUser.uid);
+        }
+        if (typeof myCode !== 'undefined' && myCode &&
+            typeof BACKUP_KEYS !== 'undefined' && BACKUP_KEYS.indexOf(key) >= 0 &&
+            typeof scheduleBackup === 'function') {
+          scheduleBackup();
+        }
       }
     } catch(e) {}
     return result;
@@ -138,8 +217,8 @@ window.addEventListener('DOMContentLoaded', () => {
   // 2. 날짜/시계
   updatePlanDate();
   startClock();
-  // 3. 화면 표시
-  showScreen('planApp');
+  // 3. 화면 표시 (인증 상태에 따라 결정, onAuthStateChanged가 최종 처리)
+  showScreen(currentUser ? 'planApp' : 'loginScreen');
 
   // 3-1. 공유 인텐트 처리 (다른 앱에서 텍스트 공유로 들어온 경우)
   // 메인 화면을 띄운 직후에 호출 → 백그라운드 동작처럼 보이며 즉시 닫힘 시도
