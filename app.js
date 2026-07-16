@@ -5084,7 +5084,7 @@ function renderStatsUI() {
   Object.keys(STAT_CATS).forEach(function(k) {
     var c = STAT_CATS[k];
     var active = (k === curSC);
-    var hasDot = data[k] && data[k].length > 0 && k !== 'weight' && k !== 'weight2';
+    var hasDot = data[k] && data[k].length > 0 && k !== 'weight' && k !== 'weight2' && k !== 'steps' && k !== 'exercise';
     var bg = active ? "var(--primary)" : "var(--card,#f1f5f9)";
     var col = active ? "#fff" : "var(--text,#334155)";
     var btn = document.createElement("button");
