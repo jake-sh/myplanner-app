@@ -180,7 +180,60 @@ function initLoginScreen() {
 
 async function logoutApp() {
   if (!confirm('로그아웃하시겠습니까?')) return;
+  // 다른 계정 로그인 시 이전 사용자 myCode가 남지 않도록 즉시 제거
+  myCode = '';
+  friends = [];
+  localStorage.removeItem('myCode');
+  localStorage.removeItem('friends');
+  savedPattern = [...DEFAULT_PATTERN];
+  localStorage.setItem('secPattern', JSON.stringify(savedPattern));
   try { await auth.signOut(); } catch(e) {}
+}
+
+async function changePassword() {
+  if (!currentUser) return;
+  var isDark = document.body.classList.contains('dark-mode');
+  var boxBg = isDark ? '#1A1A1A' : '#fff';
+  var boxBd = isDark ? '#3A3A3A' : '#e2e8f0';
+  var textCl = isDark ? '#F1F1F1' : '#1e293b';
+  var cancelBg = isDark ? '#2A2A2A' : '#f1f5f9';
+  var inpSt = 'width:100%;padding:10px;border-radius:10px;border:1.5px solid ' + boxBd + ';font-size:15px;margin-bottom:12px;box-sizing:border-box;background:' + boxBg + ';color:' + textCl + ';';
+
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  ov.innerHTML = '<div style="background:' + boxBg + ';border:1.5px solid ' + boxBd + ';border-radius:20px;padding:24px;width:85%;max-width:320px;">'
+    + '<div style="font-size:16px;font-weight:700;margin-bottom:16px;color:' + textCl + ';">' + __T('Change Password','비밀번호 변경','修改密码','パスワード変更') + '</div>'
+    + '<input id="_cpCur" type="password" placeholder="' + __T('Current password','현재 비밀번호','当前密码','現在のパスワード') + '" style="' + inpSt + '"/>'
+    + '<input id="_cpNew" type="password" placeholder="' + __T('New password (6+ chars)','새 비밀번호 (6자 이상)','新密码 (6位以上)','新しいパスワード (6文字以上)') + '" style="' + inpSt + '"/>'
+    + '<input id="_cpNew2" type="password" placeholder="' + __T('Confirm new password','새 비밀번호 확인','确认新密码','新しいパスワード確認') + '" style="' + inpSt + '"/>'
+    + '<div id="_cpMsg" style="font-size:12px;color:#e55;margin-bottom:10px;min-height:16px;"></div>'
+    + '<button id="_cpSave" style="width:100%;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:8px;">' + __T('Save','저장','保存','保存') + '</button>'
+    + '<button id="_cpCancel" style="width:100%;padding:10px;background:' + cancelBg + ';color:' + textCl + ';border:none;border-radius:12px;font-size:14px;cursor:pointer;">' + __T('Cancel','취소','取消','キャンセル') + '</button>'
+    + '</div>';
+  document.body.appendChild(ov);
+  document.getElementById('_cpCancel').addEventListener('click', function() { ov.remove(); });
+  document.getElementById('_cpSave').addEventListener('click', async function() {
+    var cur = document.getElementById('_cpCur').value;
+    var nw  = document.getElementById('_cpNew').value;
+    var nw2 = document.getElementById('_cpNew2').value;
+    var msg = document.getElementById('_cpMsg');
+    if (!cur || !nw || !nw2) { msg.textContent = __T('Fill in all fields','모든 항목을 입력하세요','请填写所有项目','すべて入力してください'); return; }
+    if (nw.length < 6)        { msg.textContent = __T('Password too short (6+ chars)','비밀번호가 너무 짧아요 (6자 이상)','密码太短 (6位以上)','パスワードが短すぎます'); return; }
+    if (nw !== nw2)           { msg.textContent = __T('Passwords do not match','새 비밀번호가 일치하지 않아요','新密码不一致','新しいパスワードが一致しません'); return; }
+    try {
+      var cred = firebase.auth.EmailAuthProvider.credential(currentUser.email, cur);
+      await currentUser.reauthenticateWithCredential(cred);
+      await currentUser.updatePassword(nw);
+      ov.remove();
+      showAlert(__T('Password changed','비밀번호가 변경됐습니다','密码已修改','パスワードを変更しました'));
+    } catch(e) {
+      if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+        msg.textContent = __T('Current password incorrect','현재 비밀번호가 틀렸어요','当前密码不正确','現在のパスワードが違います');
+      } else {
+        msg.textContent = e.message || e.code;
+      }
+    }
+  });
 }
 
 async function deleteAccount() {
@@ -210,8 +263,22 @@ async function linkUidToMyCode(uid) {
       if (stored !== myCode) {
         myCode = stored;
         localStorage.setItem('myCode', myCode);
+        // 다른 사용자 계정으로 전환 시 패턴 초기화 (이전 사용자 패턴 재사용 방지)
+        savedPattern = [...DEFAULT_PATTERN];
+        localStorage.setItem('secPattern', JSON.stringify(savedPattern));
       }
     } else if (myCode) {
+      // 이 myCode가 이미 다른 uid에 귀속되어 있는지 확인 (보안: 이전 사용자 myCode 도용 방지)
+      try {
+        var userSnap = await db.collection('users').doc(myCode).get();
+        var existingUid = userSnap.exists ? (userSnap.data().uid || null) : null;
+        if (existingUid && existingUid !== uid) {
+          // 다른 사람 코드 → 내 localStorage에서 제거
+          myCode = '';
+          localStorage.removeItem('myCode');
+          return;
+        }
+      } catch(e) {}
       await db.collection('userCodes').doc(uid).set({ myCode: myCode });
       await db.collection('users').doc(myCode).set({ uid: uid }, { merge: true });
     }
@@ -532,18 +599,20 @@ function onDragEnd() {
 }
 
 function checkDot(x, y) {
+  var hoveredDot = null;
   document.querySelectorAll('#menuGrid .menu-item').forEach(item => {
     const r = item.getBoundingClientRect();
     const cx = r.left + r.width / 2;
     const cy = r.top + r.height / 2;
     if (Math.hypot(x - cx, y - cy) <= 24) {
       const d = parseInt(item.dataset.dot);
-      if (!currentPattern.includes(d)) {
-        currentPattern.push(d);
-        highlightDot(d, true);
-      }
+      if (!currentPattern.includes(d)) currentPattern.push(d);
+      hoveredDot = d;
     }
   });
+  // 지나간 자리는 끄고 현재 터치 중인 dot만 표시
+  clearDots();
+  if (hoveredDot !== null) highlightDot(hoveredDot, true);
 }
 
 function highlightDot(dot, on) {
@@ -2381,13 +2450,26 @@ function deleteMemo(id) {
   // 호환성: 숫자 인덱스도 받아줌
   showConfirm(__T('Delete memo?','메모를 삭제할까요?','删除备忘?','メモを削除しますか?'), function() {
     var memos = loadMemos();
+    var memoToDelete = null;
     if (typeof id === 'number') {
       // 인덱스: 정렬된 화면 기준이므로 그 정렬을 한 번 더 적용해야 동일 항목
       memos.sort(function(a,b) { return (b.ts||0) - (a.ts||0); });
+      memoToDelete = memos[id];
       memos.splice(id, 1);
     } else {
       var idx = memos.findIndex(function(m) { return m.id === id; });
-      if (idx >= 0) memos.splice(idx, 1);
+      if (idx >= 0) { memoToDelete = memos[idx]; memos.splice(idx, 1); }
+    }
+    // 메모 본문에 첨부된 Storage 이미지 삭제
+    if (memoToDelete && memoToDelete.body) {
+      var tmp = document.createElement('div');
+      tmp.innerHTML = memoToDelete.body;
+      tmp.querySelectorAll('img').forEach(function(img) {
+        var src = img.getAttribute('src') || '';
+        if (src.includes('firebasestorage')) {
+          try { storage.refFromURL(src).delete().catch(function(){}); } catch(e) {}
+        }
+      });
     }
     localStorage.setItem('memos', JSON.stringify(memos));
     // 내가 공유 중이던 메모를 지웠다면 Firestore에서도 회수
@@ -3111,59 +3193,30 @@ document.addEventListener('visibilitychange', function() {
   }
 });
 
-// ── 자동 복원 (캐시 손실 시 진입 시점에 호출) ──────────────────
+// ── 자동 복원 (myCode 없을 때 패턴 입력 시 호출) ──────────────────
 //
-// 호출 시점: 사용자가 패턴 입력 후 채팅 진입 시도 직전.
+// 계정 기반 전환 이후: 신원은 Firebase Auth(userCodes/{uid})로만 결정.
+// 패턴은 로컬 잠금 역할만 하며 서버 조회에 사용하지 않음.
+//
 // 반환 값:
-//   { action: 'enter',          ...상황별 부가 정보 }     → 채팅 진입 진행
-//   { action: 'askCode' }                                  → 마이코드 입력 모달 (신규 또는 후보 N명)
-//   { action: 'silent' }                                   → 조용히 무시 (비인가 사용자)
-//
-// 호출자는 enter면 진입, askCode면 모달, silent면 아무 동작 안 함.
+//   { action: 'enter', restored: true }  → Firebase Auth에서 myCode 복원 성공
+//   { action: 'enter' }                  → 신규 사용자 (chatSetup 진행)
+//   { action: 'silent' }                 → 로그인 안 된 상태 (방어용)
 
 async function tryAutoRestore(inputPattern) {
-  // 캐시에 myCode가 살아있으면 자동 복원 흐름 불필요 (호출자가 결정)
-  // 이 함수는 myCode 없을 때만 호출된다는 전제
+  // Firebase Auth 로그인 상태여야만 myCode를 결정할 수 있음
+  if (!currentUser) return { action: 'silent' };
 
-  // 마스터 패턴이면 → patternIndex 조회 먼저 시도 (기존 사용자 복원 우선)
-  // 조회 실패 or 없으면 → 신규 진입(chatSetup)으로 폴백
-  var hash = await patternToHash(inputPattern);
-  if (!hash) return { action: 'enter' }; // 해시 실패 시 신규 진입
+  // userCodes/{uid}에서 myCode 재조회 (네트워크 지연으로 아직 미설정인 경우 재시도)
+  await linkUidToMyCode(currentUser.uid);
 
-  try {
-    var snap = await db.collection('patternIndex').doc(hash).get();
-    var codes = snap.exists ? ((snap.data() || {}).codes || []) : [];
-
-    if (codes.length === 0) {
-      // patternIndex에 없음 = 신규 사용자 or 백업 미등록
-      // 마스터 패턴이면 신규 진입, 아니면 조용히 무시
-      return isMasterPattern(inputPattern)
-        ? { action: 'enter' }
-        : { action: 'silent' };
-    }
-
-    if (codes.length === 1) {
-      // 후보 단독 → 조용히 복원 시도
-      var ok = await _restoreCode(codes[0], hash);
-      if (ok) return { action: 'enter', restored: true };
-      // backups 문서가 없거나 해시 불일치 → users 문서로 확인
-      try {
-        var userSnap = await db.collection('users').doc(codes[0]).get();
-        if (userSnap.exists) {
-          localStorage.setItem('myCode', codes[0]);
-          setTimeout(function() { try { performBackup(); } catch(e){} }, 1000);
-          return { action: 'enter', restored: true };
-        }
-      } catch(e) {}
-      return isMasterPattern(inputPattern) ? { action: 'enter' } : { action: 'silent' };
-    }
-
-    // 후보 여러 명 → 코드 입력 모달
-    return { action: 'askCode', source: 'multi', candidates: codes, hash: hash };
-  } catch(e) {
-    console.log('[RESTORE] index lookup error:', e.message);
-    return isMasterPattern(inputPattern) ? { action: 'enter' } : { action: 'silent' };
+  if (myCode) {
+    // 복원 성공 → reload로 깔끔하게 재시작
+    return { action: 'enter', restored: true };
   }
+
+  // myCode 없음 = 이 계정으로 처음 진입 → chatSetup 안내
+  return { action: 'enter' };
 }
 
 // 마이코드 입력 후 처리. 패턴은 이미 입력된 상태(savedPattern)
@@ -4237,6 +4290,8 @@ function scheduleAutoDelete(msgId, data) {
   const delay = Math.max(0, target - Date.now());
   deleteTimers[msgId] = setTimeout(() => {
     db.collection('rooms').doc(chatRoomId).collection('messages').doc(msgId).delete().catch(() => {});
+    if (data.storagePath) storage.ref(data.storagePath).delete().catch(() => {});
+    if (data.storagePaths) data.storagePaths.forEach(p => storage.ref(p).delete().catch(() => {}));
     delete deleteTimers[msgId];
   }, delay);
 }
@@ -4929,13 +4984,15 @@ function openNaverMap() {
 
 // -- Health Stats --
 var STAT_CATS = {
-  weight:   { label: "체중",   labelEn: "Weight",   labelZh: "体重",     labelJa: "体重",   unit: "kg",    color: "#4A90D9", emoji: "⚖️",
+  weight:   { label: "체중1",  labelEn: "Weight1",  labelZh: "体重1",    labelJa: "体重1",  unit: "kg",    color: "#4A90D9", emoji: "⚖️",
+    svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v4l3 3"/></svg>' },
+  weight2:  { label: "체중2",  labelEn: "Weight2",  labelZh: "体重2",    labelJa: "体重2",  unit: "kg",    color: "#f472b6", emoji: "⚖️",
     svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v4l3 3"/></svg>' },
   bp:       { label: "혈압",   labelEn: "BP",       labelZh: "血压",     labelJa: "血圧",   unit: "mmHg",  color: "#ef4444", emoji: "🫀",
     svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>' },
   steps:    { label: "걸음수", labelEn: "Steps",    labelZh: "步数",     labelJa: "歩数",   unit: "steps", color: "#22c55e", emoji: "🚶",
     svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><path d="M12 7v6l3 4"/><path d="M9 17l-2 4"/><path d="M15 13l2 4"/></svg>' },
-  exercise: { label: "운동",   labelEn: "Exercise", labelZh: "运动",     labelJa: "運動",   unit: "min",   color: "#f59e0b", emoji: "🏃",
+  exercise: { label: "러닝",   labelEn: "Running",  labelZh: "跑步",     labelJa: "ランニング", unit: "km",  color: "#f59e0b", emoji: "🏃",
     svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4" r="2"/><path d="M15 8l-3 3-3-3"/><path d="M9 11l-3 6"/><path d="M15 11l3 6"/><path d="M9 17l3-4 3 4"/></svg>' }
 };
 
@@ -4957,6 +5014,14 @@ function statUnit(k) {
   return unitMap[u] || u;
 }
 var curSC = "weight";
+var statGender = localStorage.getItem('statGender') || 'M';
+var _smEditCat = null, _smEditIdx = null, _smEditEntry = null;
+
+function weightDisplay(entry) {
+  var v = parseFloat(entry.value);
+  if (!entry.gender || entry.gender === statGender) return v;
+  return v + (statGender === 'M' ? 20 : -20);
+}
 
 function getSharedStatId() {
   if (!myCode) return null;
@@ -5012,12 +5077,13 @@ function renderStatsUI() {
   var boxBd   = isDark ? '#2A2A2A' : '#ECEEF8';
   var titleCl = isDark ? '#F1F1F1' : '#1e293b';
   var dateCl  = isDark ? '#334155' : '#334155';
+  var btnSt   = "background:var(--primary);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;";
 
   var tabHtml = '<div style="display:flex;flex-wrap:nowrap;gap:8px;padding:4px 0 16px;overflow-x:auto;">';
   Object.keys(STAT_CATS).forEach(function(k) {
     var c = STAT_CATS[k];
     var active = (k === curSC);
-    var hasDot = data[k] && data[k].length > 0;
+    var hasDot = data[k] && data[k].length > 0 && k !== 'weight' && k !== 'weight2';
     var bg = active ? "var(--primary)" : "var(--card,#f1f5f9)";
     var col = active ? "#fff" : "var(--text,#334155)";
     var btn = document.createElement("button");
@@ -5028,23 +5094,51 @@ function renderStatsUI() {
   });
   tabHtml += "</div>";
 
-  var addHtml = '<div style="text-align:right;margin-bottom:12px;"><button id="openSmBtn" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;">' + (__T('+ Add','+ 입력','+ 添加','+ 入力')) + '</button></div>';
+  var isWeightTab = curSC === 'weight' || curSC === 'weight2';
+  var genderBtn = isWeightTab
+    ? '<button id="statGenderBtn" style="' + btnSt + '">' + statGender + '</button>'
+    : '<div></div>';
+  var addHtml = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">'
+    + genderBtn
+    + '<button id="openSmBtn" style="' + btnSt + '">' + __T('+ Add','+ 입력','+ 添加','+ 入力') + '</button>'
+    + '</div>';
 
-  var chartHtml = '<div style="background:' + boxBg + ';border:1.5px solid ' + boxBd + ';border-radius:16px;padding:16px;margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:' + titleCl + ';">' + cat.emoji + ' ' + statLabel(curSC) + '</div><div style="font-size:11px;color:#334155;margin-bottom:12px;">' + (__T('Unit: ','단위: ','单位: ','単位: ')) + statUnit(curSC) + '</div>';
+  var chartHtml = '<div style="background:' + boxBg + ';border:1.5px solid ' + boxBd + ';border-radius:16px;padding:16px;margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:' + titleCl + ';">' + cat.emoji + ' ' + statLabel(curSC) + '</div><div style="font-size:11px;color:#334155;margin-bottom:12px;">' + __T('Unit: ','단위: ','单位: ','単位: ') + statUnit(curSC) + '</div>';
   if (entries.length === 0) {
     chartHtml += '<div style="text-align:center;color:#334155;font-size:13px;padding:30px 0;">데이터가 없어요.<br>+ 입력으로 추가해보세요!</div>';
   } else {
-    chartHtml += '<canvas id="sCanvas" style="width:100%;"></canvas>';
+    chartHtml += '<div id="sCanvasWrap" style="overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;width:100%;"><canvas id="sCanvas"></canvas></div>';
   }
   chartHtml += "</div>";
 
-  var listHtml = '<div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:8px;">' + (__T('Recent Records','최근 기록','最近记录','最近の記録')) + '</div>';
+  var listHtml = '<div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:8px;">' + __T('Recent Records','최근 기록','最近记录','最近の記録') + (curSC === 'weight' ? ' <span style="font-size:11px;font-weight:400;color:#94a3b8;">(길게 눌러 수정)</span>' : '') + '</div>';
   entries.slice().reverse().slice(0,10).forEach(function(e, i) {
     var origIdx = entries.length - 1 - i;
-    var valDisplay = (curSC === 'bp' && e.dia != null)
-      ? '<span style="font-size:15px;font-weight:700;color:' + cat.color + ';">' + e.value + '/' + e.dia + ' <small style="font-size:11px;color:#334155;">mmHg</small></span>'
-      : '<span style="font-size:15px;font-weight:700;color:' + cat.color + ';">' + e.value + ' <small style="font-size:11px;color:#334155;">' + cat.unit + '</small></span>';
-    var row = '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:' + boxBg + ';border:1.5px solid ' + boxBd + ';border-radius:12px;margin-bottom:6px;">'
+    var valDisplay;
+    if (curSC === 'bp' && e.dia != null) {
+      valDisplay = '<span style="font-size:15px;font-weight:700;color:' + cat.color + ';">' + e.value + '/' + e.dia + ' <small style="font-size:11px;color:#334155;">mmHg</small></span>';
+    } else if (curSC === 'exercise') {
+      var runDist = e.dist || e.value || 0;
+      var runTotalSec = (e.timeMin||0)*60 + (e.timeSec||0);
+      var runTimeStr = (e.timeMin!=null) ? ((e.timeMin||0) + ':' + String(e.timeSec||0).padStart(2,'0')) : '';
+      var runPace = '', runSpeed = '';
+      if (runDist && runTotalSec) {
+        var paceSec = runTotalSec / runDist;
+        var pm = Math.floor(paceSec/60), ps = Math.round(paceSec%60);
+        if (ps===60){pm++;ps=0;}
+        runPace = pm + "'" + String(ps).padStart(2,'0') + '"';
+        runSpeed = (runDist/(runTotalSec/3600)).toFixed(1) + 'km/h';
+      }
+      valDisplay = '<div style="text-align:right;">'
+        + '<span style="font-size:15px;font-weight:700;color:' + cat.color + ';">' + parseFloat(runDist).toFixed(2) + ' <small style="font-size:11px;color:#334155;">km</small></span>'
+        + (runTimeStr ? '<div style="font-size:11px;color:#334155;margin-top:2px;">' + runTimeStr + (runPace ? ' | ' + runPace + '/km' : '') + (runSpeed ? ' | ' + runSpeed : '') + '</div>' : '')
+        + '</div>';
+    } else {
+      var dv = isWeightTab ? weightDisplay(e) : parseFloat(e.value);
+      var dvStr = Number.isInteger(dv) ? String(dv) : dv.toFixed(1);
+      valDisplay = '<span style="font-size:15px;font-weight:700;color:' + cat.color + ';">' + dvStr + ' <small style="font-size:11px;color:#334155;">' + cat.unit + '</small></span>';
+    }
+    var row = '<div data-editcat="' + curSC + '" data-editidx="' + origIdx + '" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:' + boxBg + ';border:1.5px solid ' + boxBd + ';border-radius:12px;margin-bottom:6px;">'
       + '<span style="font-size:13px;color:' + dateCl + ';">' + e.date + '</span>'
       + valDisplay
       + '<button data-dcat="' + curSC + '" data-didx="' + origIdx + '" style="background:none;border:none;color:#cbd5e1;font-size:20px;cursor:pointer;">×</button>'
@@ -5054,29 +5148,63 @@ function renderStatsUI() {
 
   fc.innerHTML = '<div style="padding:16px;">' + tabHtml + addHtml + chartHtml + listHtml + '</div>';
 
-  // 이벤트 바인딩
+  // 탭 버튼
   fc.querySelectorAll("[data-scat]").forEach(function(btn) {
     btn.addEventListener("click", function() { curSC = this.getAttribute("data-scat"); renderStatsUI(); });
   });
+  // 삭제 버튼
   fc.querySelectorAll("[data-dcat]").forEach(function(btn) {
-    btn.addEventListener("click", function() {
+    btn.addEventListener("click", function(ev) {
+      ev.stopPropagation();
       delSE(this.getAttribute("data-dcat"), parseInt(this.getAttribute("data-didx")));
     });
   });
+  // +Add 버튼
   var smBtn = document.getElementById("openSmBtn");
-  if (smBtn) smBtn.addEventListener("click", openSM);
+  if (smBtn) smBtn.addEventListener("click", function() { _smEditCat = null; _smEditIdx = null; _smEditEntry = null; openSM(); });
+  // 성별 토글 버튼
+  var gBtn = document.getElementById("statGenderBtn");
+  if (gBtn) gBtn.addEventListener("click", function() {
+    statGender = statGender === 'M' ? 'F' : 'M';
+    localStorage.setItem('statGender', statGender);
+    renderStatsUI();
+  });
+  // 길게 눌러 수정 (체중만)
+  var _lpTimer = null;
+  fc.querySelectorAll("[data-editcat]").forEach(function(row) {
+    row.addEventListener('touchstart', function() {
+      var c = this.getAttribute('data-editcat');
+      var idx = parseInt(this.getAttribute('data-editidx'));
+      _lpTimer = setTimeout(function() { editSE(c, idx); }, 500);
+    }, { passive: true });
+    row.addEventListener('touchend', function() { clearTimeout(_lpTimer); _lpTimer = null; }, { passive: true });
+    row.addEventListener('touchmove', function() { clearTimeout(_lpTimer); _lpTimer = null; }, { passive: true });
+  });
 
+  // 그래프: 전체 기간 + 체중 성별 보정 (포인트 간격 고정, 가로 스크롤)
   if (entries.length > 0) {
+    var chartEntries = entries.slice(); // 전체
+    if (isWeightTab) {
+      chartEntries = chartEntries.map(function(e) {
+        return Object.assign({}, e, { value: weightDisplay(e) });
+      });
+    }
     setTimeout(function() {
       var canvas = document.getElementById("sCanvas");
-      if (canvas) drawSC(canvas, entries, cat);
+      if (canvas) drawSC(canvas, chartEntries, cat);
     }, 50);
   }
 }
 
 function drawSC(canvas, entries, cat) {
   var dpr = window.devicePixelRatio || 1;
-  var W = canvas.parentElement.clientWidth - 32;
+  var wrap = canvas.parentElement; // sCanvasWrap (overflow-x:auto)
+  var visibleW = wrap.clientWidth;
+  var MIN_GAP = 55; // 포인트 간 최소 간격(px)
+  var pL=40,pR=20;
+  var W = entries.length > 1
+    ? Math.max(visibleW, (entries.length - 1) * MIN_GAP + pL + pR)
+    : visibleW;
   var H = 160;
   canvas.width = W * dpr;
   canvas.height = H * dpr;
@@ -5084,7 +5212,7 @@ function drawSC(canvas, entries, cat) {
   canvas.style.height = H + "px";
   var ctx = canvas.getContext("2d");
   ctx.scale(dpr, dpr);
-  var pL=40,pR=10,pT=12,pB=24,gW=W-pL-pR,gH=H-pT-pB;
+  var pT=12,pB=24,gW=W-pL-pR,gH=H-pT-pB;
 
   // 혈압: sys(수축) + dia(이완) 두 라인
   var isBp = (curSC === 'bp');
@@ -5101,19 +5229,41 @@ function drawSC(canvas, entries, cat) {
     ctx.fillText((mx-(rng/4)*g).toFixed(1),pL-3,gy+3);
   }
 
-  function drawLine(vals, color, dashed) {
-    var pts = entries.map(function(e,i){return{
-      x:pL+(entries.length>1?(gW/(entries.length-1))*i:gW/2),
-      y:pT+gH-((vals[i]-mn)/rng)*gH
+  // 부드러운 곡선 경로 생성 (Catmull-Rom → Bezier 변환)
+  function smoothPath(pts) {
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (var i = 0; i < pts.length - 1; i++) {
+      var p0 = pts[i > 0 ? i - 1 : 0];
+      var p1 = pts[i];
+      var p2 = pts[i + 1];
+      var p3 = pts[i < pts.length - 2 ? i + 2 : i + 1];
+      var cp1x = p1.x + (p2.x - p0.x) / 6;
+      var cp1y = p1.y + (p2.y - p0.y) / 6;
+      var cp2x = p2.x - (p3.x - p1.x) / 6;
+      var cp2y = p2.y - (p3.y - p1.y) / 6;
+      ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+    }
+  }
+
+  function makePts(vals) {
+    return entries.map(function(e,i){return{
+      x: pL + (entries.length > 1 ? (gW / (entries.length - 1)) * i : gW / 2),
+      y: pT + gH - ((vals[i] - mn) / rng) * gH
     };});
+  }
+
+  function drawLine(vals, color, dashed) {
+    var pts = makePts(vals);
     ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.lineJoin="round";
     if(dashed) ctx.setLineDash([4,4]); else ctx.setLineDash([]);
-    pts.forEach(function(p,i){i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);});
+    if (pts.length === 1) { ctx.moveTo(pts[0].x, pts[0].y); ctx.lineTo(pts[0].x, pts[0].y); }
+    else smoothPath(pts);
     ctx.stroke();ctx.setLineDash([]);
     pts.forEach(function(p,i){
       ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);
       ctx.fillStyle="#1A1A1A";ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=2;ctx.stroke();
-      if(entries.length<=7||i%Math.ceil(entries.length/6)===0){
+      // 날짜 라벨: 간격 넓으면 전체 표시, 촘촘하면 일부만
+      if(entries.length<=10 || i%Math.ceil(entries.length/8)===0){
         ctx.fillStyle="#334155";ctx.font="8px sans-serif";ctx.textAlign="center";
         ctx.fillText(entries[i].date.slice(5),p.x,H-2);
       }
@@ -5121,25 +5271,28 @@ function drawSC(canvas, entries, cat) {
   }
 
   if(isBp){
-    drawLine(entries.map(function(e){return parseFloat(e.value);}), "#ef4444", false);  // 수축
-    drawLine(entries.map(function(e){return parseFloat(e.dia||0);}), "#f97316", true);  // 이완
+    drawLine(entries.map(function(e){return parseFloat(e.value);}), "#ef4444", false);
+    drawLine(entries.map(function(e){return parseFloat(e.dia||0);}), "#f97316", true);
   } else {
     var gr=ctx.createLinearGradient(0,pT,0,pT+gH);
     gr.addColorStop(0,cat.color+"44");gr.addColorStop(1,cat.color+"00");
     var vals=entries.map(function(e){return parseFloat(e.value);});
-    var pts=entries.map(function(e,i){return{
-      x:pL+(entries.length>1?(gW/(entries.length-1))*i:gW/2),
-      y:pT+gH-((parseFloat(e.value)-mn)/rng)*gH
-    };});
-    ctx.beginPath();ctx.moveTo(pts[0].x,pT+gH);
-    pts.forEach(function(p){ctx.lineTo(p.x,p.y);});
-    ctx.lineTo(pts[pts.length-1].x,pT+gH);ctx.closePath();
+    var pts=makePts(vals);
+    // 곡선 fill
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pT+gH);
+    ctx.lineTo(pts[0].x, pts[0].y);
+    if (pts.length > 1) smoothPath(pts);
+    ctx.lineTo(pts[pts.length-1].x, pT+gH);
+    ctx.closePath();
     ctx.fillStyle=gr;ctx.fill();
     drawLine(vals, cat.color, false);
   }
+  // 최신 데이터가 오른쪽에 보이도록 스크롤
+  wrap.scrollLeft = wrap.scrollWidth;
 }
 
-function openSM() {
+function openSM(prefillEntry) {
   var isDark = document.body.classList.contains('dark-mode');
   var boxBg  = isDark ? '#1A1A1A' : '#fff';
   var boxBd  = isDark ? '#2A2A2A' : '#e2e8f0';
@@ -5175,8 +5328,29 @@ function openSM() {
 
   document.body.appendChild(overlay);
   smCatChange();
+  // 수정 모드: 기존 값 프리필
+  if (prefillEntry) {
+    var catSel = document.getElementById("smCat");
+    if (catSel && _smEditCat) { catSel.value = _smEditCat; smCatChange(); }
+    var dateEl = document.getElementById("smDate");
+    if (dateEl) dateEl.value = prefillEntry.date;
+    if (_smEditCat === 'exercise') {
+      var distEl = document.getElementById("smRunDist");
+      var minEl  = document.getElementById("smRunMin");
+      var secEl  = document.getElementById("smRunSec");
+      if (distEl) distEl.value = prefillEntry.dist || prefillEntry.value || '';
+      if (minEl)  minEl.value  = prefillEntry.timeMin || 0;
+      if (secEl)  secEl.value  = prefillEntry.timeSec || 0;
+    } else {
+      var valEl = document.getElementById("smVal");
+      if (valEl) valEl.value = prefillEntry.value;
+    }
+  }
   document.getElementById("smSaveBtn").addEventListener("click", saveSE);
-  document.getElementById("smCancelBtn").addEventListener("click", function(){ overlay.remove(); });
+  document.getElementById("smCancelBtn").addEventListener("click", function(){
+    _smEditCat = null; _smEditIdx = null; _smEditEntry = null;
+    overlay.remove();
+  });
 }
 
 function smCatChange() {
@@ -5197,6 +5371,18 @@ function smCatChange() {
       + '<div style="flex:1;"><div style="font-size:11px;color:' + subCl + ';margin-bottom:4px;">이완기</div>'
       + '<input id="smValDia" type="number" step="1" placeholder="80" style="' + inpStyle + '"/></div>'
       + '</div>';
+  } else if (cat === 'exercise') {
+    wrap.innerHTML = '<div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:12px;">'
+      + '<div style="flex:1;"><div style="font-size:11px;color:' + subCl + ';margin-bottom:4px;">거리</div>'
+      + '<input id="smRunDist" type="number" step="0.01" min="0" placeholder="5.00" style="' + inpStyle + '"/></div>'
+      + '<div style="font-size:14px;font-weight:600;color:' + textCl + ';padding-bottom:10px;">km</div>'
+      + '</div>'
+      + '<div style="margin-bottom:12px;"><div style="font-size:11px;color:' + subCl + ';margin-bottom:4px;">시간 (분 : 초)</div>'
+      + '<div style="display:flex;gap:6px;align-items:center;">'
+      + '<input id="smRunMin" type="number" step="1" min="0" placeholder="30" style="' + inpStyle + 'width:0;flex:1;text-align:center;"/>'
+      + '<span style="font-size:20px;font-weight:700;color:' + textCl + ';">:</span>'
+      + '<input id="smRunSec" type="number" step="1" min="0" max="59" placeholder="00" style="' + inpStyle + 'width:0;flex:1;text-align:center;"/>'
+      + '</div></div>';
   } else {
     wrap.innerHTML = '<input id="smVal" type="number" step="0.1" placeholder="수치 입력" style="' + inpStyle + 'margin-bottom:12px;"/>';
   }
@@ -5208,15 +5394,36 @@ function saveSE() {
   var data = getSD();
   if (!data[cat]) data[cat] = [];
 
+  var newEntry;
   if (cat === 'bp') {
-    var sys = document.getElementById("smValSys")?.value.trim();
-    var dia = document.getElementById("smValDia")?.value.trim();
+    var sys = document.getElementById("smValSys") ? document.getElementById("smValSys").value.trim() : '';
+    var dia = document.getElementById("smValDia") ? document.getElementById("smValDia").value.trim() : '';
     if (!sys || !dia || !date) { showAlert("수치와 날짜를 입력해주세요"); return; }
-    data[cat].push({ value: parseFloat(sys), dia: parseFloat(dia), date: date });
+    newEntry = { value: parseFloat(sys), dia: parseFloat(dia), date: date };
+  } else if (cat === 'exercise') {
+    var distVal = document.getElementById("smRunDist") ? parseFloat(document.getElementById("smRunDist").value) : NaN;
+    var runMin  = document.getElementById("smRunMin")  ? parseInt(document.getElementById("smRunMin").value)  : 0;
+    var runSec  = document.getElementById("smRunSec")  ? parseInt(document.getElementById("smRunSec").value)  : 0;
+    if (isNaN(distVal) || distVal <= 0 || !date) { showAlert("거리와 날짜를 입력해주세요"); return; }
+    if (isNaN(runMin)) runMin = 0;
+    if (isNaN(runSec)) runSec = 0;
+    newEntry = { value: distVal, dist: distVal, timeMin: runMin, timeSec: runSec, date: date };
   } else {
-    var val = document.getElementById("smVal")?.value.trim();
+    var valEl = document.getElementById("smVal");
+    var val = valEl ? valEl.value.trim() : '';
     if (!val || !date) { showAlert("수치와 날짜를 입력해주세요"); return; }
-    data[cat].push({ value: parseFloat(val), date: date });
+    newEntry = { value: parseFloat(val), date: date };
+    if (cat === 'weight' || cat === 'weight2') newEntry.gender = statGender;
+  }
+
+  if (_smEditCat !== null && _smEditIdx !== null) {
+    // 수정 모드: 해당 인덱스 교체
+    data[cat].sort(function(a,b){ return a.date > b.date ? 1 : -1; });
+    if (_smEditEntry && _smEditEntry.gender) newEntry.gender = _smEditEntry.gender; // 원래 입력자 성별 유지
+    data[cat][_smEditIdx] = newEntry;
+    _smEditCat = null; _smEditIdx = null; _smEditEntry = null;
+  } else {
+    data[cat].push(newEntry);
   }
 
   setSD(data);
@@ -5232,6 +5439,16 @@ function delSE(cat, idx) {
   data[cat].splice(idx,1);
   setSD(data);
   renderStatsUI();
+}
+
+function editSE(cat, idx) {
+  var data = getSD();
+  if (!data[cat]) return;
+  var sorted = data[cat].slice().sort(function(a,b){ return a.date > b.date ? 1 : -1; });
+  var entry = sorted[idx];
+  if (!entry) return;
+  _smEditCat = cat; _smEditIdx = idx; _smEditEntry = entry;
+  openSM(entry);
 }
 
 // ── 날씨 위젯 ──────────────────────────────────────────
@@ -5804,9 +6021,13 @@ function applyLang() {
   _setText('notifEventLabel', __T('Event Alerts','이벤트 알림','事件提醒','イベント通知'));
   _setText('notifAppLabel', __T('App Alerts','앱 알림','应用提醒','アプリ通知'));
   _setText('shareTargetLabel', __T('Share Target :','공유 대상 :','共享对象 :','共有相手 :'));
-  // 로그아웃 / 계정삭제
+  // 로그아웃 / 비밀번호 변경 / 계정삭제
   _setText('logoutBtn', __T('Logout','로그아웃','退出登录','ログアウト'));
+  _setText('changePwBtn', __T('Change Password','비밀번호 변경','修改密码','パスワード変更'));
   _setText('deleteAccountBtn', __T('Delete Account','계정 삭제','删除账户','アカウント削除'));
+  // 계정 이메일 표시
+  var _aeEl = document.getElementById('accountEmailText');
+  if (_aeEl && currentUser && currentUser.email) _aeEl.textContent = currentUser.email;
   // 로그인 화면 버튼 / placeholder / 라벨 갱신
   _setText('loginBtn', __T('Login','로그인','登录','ログイン'));
   _setText('registerBtn', __T('Register','회원가입','注册','新規登録'));

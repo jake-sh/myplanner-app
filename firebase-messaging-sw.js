@@ -1,10 +1,9 @@
-// FCM 백그라운드 메시지 수신 전담 서비스워커
-// 앱이 꺼져있거나 백그라운드일 때 푸시를 받아 알림을 띄운다.
-// SW_VERSION: v460 (data-only 방식 — onBackgroundMessage 유지)
+﻿// FCM 諛깃렇?쇱슫??硫붿떆吏 ?섏떊 ?꾨떞 ?쒕퉬?ㅼ썙而?// ?깆씠 爰쇱졇?덇굅??諛깃렇?쇱슫?쒖씪 ???몄떆瑜?諛쏆븘 ?뚮┝???꾩슫??
+// SW_VERSION: v468 (data-only 諛⑹떇 ??onBackgroundMessage ?좎?)
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
 
-// 새 SW가 즉시 활성화되어 옛 버전을 교체하도록 강제
+// ??SW媛 利됱떆 ?쒖꽦?붾릺????踰꾩쟾??援먯껜?섎룄濡?媛뺤젣
 self.addEventListener('install', function() { self.skipWaiting(); });
 self.addEventListener('activate', function(e) { e.waitUntil(self.clients.claim()); });
 
@@ -19,14 +18,14 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// 백그라운드 메시지 수신 (data-only 방식)
-// 서버는 notification 페이로드 없이 data만 보낸다. 따라서 FCM 자동표시가
-// 발생하지 않으므로, 알림 표시는 오직 이 onBackgroundMessage 한 곳에서만 한다.
-// → 자동표시와 충돌이 원천적으로 불가능 → iOS/Android 모두 정확히 1개.
+// 諛깃렇?쇱슫??硫붿떆吏 ?섏떊 (data-only 諛⑹떇)
+// ?쒕쾭??notification ?섏씠濡쒕뱶 ?놁씠 data留?蹂대궦?? ?곕씪??FCM ?먮룞?쒖떆媛
+// 諛쒖깮?섏? ?딆쑝誘濡? ?뚮┝ ?쒖떆???ㅼ쭅 ??onBackgroundMessage ??怨녹뿉?쒕쭔 ?쒕떎.
+// ???먮룞?쒖떆? 異⑸룎???먯쿇?곸쑝濡?遺덇?????iOS/Android 紐⑤몢 ?뺥솗??1媛?
 messaging.onBackgroundMessage(function(payload) {
   var d = payload.data || {};
-  var title = d.title || '일정 알림';
-  var body = d.body || '새 메시지가 있습니다';
+  var title = d.title || '?쇱젙 ?뚮┝';
+  var body = d.body || '??硫붿떆吏媛 ?덉뒿?덈떎';
   return self.registration.showNotification(title, {
     body: body,
     icon: '/myplanner-app/icons/icon-192.png',
@@ -36,9 +35,8 @@ messaging.onBackgroundMessage(function(payload) {
   });
 });
 
-// 앱이 열리거나 포커스될 때 메인 페이지에서 알림 정리를 요청함.
-// 이 알림은 이 SW(self.registration)에서 표시했으므로 여기서 닫아야
-// 메인 sw.js의 registration.getNotifications()로는 보이지 않아 안 지워짐.
+// ?깆씠 ?대━嫄곕굹 ?ъ빱?ㅻ맆 ??硫붿씤 ?섏씠吏?먯꽌 ?뚮┝ ?뺣━瑜??붿껌??
+// ???뚮┝? ??SW(self.registration)?먯꽌 ?쒖떆?덉쑝誘濡??ш린???レ븘??// 硫붿씤 sw.js??registration.getNotifications()濡쒕뒗 蹂댁씠吏 ?딆븘 ??吏?뚯쭚.
 self.addEventListener('message', function(e) {
   if (e.data && e.data.type === 'CLEAR_NOTIFICATIONS') {
     self.registration.getNotifications().then(function(notifications) {
@@ -47,8 +45,7 @@ self.addEventListener('message', function(e) {
   }
 });
 
-// 알림 클릭 시 앱 열기/포커스
-self.addEventListener('notificationclick', function(e) {
+// ?뚮┝ ?대┃ ?????닿린/?ъ빱??self.addEventListener('notificationclick', function(e) {
   e.notification.close();
   e.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(cls) {
@@ -59,3 +56,4 @@ self.addEventListener('notificationclick', function(e) {
     })
   );
 });
+

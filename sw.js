@@ -1,4 +1,4 @@
-const CACHE = 'myplanner-v460';
+﻿const CACHE = 'myplanner-v468';
 const PRECACHE = ['./', './index.html', './app.js', './style.css', './manifest.json'];
 
 self.addEventListener('install', e => {
@@ -11,7 +11,7 @@ self.addEventListener('activate', e => {
     caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
     .then(() => self.clients.claim())
     .then(() => {
-      // 새 버전 활성 알림 → 클라이언트가 자동 새로고침
+      // ??踰꾩쟾 ?쒖꽦 ?뚮┝ ???대씪?댁뼵?멸? ?먮룞 ?덈줈怨좎묠
       return self.clients.matchAll({ type: 'window' }).then(clients => {
         clients.forEach(c => c.postMessage({ type: 'SW_ACTIVATED', version: CACHE }));
       });
@@ -22,9 +22,9 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // Firebase/Google API 요청은 SW가 절대 가로채지 않고 네트워크로 직행한다.
-  // (인증 토큰 갱신, Firestore 쓰기 등이 SW를 거치며 변형/실패하면
-  //  미사용 후 "URI Too Long", 인증 실패, 동기화 누락이 발생함)
+  // Firebase/Google API ?붿껌? SW媛 ?덈? 媛濡쒖콈吏 ?딄퀬 ?ㅽ듃?뚰겕濡?吏곹뻾?쒕떎.
+  // (?몄쬆 ?좏겙 媛깆떊, Firestore ?곌린 ?깆씠 SW瑜?嫄곗튂硫?蹂???ㅽ뙣?섎㈃
+  //  誘몄궗????"URI Too Long", ?몄쬆 ?ㅽ뙣, ?숆린???꾨씫??諛쒖깮??
   const host = url.hostname;
   if (host.includes('googleapis.com') ||
       host.includes('firebaseio.com') ||
@@ -35,13 +35,13 @@ self.addEventListener('fetch', e => {
       host.includes('firestore') ||
       host.includes('identitytoolkit') ||
       host.includes('securetoken')) {
-    return; // respondWith 호출 안 함 → 브라우저 기본 네트워크 처리
+    return; // respondWith ?몄텧 ??????釉뚮씪?곗? 湲곕낯 ?ㅽ듃?뚰겕 泥섎━
   }
 
-  // ── POST share_target 수신 ──────────────────────────────────
-  // manifest의 share_target이 POST ./share-receiver 로 들어옴.
-  // 긴 텍스트도 URL이 아닌 body(formData)에 실리므로 "URI Too Long"이 없다.
-  // formData를 꺼내 Cache에 임시 저장 후, 짧은 URL로 redirect → 클라이언트가 읽어감.
+  // ?? POST share_target ?섏떊 ??????????????????????????????????
+  // manifest??share_target??POST ./share-receiver 濡??ㅼ뼱??
+  // 湲??띿뒪?몃룄 URL???꾨땶 body(formData)???ㅻ━誘濡?"URI Too Long"???녿떎.
+  // formData瑜?爰쇰궡 Cache???꾩떆 ????? 吏㏃? URL濡?redirect ???대씪?댁뼵?멸? ?쎌뼱媛?
   if (e.request.method === 'POST' && url.pathname.endsWith('/share-receiver')) {
     e.respondWith((async () => {
       try {
@@ -57,23 +57,22 @@ self.addEventListener('fetch', e => {
           headers: { 'Content-Type': 'application/json' }
         }));
       } catch(err) {
-        // formData 파싱 실패해도 앱은 띄움
+        // formData ?뚯떛 ?ㅽ뙣?대룄 ?깆? ?꾩?
       }
-      // 짧은 URL로 redirect (303: POST → GET 전환)
+      // 吏㏃? URL濡?redirect (303: POST ??GET ?꾪솚)
       return Response.redirect('./?share=1', 303);
     })());
     return;
   }
 
-  // share_target으로 들어온 요청은 캐시 우회 + 쿼리스트링 유지
-  // (구버전 GET 방식 호환 유지 — manifest 갱신 전 기기 대응)
+  // share_target?쇰줈 ?ㅼ뼱???붿껌? 罹먯떆 ?고쉶 + 荑쇰━?ㅽ듃留??좎?
+  // (援щ쾭??GET 諛⑹떇 ?명솚 ?좎? ??manifest 媛깆떊 ??湲곌린 ???
   const isShareTarget = e.request.method === 'GET' &&
     (url.searchParams.has('title') || url.searchParams.has('text') || url.searchParams.has('url'));
   if (isShareTarget) {
-    // 캐시된 index.html을 응답하고, 쿼리스트링은 클라이언트의 location.search로 살아있음.
-    // 캐시 miss(장시간 미사용으로 캐시 정리됨) 시에도 절대 원본 긴 URL을 서버로 보내지 않는다
-    // — GitHub Pages가 긴 쿼리스트링을 414 "URI Too Long"으로 거부하기 때문.
-    // 쿼리를 뗀 ./index.html만 네트워크로 요청한다 (주소창 쿼리스트링은 유지됨).
+    // 罹먯떆??index.html???묐떟?섍퀬, 荑쇰━?ㅽ듃留곸? ?대씪?댁뼵?몄쓽 location.search濡??댁븘?덉쓬.
+    // 罹먯떆 miss(?μ떆媛?誘몄궗?⑹쑝濡?罹먯떆 ?뺣━?? ?쒖뿉???덈? ?먮낯 湲?URL???쒕쾭濡?蹂대궡吏 ?딅뒗??    // ??GitHub Pages媛 湲?荑쇰━?ㅽ듃留곸쓣 414 "URI Too Long"?쇰줈 嫄곕??섍린 ?뚮Ц.
+    // 荑쇰━瑜?? ./index.html留??ㅽ듃?뚰겕濡??붿껌?쒕떎 (二쇱냼李?荑쇰━?ㅽ듃留곸? ?좎???.
     e.respondWith(
       caches.match('./index.html')
         .then(c => c || caches.match('./'))
@@ -82,17 +81,17 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
-  // navigation 요청은 네트워크 우선
+  // navigation ?붿껌? ?ㅽ듃?뚰겕 ?곗꽑
   if (e.request.mode === 'navigate') {
     e.respondWith(fetch(e.request).catch(() => caches.match('/myplanner-app/index.html')));
     return;
   }
-  // GET이 아닌 요청(POST/PUT/PATCH/DELETE 등 쓰기)은 캐시 대상이 아니므로 손대지 않음
+  // GET???꾨땶 ?붿껌(POST/PUT/PATCH/DELETE ???곌린)? 罹먯떆 ??곸씠 ?꾨땲誘濡??먮?吏 ?딆쓬
   if (e.request.method !== 'GET') {
     return;
   }
-  // 핵심 자산(html/css/js)은 network-first → 항상 최신 반영, 오프라인시 캐시 폴백
-  // (cache-first면 한번 캐시된 옛 style.css/app.js가 계속 서빙되어 변경이 안 보임)
+  // ?듭떖 ?먯궛(html/css/js)? network-first ????긽 理쒖떊 諛섏쁺, ?ㅽ봽?쇱씤??罹먯떆 ?대갚
+  // (cache-first硫??쒕쾲 罹먯떆????style.css/app.js媛 怨꾩냽 ?쒕튃?섏뼱 蹂寃쎌씠 ??蹂댁엫)
   const isCore = url.pathname.endsWith('.css') ||
                  url.pathname.endsWith('.js') ||
                  url.pathname.endsWith('.html') ||
@@ -110,7 +109,7 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // 나머지(폰트·이미지 등)는 cache-first
+  // ?섎㉧吏(?고듃쨌?대?吏 ????cache-first
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).then(resp => {
       if (resp && resp.status === 200 && e.request.url.startsWith(self.location.origin)) {
@@ -122,17 +121,17 @@ self.addEventListener('fetch', e => {
   );
 });
 
-// push 이벤트 핸들러 없음 (sw.js는 FCM 알림 표시 담당 아님).
-// FCM 백그라운드 알림은 firebase-messaging-sw.js의 onBackgroundMessage가 전담.
-// 서버는 data-only 페이로드로 전송 → FCM 자동표시 없음 → onBackgroundMessage 한 곳에서만 표시.
-// (이전에 sw.js push 핸들러 + onBackgroundMessage 양쪽에서 표시해 2개 오던 문제 수정됨)
+// push ?대깽???몃뱾???놁쓬 (sw.js??FCM ?뚮┝ ?쒖떆 ?대떦 ?꾨떂).
+// FCM 諛깃렇?쇱슫???뚮┝? firebase-messaging-sw.js??onBackgroundMessage媛 ?꾨떞.
+// ?쒕쾭??data-only ?섏씠濡쒕뱶濡??꾩넚 ??FCM ?먮룞?쒖떆 ?놁쓬 ??onBackgroundMessage ??怨녹뿉?쒕쭔 ?쒖떆.
+// (?댁쟾??sw.js push ?몃뱾??+ onBackgroundMessage ?묒そ?먯꽌 ?쒖떆??2媛??ㅻ뜕 臾몄젣 ?섏젙??
 
 self.addEventListener('message', e => {
   if (e.data?.type === 'SHOW_NOTIFICATION') {
-    // 기존 알림 닫고 새 알림 표시 (중복 방지)
+    // 湲곗〈 ?뚮┝ ?リ퀬 ???뚮┝ ?쒖떆 (以묐났 諛⑹?)
     self.registration.getNotifications({ tag: 'planner-notification' }).then(ns => {
       ns.forEach(n => n.close());
-      self.registration.showNotification(e.data.title || '알림', {
+      self.registration.showNotification(e.data.title || '?뚮┝', {
         body: e.data.body || '',
         icon: '/myplanner-app/icons/icon-192.png',
         badge: '/myplanner-app/icons/icon-badge.png',
@@ -153,11 +152,11 @@ self.addEventListener('notificationclick', e => {
   e.notification.close();
   e.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-      // 열린 창 있으면 포커스
-      for (const client of list) {
+      // ?대┛ 李??덉쑝硫??ъ빱??      for (const client of list) {
         if ('focus' in client) return client.focus();
       }
       return self.clients.openWindow('/myplanner-app/');
     })
   );
 });
+

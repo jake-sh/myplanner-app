@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8"/>
@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-title" content="my planner"/>
   <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png"/>
   <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png"/>
-  <link rel="stylesheet" href="style.css?v=460"/>
+  <link rel="stylesheet" href="style.css?v=468"/>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400&family=Noto+Sans+KR:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet"/>
   <script>
     // 흰 화면 깜빡임 방지: CSS 로드 전에 배경색 즉시 적용
@@ -107,7 +107,7 @@
     </div>
   </div>
   <!-- 캐시버전 표기 (개발용) -->
-  <div id="mainVersionText" style="text-align:center;font-size:10px;color:#aaa;opacity:0.35;pointer-events:none;margin-top:-22px;margin-bottom:8px;letter-spacing:0.5px;user-select:none;">v4.6.0</div>
+  <div id="mainVersionText" style="text-align:center;font-size:10px;color:#aaa;opacity:0.35;pointer-events:none;margin-top:-22px;margin-bottom:8px;letter-spacing:0.5px;user-select:none;">v4.6.7</div>
 </div>
 
 <!-- ===== PLAN SETTINGS ===== -->
@@ -118,8 +118,17 @@
   </div>
   <div class="settings-content">
 
+    <!-- 계정 정보 -->
     <div class="settings-section">
-      <div id="displayModeLabel" class="settings-label">화면 모드</div>
+      <div id="accountEmailText" style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:14px;word-break:break-all;"></div>
+      <div style="display:flex;gap:8px;">
+        <button id="changePwBtn" class="style-select-btn" onclick="changePassword()" style="flex:1;">비밀번호 변경</button>
+        <button onclick="logoutApp()" class="logout-btn" id="logoutBtn" style="flex:1;width:auto;">로그아웃</button>
+      </div>
+    </div>
+
+
+    <div class="settings-section">
       <div class="settings-row">
         <span id="darkModeText">다크 모드</span>
         <label class="toggle"><input type="checkbox" id="darkModeToggle" onchange="setDarkMode(this.checked)"/><span class="slider"></span></label>
@@ -154,10 +163,9 @@
     </div>
     <div class="settings-section">
       <div class="settings-label" id="infoLabel">정보</div>
-      <div class="settings-desc" id="appVersionText">my planner v4.6.0</div>
+      <div class="settings-desc" id="appVersionText">my planner v4.6.7</div>
     </div>
     <div class="settings-section">
-      <button onclick="logoutApp()" class="logout-btn" id="logoutBtn">로그아웃</button>
       <button onclick="deleteAccount()" class="delete-account-btn" id="deleteAccountBtn">계정 삭제</button>
     </div>
   </div>
@@ -691,7 +699,7 @@ try {
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script src="app.js?v=460"></script>
+<script src="app.js?v=468"></script>
 
 <!-- 이미지 뷰어 -->
 <div id="imgViewer" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:9999;flex-direction:column;align-items:center;justify-content:center;">
