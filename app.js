@@ -5015,6 +5015,7 @@ function statUnit(k) {
 }
 var curSC = "weight";
 var statGender = localStorage.getItem('statGender') || 'M';
+var statListCount = parseInt(localStorage.getItem('statListCount')) || 30;
 var _smEditCat = null, _smEditIdx = null, _smEditEntry = null;
 
 function weightDisplay(entry) {
@@ -5125,8 +5126,18 @@ function renderStatsUI() {
   }
   chartHtml += "</div>";
 
-  var listHtml = '<div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:8px;">' + __T('Recent Records','최근 기록','最近记录','最近の記録') + (curSC === 'weight' ? ' <span style="font-size:11px;font-weight:400;color:#94a3b8;">(길게 눌러 수정)</span>' : '') + '</div>';
-  entries.slice().reverse().slice(0,30).forEach(function(e, i) {
+  var _countOpts = [10,30,50,0];
+  var _countBtns = _countOpts.map(function(n){
+    var lbl = n===0?'전체':String(n);
+    var act = statListCount===n;
+    return '<button data-listcount="'+n+'" style="padding:3px 9px;border-radius:12px;border:none;font-size:11px;font-weight:600;cursor:pointer;background:'+(act?'var(--primary)':'var(--card,#f1f5f9)')+';color:'+(act?'#fff':'var(--text,#334155)')+';">'+lbl+'</button>';
+  }).join('');
+  var listHtml = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">'
+    + '<div style="font-size:13px;font-weight:700;color:#334155;">' + __T('Recent Records','최근 기록','最近记录','最近の記録') + (curSC === 'weight' ? ' <span style="font-size:11px;font-weight:400;color:#94a3b8;">(길게 눌러 수정)</span>' : '') + '</div>'
+    + '<div style="display:flex;gap:4px;">' + _countBtns + '</div>'
+    + '</div>';
+  var _listLimit = statListCount === 0 ? entries.length : statListCount;
+  entries.slice().reverse().slice(0,_listLimit).forEach(function(e, i) {
     var origIdx = entries.length - 1 - i;
     var valDisplay;
     if (curSC === 'exercise') {
@@ -5169,6 +5180,14 @@ function renderStatsUI() {
     btn.addEventListener("click", function(ev) {
       ev.stopPropagation();
       delSE(this.getAttribute("data-dcat"), parseInt(this.getAttribute("data-didx")));
+    });
+  });
+  // 목록 개수 선택 버튼
+  fc.querySelectorAll("[data-listcount]").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      statListCount = parseInt(this.getAttribute("data-listcount"));
+      localStorage.setItem('statListCount', statListCount);
+      renderStatsUI();
     });
   });
   // +Add 버튼
