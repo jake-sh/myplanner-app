@@ -999,6 +999,8 @@ function openSettings() {
   var notifAppEl = document.getElementById('notifApp');
   if (notifEventEl) notifEventEl.checked = localStorage.getItem('notifEvent') === 'true';
   if (notifAppEl) notifAppEl.checked = localStorage.getItem('notifApp') === 'true';
+  var _aeEl = document.getElementById('accountEmailText');
+  if (_aeEl && currentUser && currentUser.email) _aeEl.textContent = currentUser.email;
   showScreen('settingsScreen');
   var t2 = localStorage.getItem('themeColor') || '#6C63FF';
   setTimeout(function(){ renderThemeRecentColors(); updateIconStyleBtns(); updateSvgColorBtns(); }, 200);
@@ -4988,8 +4990,6 @@ var STAT_CATS = {
     svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v4l3 3"/></svg>' },
   weight2:  { label: "체중2",  labelEn: "Weight2",  labelZh: "体重2",    labelJa: "体重2",  unit: "kg",    color: "#f472b6", emoji: "⚖️",
     svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v4l3 3"/></svg>' },
-  bp:       { label: "혈압",   labelEn: "BP",       labelZh: "血压",     labelJa: "血圧",   unit: "mmHg",  color: "#ef4444", emoji: "🫀",
-    svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>' },
   steps:    { label: "걸음수", labelEn: "Steps",    labelZh: "步数",     labelJa: "歩数",   unit: "steps", color: "#22c55e", emoji: "🚶",
     svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><path d="M12 7v6l3 4"/><path d="M9 17l-2 4"/><path d="M15 13l2 4"/></svg>' },
   exercise: { label: "러닝",   labelEn: "Running",  labelZh: "跑步",     labelJa: "ランニング", unit: "km",  color: "#f59e0b", emoji: "🏃",
@@ -5115,9 +5115,7 @@ function renderStatsUI() {
   entries.slice().reverse().slice(0,10).forEach(function(e, i) {
     var origIdx = entries.length - 1 - i;
     var valDisplay;
-    if (curSC === 'bp' && e.dia != null) {
-      valDisplay = '<span style="font-size:15px;font-weight:700;color:' + cat.color + ';">' + e.value + '/' + e.dia + ' <small style="font-size:11px;color:#334155;">mmHg</small></span>';
-    } else if (curSC === 'exercise') {
+    if (curSC === 'exercise') {
       var runDist = e.dist || e.value || 0;
       var runTotalSec = (e.timeMin||0)*60 + (e.timeSec||0);
       var runTimeStr = (e.timeMin!=null) ? ((e.timeMin||0) + ':' + String(e.timeSec||0).padStart(2,'0')) : '';
@@ -5200,7 +5198,7 @@ function drawSC(canvas, entries, cat) {
   var dpr = window.devicePixelRatio || 1;
   var wrap = canvas.parentElement; // sCanvasWrap (overflow-x:auto)
   var visibleW = wrap.clientWidth;
-  var MIN_GAP = 55; // 포인트 간 최소 간격(px)
+  var MIN_GAP = 28; // 포인트 간 최소 간격(px)
   var pL=40,pR=20;
   var W = entries.length > 1
     ? Math.max(visibleW, (entries.length - 1) * MIN_GAP + pL + pR)
@@ -5214,11 +5212,7 @@ function drawSC(canvas, entries, cat) {
   ctx.scale(dpr, dpr);
   var pT=12,pB=24,gW=W-pL-pR,gH=H-pT-pB;
 
-  // 혈압: sys(수축) + dia(이완) 두 라인
-  var isBp = (curSC === 'bp');
-  var allVals = isBp
-    ? entries.map(function(e){return parseFloat(e.value);}).concat(entries.map(function(e){return parseFloat(e.dia||0);}))
-    : entries.map(function(e){return parseFloat(e.value);});
+  var allVals = entries.map(function(e){return parseFloat(e.value);});
   var mn=Math.min.apply(null,allVals), mx=Math.max.apply(null,allVals), rng=mx-mn||1;
 
   for(var g=0;g<=4;g++){
@@ -5270,24 +5264,18 @@ function drawSC(canvas, entries, cat) {
     });
   }
 
-  if(isBp){
-    drawLine(entries.map(function(e){return parseFloat(e.value);}), "#ef4444", false);
-    drawLine(entries.map(function(e){return parseFloat(e.dia||0);}), "#f97316", true);
-  } else {
-    var gr=ctx.createLinearGradient(0,pT,0,pT+gH);
-    gr.addColorStop(0,cat.color+"44");gr.addColorStop(1,cat.color+"00");
-    var vals=entries.map(function(e){return parseFloat(e.value);});
-    var pts=makePts(vals);
-    // 곡선 fill
-    ctx.beginPath();
-    ctx.moveTo(pts[0].x, pT+gH);
-    ctx.lineTo(pts[0].x, pts[0].y);
-    if (pts.length > 1) smoothPath(pts);
-    ctx.lineTo(pts[pts.length-1].x, pT+gH);
-    ctx.closePath();
-    ctx.fillStyle=gr;ctx.fill();
-    drawLine(vals, cat.color, false);
-  }
+  var gr=ctx.createLinearGradient(0,pT,0,pT+gH);
+  gr.addColorStop(0,cat.color+"44");gr.addColorStop(1,cat.color+"00");
+  var vals=entries.map(function(e){return parseFloat(e.value);});
+  var pts=makePts(vals);
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pT+gH);
+  ctx.lineTo(pts[0].x, pts[0].y);
+  if (pts.length > 1) smoothPath(pts);
+  ctx.lineTo(pts[pts.length-1].x, pT+gH);
+  ctx.closePath();
+  ctx.fillStyle=gr;ctx.fill();
+  drawLine(vals, cat.color, false);
   // 최신 데이터가 오른쪽에 보이도록 스크롤
   wrap.scrollLeft = wrap.scrollWidth;
 }
@@ -5364,14 +5352,7 @@ function smCatChange() {
   var cat = document.getElementById("smCat").value;
   var wrap = document.getElementById("smValWrap");
   if (!wrap) return;
-  if (cat === 'bp') {
-    wrap.innerHTML = '<div style="display:flex;gap:8px;margin-bottom:12px;">'
-      + '<div style="flex:1;"><div style="font-size:11px;color:' + subCl + ';margin-bottom:4px;">수축기</div>'
-      + '<input id="smValSys" type="number" step="1" placeholder="120" style="' + inpStyle + '"/></div>'
-      + '<div style="flex:1;"><div style="font-size:11px;color:' + subCl + ';margin-bottom:4px;">이완기</div>'
-      + '<input id="smValDia" type="number" step="1" placeholder="80" style="' + inpStyle + '"/></div>'
-      + '</div>';
-  } else if (cat === 'exercise') {
+  if (cat === 'exercise') {
     wrap.innerHTML = '<div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:12px;">'
       + '<div style="flex:1;"><div style="font-size:11px;color:' + subCl + ';margin-bottom:4px;">거리</div>'
       + '<input id="smRunDist" type="number" step="0.01" min="0" placeholder="5.00" style="' + inpStyle + '"/></div>'
@@ -5395,12 +5376,7 @@ function saveSE() {
   if (!data[cat]) data[cat] = [];
 
   var newEntry;
-  if (cat === 'bp') {
-    var sys = document.getElementById("smValSys") ? document.getElementById("smValSys").value.trim() : '';
-    var dia = document.getElementById("smValDia") ? document.getElementById("smValDia").value.trim() : '';
-    if (!sys || !dia || !date) { showAlert("수치와 날짜를 입력해주세요"); return; }
-    newEntry = { value: parseFloat(sys), dia: parseFloat(dia), date: date };
-  } else if (cat === 'exercise') {
+  if (cat === 'exercise') {
     var distVal = document.getElementById("smRunDist") ? parseFloat(document.getElementById("smRunDist").value) : NaN;
     var runMin  = document.getElementById("smRunMin")  ? parseInt(document.getElementById("smRunMin").value)  : 0;
     var runSec  = document.getElementById("smRunSec")  ? parseInt(document.getElementById("smRunSec").value)  : 0;

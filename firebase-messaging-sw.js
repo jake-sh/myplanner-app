@@ -1,5 +1,5 @@
 ﻿// FCM 諛깃렇?쇱슫??硫붿떆吏 ?섏떊 ?꾨떞 ?쒕퉬?ㅼ썙而?// ?깆씠 爰쇱졇?덇굅??諛깃렇?쇱슫?쒖씪 ???몄떆瑜?諛쏆븘 ?뚮┝???꾩슫??
-// SW_VERSION: v468 (data-only 諛⑹떇 ??onBackgroundMessage ?좎?)
+// SW_VERSION: v469 (data-only 諛⑹떇 ??onBackgroundMessage ?좎?)
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
 
