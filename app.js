@@ -1000,7 +1000,7 @@ function openSettings() {
   if (notifEventEl) notifEventEl.checked = localStorage.getItem('notifEvent') === 'true';
   if (notifAppEl) notifAppEl.checked = localStorage.getItem('notifApp') === 'true';
   var _aeEl = document.getElementById('accountEmailText');
-  if (_aeEl && currentUser && currentUser.email) _aeEl.textContent = currentUser.email;
+  if (_aeEl && currentUser && currentUser.email) _aeEl.textContent = 'ID : ' + currentUser.email.split('@')[0];
   showScreen('settingsScreen');
   var t2 = localStorage.getItem('themeColor') || '#6C63FF';
   setTimeout(function(){ renderThemeRecentColors(); updateIconStyleBtns(); updateSvgColorBtns(); }, 200);
@@ -6057,7 +6057,7 @@ function applyLang() {
   _setText('deleteAccountBtn', __T('Delete Account','계정 삭제','删除账户','アカウント削除'));
   // 계정 이메일 표시
   var _aeEl = document.getElementById('accountEmailText');
-  if (_aeEl && currentUser && currentUser.email) _aeEl.textContent = currentUser.email;
+  if (_aeEl && currentUser && currentUser.email) _aeEl.textContent = 'ID : ' + currentUser.email.split('@')[0];
   // 로그인 화면 버튼 / placeholder / 라벨 갱신
   _setText('loginBtn', __T('Login','로그인','登录','ログイン'));
   _setText('registerBtn', __T('Register','회원가입','注册','新規登録'));
