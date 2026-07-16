@@ -5897,23 +5897,17 @@ function applyLang() {
   _setText('notifSectionLabel', __T('Notifications','알림','通知','通知'));
   _setText('langLabel', __T('Language','언어','语言','言語'));
   _setText('infoLabel', __T('Info','정보','信息','情報'));
-  // SW 캐시명에서 버전 자동 추출 → appVersionText + mainVersionText 동기화
-  // 버전 규칙: myplanner-v410 → v4.1.0 (십진법, 3자리 숫자 그대로 점 없이 올라감)
-  // 예) v409→v4.0.9, v410→v4.1.0, v411→v4.1.1, v500→v5.0.0
-  (async function() {
-    try {
-      var keys = await caches.keys();
-      var ver = keys.find(function(k){ return k.indexOf('myplanner-') === 0; });
-      if (ver) {
-        var num = ver.replace('myplanner-v','');
-        // 3자리 숫자: 첫째자리.둘째자리.셋째자리
-        var formatted = 'v' + num[0] + '.' + num[1] + '.' + num.slice(2);
-        var elSettings = document.getElementById('appVersionText');
-        if (elSettings) elSettings.textContent = 'my planner ' + formatted;
-        var elMain = document.getElementById('mainVersionText');
-        if (elMain) elMain.textContent = formatted;
-      }
-    } catch(e) {}
+  // meta[name=app-version]에서 버전 표시 (SW 캐시 의존 제거)
+  (function() {
+    var meta = document.querySelector('meta[name="app-version"]');
+    var ver = meta ? meta.getAttribute('content') : null;
+    if (ver) {
+      var formatted = 'v' + ver;
+      var elSettings = document.getElementById('appVersionText');
+      if (elSettings) elSettings.textContent = 'my planner ' + formatted;
+      var elMain = document.getElementById('mainVersionText');
+      if (elMain) elMain.textContent = formatted;
+    }
   })();
   _setText('notifEventLabel', __T('Event Alerts','이벤트 알림','事件提醒','イベント通知'));
   _setText('notifAppLabel', __T('App Alerts','앱 알림','应用提醒','アプリ通知'));
