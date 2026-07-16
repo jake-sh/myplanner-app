@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
   <meta name="apple-mobile-web-app-title" content="my planner"/>
-  <meta name="app-version" content="4.7.6"/>
+  <meta name="app-version" content="4.7.7"/>
   <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png"/>
   <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png"/>
-  <link rel="stylesheet" href="style.css?v=476"/>
+  <link rel="stylesheet" href="style.css?v=477"/>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400&family=Noto+Sans+KR:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet"/>
   <script>
     // 흰 화면 깜빡임 방지: CSS 로드 전에 배경색 즉시 적용
@@ -130,7 +130,7 @@
 
 
     <div class="settings-section">
-      <div class="settings-row">
+      <div class="settings-row" style="padding:4px 0;">
         <span id="darkModeText">다크 모드</span>
         <label class="toggle"><input type="checkbox" id="darkModeToggle" onchange="setDarkMode(this.checked)"/><span class="slider"></span></label>
       </div>
@@ -158,14 +158,8 @@
       <div class="settings-row"><span id="notifEventLabel">Event Alerts</span><label class="toggle"><input type="checkbox" id="notifEvent" onchange="toggleSettingsNotif('event',this.checked)"/><span class="slider"></span></label></div>
       <div class="settings-row"><span id="notifAppLabel">App Alerts</span><label class="toggle"><input type="checkbox" id="notifApp" onchange="toggleSettingsNotif('app',this.checked)"/><span class="slider"></span></label></div>
     </div>
-    <div class="settings-section">
-      <div id="langLabel" class="settings-label">언어</div>
-      <select id="langSelect" class="settings-select" onchange="setLang(this.value)"><option value="ko">한국어</option><option value="en">English</option><option value="zh">中文</option><option value="ja">日本語</option></select>
-    </div>
-    <div class="settings-section">
-      <div class="settings-label" id="infoLabel">정보</div>
-      <div class="settings-desc" id="appVersionText">my planner v4.6.7</div>
-    </div>
+    <div class="settings-section" style="padding:10px 20px;"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;"><div id="langLabel" class="settings-label" style="margin-bottom:0;white-space:nowrap;">언어</div><select id="langSelect" class="settings-select" onchange="setLang(this.value)" style="width:auto;flex-shrink:0;"><option value="ko">한국어</option><option value="en">English</option><option value="zh">中文</option><option value="ja">日本語</option></select></div></div>
+    <div class="settings-section" style="padding:10px 20px;"><div style="display:flex;align-items:center;justify-content:space-between;"><div class="settings-label" id="infoLabel" style="margin-bottom:0;">정보</div><div class="settings-desc" id="appVersionText">my planner v4.7.6</div></div></div>
     <div class="settings-section" style="text-align:center;padding:10px 20px 14px;">
       <button onclick="deleteAccount()" class="delete-account-btn" id="deleteAccountBtn" style="margin:0 auto;">계정 삭제</button>
     </div>
@@ -700,7 +694,7 @@ try {
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script src="app.js?v=476"></script>
+<script src="app.js?v=477"></script>
 
 <!-- 이미지 뷰어 -->
 <div id="imgViewer" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:9999;flex-direction:column;align-items:center;justify-content:center;">
