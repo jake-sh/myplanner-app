@@ -5104,8 +5104,10 @@ function renderStatsUI() {
     + '<button id="openSmBtn" style="' + btnSt + '">' + __T('+ Add','+ 입력','+ 添加','+ 入力') + '</button>'
     + '</div>';
 
-  var _wrapSt = 'overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;width:100%;';
+  var _wrapSt = 'overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;flex:1;min-width:0;';
   var _subLbl = 'font-size:11px;color:#334155;margin-bottom:6px;font-weight:600;';
+  var _chartRow = 'display:flex;align-items:flex-start;';
+  var _ycSt = 'flex-shrink:0;';
   var chartHtml = '<div style="background:' + boxBg + ';border:1.5px solid ' + boxBd + ';border-radius:16px;padding:16px;margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:' + titleCl + ';">' + cat.emoji + ' ' + statLabel(curSC) + '</div>';
   if (curSC !== 'exercise') {
     chartHtml += '<div style="font-size:11px;color:#334155;margin-bottom:12px;">' + __T('Unit: ','단위: ','单位: ','単位: ') + statUnit(curSC) + '</div>';
@@ -5116,13 +5118,13 @@ function renderStatsUI() {
     chartHtml += '<div style="text-align:center;color:#334155;font-size:13px;padding:30px 0;">데이터가 없어요.<br>+ 입력으로 추가해보세요!</div>';
   } else if (curSC === 'exercise') {
     chartHtml += '<div style="' + _subLbl + '">🏃 거리 (km)</div>'
-      + '<div id="sCanvasWrap" style="' + _wrapSt + 'margin-bottom:14px;"><canvas id="sCanvas"></canvas></div>'
+      + '<div style="' + _chartRow + 'margin-bottom:14px;"><canvas id="sCanvasY" style="' + _ycSt + '"></canvas><div id="sCanvasWrap" style="' + _wrapSt + '"><canvas id="sCanvas"></canvas></div></div>'
       + '<div style="' + _subLbl + '">⏱ 시간 (분)</div>'
-      + '<div id="sCanvasWrap2" style="' + _wrapSt + 'margin-bottom:14px;"><canvas id="sCanvas2"></canvas></div>'
+      + '<div style="' + _chartRow + 'margin-bottom:14px;"><canvas id="sCanvas2Y" style="' + _ycSt + '"></canvas><div id="sCanvasWrap2" style="' + _wrapSt + '"><canvas id="sCanvas2"></canvas></div></div>'
       + '<div style="' + _subLbl + '">⚡ 페이스 (min/km, 낮을수록 빠름)</div>'
-      + '<div id="sCanvasWrap3" style="' + _wrapSt + '"><canvas id="sCanvas3"></canvas></div>';
+      + '<div style="' + _chartRow + '"><canvas id="sCanvas3Y" style="' + _ycSt + '"></canvas><div id="sCanvasWrap3" style="' + _wrapSt + '"><canvas id="sCanvas3"></canvas></div></div>';
   } else {
-    chartHtml += '<div id="sCanvasWrap" style="' + _wrapSt + '"><canvas id="sCanvas"></canvas></div>';
+    chartHtml += '<div style="' + _chartRow + '"><canvas id="sCanvasY" style="' + _ycSt + '"></canvas><div id="sCanvasWrap" style="' + _wrapSt + '"><canvas id="sCanvas"></canvas></div></div>';
   }
   chartHtml += "</div>";
 
@@ -5161,7 +5163,7 @@ function renderStatsUI() {
       var dvStr = Number.isInteger(dv) ? String(dv) : dv.toFixed(1);
       valDisplay = '<span style="font-size:15px;font-weight:700;color:' + cat.color + ';">' + dvStr + ' <small style="font-size:11px;color:#334155;">' + cat.unit + '</small></span>';
     }
-    var row = '<div data-editcat="' + curSC + '" data-editidx="' + origIdx + '" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:' + boxBg + ';border:1.5px solid ' + boxBd + ';border-radius:12px;margin-bottom:6px;">'
+    var row = '<div data-editcat="' + curSC + '" data-editidx="' + origIdx + '" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:' + boxBg + ';border:1.5px solid ' + boxBd + ';border-radius:12px;margin-bottom:6px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;">'
       + '<span style="font-size:13px;color:' + dateCl + ';">' + e.date + '</span>'
       + valDisplay
       + '<button data-dcat="' + curSC + '" data-didx="' + origIdx + '" style="background:none;border:none;color:#cbd5e1;font-size:20px;cursor:pointer;">×</button>'
@@ -5249,88 +5251,91 @@ function renderStatsUI() {
 }
 
 function drawSC(canvas, entries, cat, chartH) {
+  var yCanvas = document.getElementById(canvas.id + 'Y');
   var dpr = window.devicePixelRatio || 1;
-  var wrap = canvas.parentElement; // sCanvasWrap (overflow-x:auto)
+  var wrap = canvas.parentElement;
   var visibleW = wrap.clientWidth;
-  var MIN_GAP = 28; // 포인트 간 최소 간격(px)
-  var pL=40,pR=20;
+  var MIN_GAP = 28;
+  var pL=8, pR=20, yW=40;
   var W = entries.length > 1
     ? Math.max(visibleW, (entries.length - 1) * MIN_GAP + pL + pR)
     : visibleW;
   var H = chartH || 160;
-  canvas.width = W * dpr;
-  canvas.height = H * dpr;
-  canvas.style.width = W + "px";
-  canvas.style.height = H + "px";
-  var ctx = canvas.getContext("2d");
+  canvas.width = W*dpr; canvas.height = H*dpr;
+  canvas.style.width = W+'px'; canvas.style.height = H+'px';
+  var ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
-  var pT=12,pB=24,gW=W-pL-pR,gH=H-pT-pB;
+  var pT=12, pB=24, gW=W-pL-pR, gH=H-pT-pB;
 
   var allVals = entries.map(function(e){return parseFloat(e.value);});
   var mn=Math.min.apply(null,allVals), mx=Math.max.apply(null,allVals), rng=mx-mn||1;
 
-  for(var g=0;g<=4;g++){
-    var gy=pT+(gH/4)*g;
-    ctx.strokeStyle="#333";ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(pL,gy);ctx.lineTo(W-pR,gy);ctx.stroke();
-    ctx.fillStyle="#334155";ctx.font="9px sans-serif";ctx.textAlign="right";
-    ctx.fillText((mx-(rng/4)*g).toFixed(1),pL-3,gy+3);
+  // Y축 고정 캔버스 (레이블 + 눈금선)
+  if (yCanvas) {
+    yCanvas.width = yW*dpr; yCanvas.height = H*dpr;
+    yCanvas.style.width = yW+'px'; yCanvas.style.height = H+'px';
+    var yCtx = yCanvas.getContext('2d');
+    yCtx.scale(dpr, dpr);
+    for (var g=0; g<=4; g++) {
+      var gy = pT+(gH/4)*g;
+      yCtx.strokeStyle='#555'; yCtx.lineWidth=1;
+      yCtx.beginPath(); yCtx.moveTo(yW-4, gy); yCtx.lineTo(yW, gy); yCtx.stroke();
+      yCtx.fillStyle='#334155'; yCtx.font='9px sans-serif'; yCtx.textAlign='right';
+      yCtx.fillText((mx-(rng/4)*g).toFixed(1), yW-5, gy+3);
+    }
   }
 
-  // 부드러운 곡선 경로 생성 (Catmull-Rom → Bezier 변환)
+  // 스크롤 캔버스: 격자선만 (레이블 없음)
+  for (var g=0; g<=4; g++) {
+    var gy = pT+(gH/4)*g;
+    ctx.strokeStyle='#333'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pL, gy); ctx.lineTo(W-pR, gy); ctx.stroke();
+  }
+
   function smoothPath(pts) {
     ctx.moveTo(pts[0].x, pts[0].y);
-    for (var i = 0; i < pts.length - 1; i++) {
-      var p0 = pts[i > 0 ? i - 1 : 0];
-      var p1 = pts[i];
-      var p2 = pts[i + 1];
-      var p3 = pts[i < pts.length - 2 ? i + 2 : i + 1];
-      var cp1x = p1.x + (p2.x - p0.x) / 6;
-      var cp1y = p1.y + (p2.y - p0.y) / 6;
-      var cp2x = p2.x - (p3.x - p1.x) / 6;
-      var cp2y = p2.y - (p3.y - p1.y) / 6;
+    for (var i=0; i<pts.length-1; i++) {
+      var p0=pts[i>0?i-1:0], p1=pts[i], p2=pts[i+1], p3=pts[i<pts.length-2?i+2:i+1];
+      var cp1x=p1.x+(p2.x-p0.x)/6, cp1y=p1.y+(p2.y-p0.y)/6;
+      var cp2x=p2.x-(p3.x-p1.x)/6, cp2y=p2.y-(p3.y-p1.y)/6;
       ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
     }
   }
 
   function makePts(vals) {
     return entries.map(function(e,i){return{
-      x: pL + (entries.length > 1 ? (gW / (entries.length - 1)) * i : gW / 2),
-      y: pT + gH - ((vals[i] - mn) / rng) * gH
+      x: pL + (entries.length>1 ? (gW/(entries.length-1))*i : gW/2),
+      y: pT + gH - ((vals[i]-mn)/rng)*gH
     };});
   }
 
   function drawLine(vals, color, dashed) {
     var pts = makePts(vals);
-    ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.lineJoin="round";
+    ctx.beginPath(); ctx.strokeStyle=color; ctx.lineWidth=2.5; ctx.lineJoin='round';
     if(dashed) ctx.setLineDash([4,4]); else ctx.setLineDash([]);
-    if (pts.length === 1) { ctx.moveTo(pts[0].x, pts[0].y); ctx.lineTo(pts[0].x, pts[0].y); }
+    if(pts.length===1){ctx.moveTo(pts[0].x,pts[0].y);ctx.lineTo(pts[0].x,pts[0].y);}
     else smoothPath(pts);
-    ctx.stroke();ctx.setLineDash([]);
+    ctx.stroke(); ctx.setLineDash([]);
     pts.forEach(function(p,i){
-      ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);
-      ctx.fillStyle="#1A1A1A";ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=2;ctx.stroke();
-      // 날짜 라벨: 간격 넓으면 전체 표시, 촘촘하면 일부만
+      ctx.beginPath(); ctx.arc(p.x,p.y,3.5,0,Math.PI*2);
+      ctx.fillStyle='#1A1A1A'; ctx.fill(); ctx.strokeStyle=color; ctx.lineWidth=2; ctx.stroke();
       if(entries.length<=10 || i%Math.ceil(entries.length/8)===0){
-        ctx.fillStyle="#334155";ctx.font="8px sans-serif";ctx.textAlign="center";
-        ctx.fillText(entries[i].date.slice(5),p.x,H-2);
+        ctx.fillStyle='#334155'; ctx.font='8px sans-serif'; ctx.textAlign='center';
+        ctx.fillText(entries[i].date.slice(5), p.x, H-2);
       }
     });
   }
 
   var gr=ctx.createLinearGradient(0,pT,0,pT+gH);
-  gr.addColorStop(0,cat.color+"44");gr.addColorStop(1,cat.color+"00");
+  gr.addColorStop(0,cat.color+'44'); gr.addColorStop(1,cat.color+'00');
   var vals=entries.map(function(e){return parseFloat(e.value);});
   var pts=makePts(vals);
   ctx.beginPath();
-  ctx.moveTo(pts[0].x, pT+gH);
-  ctx.lineTo(pts[0].x, pts[0].y);
-  if (pts.length > 1) smoothPath(pts);
+  ctx.moveTo(pts[0].x, pT+gH); ctx.lineTo(pts[0].x, pts[0].y);
+  if(pts.length>1) smoothPath(pts);
   ctx.lineTo(pts[pts.length-1].x, pT+gH);
-  ctx.closePath();
-  ctx.fillStyle=gr;ctx.fill();
+  ctx.closePath(); ctx.fillStyle=gr; ctx.fill();
   drawLine(vals, cat.color, false);
-  // 최신 데이터가 오른쪽에 보이도록 스크롤
   wrap.scrollLeft = wrap.scrollWidth;
 }
 
@@ -5369,6 +5374,31 @@ function openSM(prefillEntry) {
     + '</div>';
 
   document.body.appendChild(overlay);
+
+  // 키보드 올라오면 모달 위로 밀기
+  var _smBox = overlay.querySelector('div');
+  var _smVvFn = null;
+  if (window.visualViewport && _smBox) {
+    _smVvFn = function() {
+      if (!document.getElementById('smOverlay')) {
+        window.visualViewport.removeEventListener('resize', _smVvFn);
+        return;
+      }
+      var kbH = Math.max(0, window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop);
+      _smBox.style.transform = kbH > 60 ? 'translateY(-' + Math.round(kbH * 0.5) + 'px)' : '';
+    };
+    window.visualViewport.addEventListener('resize', _smVvFn);
+  }
+  // 입력 필드 포커스 시 커서만 (select-all 방지)
+  overlay.addEventListener('focus', function(e) {
+    var inp = e.target;
+    if (inp && inp.tagName === 'INPUT' && inp.type === 'text') {
+      setTimeout(function() {
+        try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch(ex) {}
+      }, 30);
+    }
+  }, true);
+
   smCatChange();
   // 수정 모드: 기존 값 프리필
   if (prefillEntry) {
@@ -5391,6 +5421,7 @@ function openSM(prefillEntry) {
   document.getElementById("smSaveBtn").addEventListener("click", saveSE);
   document.getElementById("smCancelBtn").addEventListener("click", function(){
     _smEditCat = null; _smEditIdx = null; _smEditEntry = null;
+    if (_smVvFn && window.visualViewport) window.visualViewport.removeEventListener('resize', _smVvFn);
     overlay.remove();
   });
 }
@@ -5409,17 +5440,17 @@ function smCatChange() {
   if (cat === 'exercise') {
     wrap.innerHTML = '<div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:12px;">'
       + '<div style="flex:1;"><div style="font-size:11px;color:' + subCl + ';margin-bottom:4px;">거리</div>'
-      + '<input id="smRunDist" type="number" step="0.01" min="0" placeholder="5.00" style="' + inpStyle + '"/></div>'
+      + '<input id="smRunDist" type="text" inputmode="decimal" placeholder="5.00" style="' + inpStyle + '"/></div>'
       + '<div style="font-size:14px;font-weight:600;color:' + textCl + ';padding-bottom:10px;">km</div>'
       + '</div>'
       + '<div style="margin-bottom:12px;"><div style="font-size:11px;color:' + subCl + ';margin-bottom:4px;">시간 (분 : 초)</div>'
       + '<div style="display:flex;gap:6px;align-items:center;">'
-      + '<input id="smRunMin" type="number" step="1" min="0" placeholder="30" style="' + inpStyle + 'width:0;flex:1;text-align:center;"/>'
+      + '<input id="smRunMin" type="text" inputmode="numeric" placeholder="30" style="' + inpStyle + 'width:0;flex:1;text-align:center;"/>'
       + '<span style="font-size:20px;font-weight:700;color:' + textCl + ';">:</span>'
-      + '<input id="smRunSec" type="number" step="1" min="0" max="59" placeholder="00" style="' + inpStyle + 'width:0;flex:1;text-align:center;"/>'
+      + '<input id="smRunSec" type="text" inputmode="numeric" placeholder="00" style="' + inpStyle + 'width:0;flex:1;text-align:center;"/>'
       + '</div></div>';
   } else {
-    wrap.innerHTML = '<input id="smVal" type="number" step="0.1" placeholder="수치 입력" style="' + inpStyle + 'margin-bottom:12px;"/>';
+    wrap.innerHTML = '<input id="smVal" type="text" inputmode="decimal" placeholder="수치 입력" style="' + inpStyle + 'margin-bottom:12px;"/>';
   }
 }
 
