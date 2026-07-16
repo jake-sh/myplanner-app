@@ -5103,16 +5103,30 @@ function renderStatsUI() {
     + '<button id="openSmBtn" style="' + btnSt + '">' + __T('+ Add','+ 입력','+ 添加','+ 入力') + '</button>'
     + '</div>';
 
-  var chartHtml = '<div style="background:' + boxBg + ';border:1.5px solid ' + boxBd + ';border-radius:16px;padding:16px;margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:' + titleCl + ';">' + cat.emoji + ' ' + statLabel(curSC) + '</div><div style="font-size:11px;color:#334155;margin-bottom:12px;">' + __T('Unit: ','단위: ','单位: ','単位: ') + statUnit(curSC) + '</div>';
+  var _wrapSt = 'overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;width:100%;';
+  var _subLbl = 'font-size:11px;color:#334155;margin-bottom:6px;font-weight:600;';
+  var chartHtml = '<div style="background:' + boxBg + ';border:1.5px solid ' + boxBd + ';border-radius:16px;padding:16px;margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:' + titleCl + ';">' + cat.emoji + ' ' + statLabel(curSC) + '</div>';
+  if (curSC !== 'exercise') {
+    chartHtml += '<div style="font-size:11px;color:#334155;margin-bottom:12px;">' + __T('Unit: ','단위: ','单位: ','単位: ') + statUnit(curSC) + '</div>';
+  } else {
+    chartHtml += '<div style="font-size:11px;color:#334155;margin-bottom:12px;">거리 · 시간 · 페이스</div>';
+  }
   if (entries.length === 0) {
     chartHtml += '<div style="text-align:center;color:#334155;font-size:13px;padding:30px 0;">데이터가 없어요.<br>+ 입력으로 추가해보세요!</div>';
+  } else if (curSC === 'exercise') {
+    chartHtml += '<div style="' + _subLbl + '">🏃 거리 (km)</div>'
+      + '<div id="sCanvasWrap" style="' + _wrapSt + 'margin-bottom:14px;"><canvas id="sCanvas"></canvas></div>'
+      + '<div style="' + _subLbl + '">⏱ 시간 (분)</div>'
+      + '<div id="sCanvasWrap2" style="' + _wrapSt + 'margin-bottom:14px;"><canvas id="sCanvas2"></canvas></div>'
+      + '<div style="' + _subLbl + '">⚡ 페이스 (min/km, 낮을수록 빠름)</div>'
+      + '<div id="sCanvasWrap3" style="' + _wrapSt + '"><canvas id="sCanvas3"></canvas></div>';
   } else {
-    chartHtml += '<div id="sCanvasWrap" style="overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;width:100%;"><canvas id="sCanvas"></canvas></div>';
+    chartHtml += '<div id="sCanvasWrap" style="' + _wrapSt + '"><canvas id="sCanvas"></canvas></div>';
   }
   chartHtml += "</div>";
 
   var listHtml = '<div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:8px;">' + __T('Recent Records','최근 기록','最近记录','最近の記録') + (curSC === 'weight' ? ' <span style="font-size:11px;font-weight:400;color:#94a3b8;">(길게 눌러 수정)</span>' : '') + '</div>';
-  entries.slice().reverse().slice(0,10).forEach(function(e, i) {
+  entries.slice().reverse().slice(0,30).forEach(function(e, i) {
     var origIdx = entries.length - 1 - i;
     var valDisplay;
     if (curSC === 'exercise') {
@@ -5179,22 +5193,43 @@ function renderStatsUI() {
     row.addEventListener('touchmove', function() { clearTimeout(_lpTimer); _lpTimer = null; }, { passive: true });
   });
 
-  // 그래프: 전체 기간 + 체중 성별 보정 (포인트 간격 고정, 가로 스크롤)
+  // 그래프: 리스트와 동일한 최근 10개만 표시
   if (entries.length > 0) {
-    var chartEntries = entries.slice(); // 전체
+    var chartEntries = entries.slice(-100); // 최근 100개
     if (isWeightTab) {
       chartEntries = chartEntries.map(function(e) {
         return Object.assign({}, e, { value: weightDisplay(e) });
       });
     }
-    setTimeout(function() {
-      var canvas = document.getElementById("sCanvas");
-      if (canvas) drawSC(canvas, chartEntries, cat);
-    }, 50);
+    if (curSC === 'exercise') {
+      var runE = chartEntries.filter(function(e) { return e.dist && e.dist > 0; });
+      setTimeout(function() {
+        var c1 = document.getElementById("sCanvas");
+        var c2 = document.getElementById("sCanvas2");
+        var c3 = document.getElementById("sCanvas3");
+        if (!c1 || !runE.length) return;
+        var distE = runE.map(function(e){ return Object.assign({},e,{value:e.dist}); });
+        var timeE = runE.map(function(e){
+          return Object.assign({},e,{value:((e.timeMin||0)*60+(e.timeSec||0))/60});
+        });
+        var paceE = runE.map(function(e){
+          var ts=(e.timeMin||0)*60+(e.timeSec||0);
+          return Object.assign({},e,{value:ts&&e.dist?ts/e.dist/60:0});
+        });
+        drawSC(c1, distE, {color:'#f59e0b'}, 120);
+        if(c2) drawSC(c2, timeE, {color:'#3b82f6'}, 120);
+        if(c3) drawSC(c3, paceE, {color:'#10b981'}, 120);
+      }, 50);
+    } else {
+      setTimeout(function() {
+        var canvas = document.getElementById("sCanvas");
+        if (canvas) drawSC(canvas, chartEntries, cat);
+      }, 50);
+    }
   }
 }
 
-function drawSC(canvas, entries, cat) {
+function drawSC(canvas, entries, cat, chartH) {
   var dpr = window.devicePixelRatio || 1;
   var wrap = canvas.parentElement; // sCanvasWrap (overflow-x:auto)
   var visibleW = wrap.clientWidth;
@@ -5203,7 +5238,7 @@ function drawSC(canvas, entries, cat) {
   var W = entries.length > 1
     ? Math.max(visibleW, (entries.length - 1) * MIN_GAP + pL + pR)
     : visibleW;
-  var H = 160;
+  var H = chartH || 160;
   canvas.width = W * dpr;
   canvas.height = H * dpr;
   canvas.style.width = W + "px";
