@@ -14,17 +14,20 @@ const storage = firebase.storage();
 
 let currentUser = null;
 let _authReady = false;
+let _explicitLogin = false; // 명시적 로그인 여부 (새로고침 시 false로 초기화됨)
 auth.onAuthStateChanged(async user => {
   // @myplanner.app 이메일이 아닌 경우 → 무효 세션 강제 로그아웃
   if (user && (!user.email || !user.email.endsWith('@myplanner.app'))) {
     try { await auth.signOut(); } catch(e) {}
     return;
   }
-  // 자동로그인 해제 상태에서 페이지 로드(새로고침) 시 로그아웃
-  if (user && !_getAutoLogin()) {
+  // 자동로그인 해제 + 새로고침(페이지 재로드) 시 로그아웃
+  // _explicitLogin이 true면 방금 로그인한 것 → 로그아웃하지 않음
+  if (user && !_getAutoLogin() && !_explicitLogin) {
     try { await auth.signOut(); } catch(e) {}
     return;
   }
+  _explicitLogin = false;
   currentUser = user;
   _authReady = true;
   if (!user) {
@@ -106,8 +109,10 @@ async function loginWithId() {
   try {
     document.getElementById('loginBtn').disabled = true;
     await _setPersistence();
+    _explicitLogin = true;
     await auth.signInWithEmailAndPassword(_idToEmail(id), pw);
   } catch(e) {
+    _explicitLogin = false;
     var code = e.code || '';
     if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
       msgEl.textContent = 'ID 또는 비밀번호가 올바르지 않습니다.';
@@ -131,6 +136,7 @@ async function registerWithId() {
   try {
     document.getElementById('registerBtn').disabled = true;
     await _setPersistence();
+    _explicitLogin = true;
     await auth.createUserWithEmailAndPassword(_idToEmail(id), pw);
   } catch(e) {
     var code = e.code || '';
