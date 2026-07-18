@@ -20,6 +20,11 @@ auth.onAuthStateChanged(async user => {
     try { await auth.signOut(); } catch(e) {}
     return;
   }
+  // 자동로그인 해제 상태에서 페이지 로드(새로고침) 시 로그아웃
+  if (user && !_getAutoLogin()) {
+    try { await auth.signOut(); } catch(e) {}
+    return;
+  }
   currentUser = user;
   _authReady = true;
   if (!user) {
