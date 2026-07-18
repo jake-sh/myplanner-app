@@ -251,9 +251,18 @@ async function deleteAccount() {
   if (!confirm('계정을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
   if (!currentUser) return;
   try {
+    // 서버 데이터 전체 삭제 (시크릿코드·백업·친구관계·채팅방 포함)
+    var codeToDelete = myCode;
+    var friendsToDelete = friends.slice();
+    await _purgeServerData(codeToDelete, friendsToDelete);
     // userCodes 매핑 삭제
     await db.collection('userCodes').doc(currentUser.uid).delete().catch(function(){});
-    // Firebase Auth 계정 삭제 (최근 로그인 필요 — 세션이 살아있으면 가능)
+    // 로컬 데이터 정리
+    myCode = '';
+    friends = [];
+    localStorage.removeItem('myCode');
+    localStorage.removeItem('friends');
+    // Firebase Auth 계정 삭제
     await currentUser.delete();
   } catch(e) {
     if (e.code === 'auth/requires-recent-login') {
