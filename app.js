@@ -250,6 +250,9 @@ async function changePassword() {
 async function deleteAccount() {
   if (!confirm('계정을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
   if (!currentUser) return;
+  // async 도중 currentUser가 null이 될 수 있으므로 미리 저장
+  var userToDelete = currentUser;
+  var uid = userToDelete.uid;
   // 리스너 먼저 해제 (문서 삭제 시 연쇄 콜백으로 화면 깨짐 방지)
   if (friendsListener) { friendsListener(); friendsListener = null; }
   if (roomListener)    { roomListener();    roomListener = null; }
@@ -260,15 +263,16 @@ async function deleteAccount() {
     var codeToDelete = myCode;
     var friendsToDelete = friends.slice();
     await _purgeServerData(codeToDelete, friendsToDelete);
-    // userCodes 매핑 삭제
-    await db.collection('userCodes').doc(currentUser.uid).delete().catch(function(){});
+    // userCodes 매핑 삭제 (미리 저장한 uid 사용, 규칙: allow delete if auth.uid == uid)
+    try { await db.collection('userCodes').doc(uid).delete(); } catch(e) {}
     // 로컬 데이터 정리
     myCode = '';
     friends = [];
     localStorage.removeItem('myCode');
     localStorage.removeItem('friends');
+    hideUploadStatus();
     // Firebase Auth 계정 삭제 → onAuthStateChanged(null) → 로그인 화면 이동
-    await currentUser.delete();
+    await userToDelete.delete();
   } catch(e) {
     hideUploadStatus();
     if (e.code === 'auth/requires-recent-login') {
@@ -3674,13 +3678,20 @@ async function _purgeServerData(oldCode, oldFriends) {
   try {
     await db.collection('backups').doc(oldCode).delete();
   } catch(e) {}
-  // patternIndex에서 내 코드 제거 (현재 patternHash 기준)
+  // patternIndex에서 내 코드 제거 → 빈 배열이 되면 문서 삭제
   try {
     var hash = await patternToHash(savedPattern);
     if (hash) {
-      await db.collection('patternIndex').doc(hash).set({
-        codes: firebase.firestore.FieldValue.arrayRemove(oldCode)
-      }, { merge: true });
+      var piRef = db.collection('patternIndex').doc(hash);
+      var piSnap = await piRef.get();
+      if (piSnap.exists) {
+        var remaining = (piSnap.data().codes || []).filter(function(c) { return c !== oldCode; });
+        if (remaining.length === 0) {
+          await piRef.delete();
+        } else {
+          await piRef.update({ codes: remaining });
+        }
+      }
     }
   } catch(e) {}
 
