@@ -577,7 +577,11 @@ function onDragEnd() {
     return;
   }
 
-  // [myCode 없음] = 캐시 손실 또는 첫 사용자. 자동 복원 분기 호출
+  // [myCode 없음] = 캐시 손실 또는 첫 사용자.
+  // 마스터 패턴 또는 기기에 저장된 패턴만 허용 — 임의 패턴은 무시
+  if (!isMasterPattern(patternCopy) && !arraysEqual(patternCopy, savedPattern)) {
+    return;
+  }
   tryAutoRestore(patternCopy).then(function(r) {
     if (!r) return;
     if (r.action === 'enter') {
