@@ -250,7 +250,12 @@ async function changePassword() {
 async function deleteAccount() {
   if (!confirm('계정을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
   if (!currentUser) return;
+  // 리스너 먼저 해제 (문서 삭제 시 연쇄 콜백으로 화면 깨짐 방지)
+  if (friendsListener) { friendsListener(); friendsListener = null; }
+  if (roomListener)    { roomListener();    roomListener = null; }
+  if (messageListener) { messageListener(); messageListener = null; }
   try {
+    showUploadStatus(__T('Deleting account...','계정 삭제 중...','正在删除账户...','アカウント削除中...'));
     // 서버 데이터 전체 삭제 (시크릿코드·백업·친구관계·채팅방 포함)
     var codeToDelete = myCode;
     var friendsToDelete = friends.slice();
@@ -262,9 +267,10 @@ async function deleteAccount() {
     friends = [];
     localStorage.removeItem('myCode');
     localStorage.removeItem('friends');
-    // Firebase Auth 계정 삭제
+    // Firebase Auth 계정 삭제 → onAuthStateChanged(null) → 로그인 화면 이동
     await currentUser.delete();
   } catch(e) {
+    hideUploadStatus();
     if (e.code === 'auth/requires-recent-login') {
       showAlert('보안을 위해 재로그인 후 계정 삭제가 가능합니다.\n로그아웃 후 다시 로그인해 주세요.');
       await auth.signOut();
