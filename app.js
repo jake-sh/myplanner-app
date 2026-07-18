@@ -287,6 +287,13 @@ async function linkUidToMyCode(uid) {
         savedPattern = [...DEFAULT_PATTERN];
         localStorage.setItem('secPattern', JSON.stringify(savedPattern));
       }
+      // users/{code}.uid 불일치 자동 보정 (구버전 레코드 또는 이전 취약점으로 잘못 기록된 경우)
+      try {
+        var uSnap = await db.collection('users').doc(stored).get();
+        if (!uSnap.exists || (uSnap.data().uid || null) !== uid) {
+          await db.collection('users').doc(stored).set({ uid: uid }, { merge: true });
+        }
+      } catch(e) {}
     } else if (myCode) {
       // 이 myCode가 이미 다른 uid에 귀속되어 있는지 확인 (보안: 이전 사용자 myCode 도용 방지)
       try {
