@@ -3057,13 +3057,26 @@ async function saveMyCode() {
     showAlert(__T('At least 2 chars required','2자 이상 입력하세요','请输入至少2个字符','2文字以上入力してください'));
     return;
   }
-  // 코드 중복 검증: 이미 다른 사용자가 백업해둔 코드면 거부
+  var myUid = currentUser ? currentUser.uid : null;
   try {
+    // 1) users/{code}.uid 선행 확인 — 다른 UID 소유 코드면 즉시 거부
+    var userSnap = await db.collection('users').doc(code).get();
+    if (userSnap.exists) {
+      var ud = userSnap.data() || {};
+      if (ud.uid && ud.uid !== myUid) {
+        showAlert(__T('Code already in use','이미 등록된 코드입니다','此代码已被使用','既に登録されているコードです'));
+        return;
+      }
+    }
+    // 2) backups/{code} 확인 — 타인 백업이면 거부, 본인 백업이면 복원
     var bk = await db.collection('backups').doc(code).get();
     if (bk.exists) {
       var data = bk.data() || {};
+      if (data.uid && data.uid !== myUid) {
+        showAlert(__T('Code already in use','이미 등록된 코드입니다','此代码已被使用','既に登録されているコードです'));
+        return;
+      }
       var myHash = await patternToHash(savedPattern);
-      // 본인 백업(패턴 일치)이면 복원, 아니면 거부
       if (data.patternHash === myHash) {
         var ok = await _restoreCode(code, myHash);
         if (ok) { window.location.reload(); return; }
@@ -3074,8 +3087,7 @@ async function saveMyCode() {
   } catch(e) { console.log('[saveMyCode] check error:', e.message); }
 
   myCode = code; localStorage.setItem('myCode', myCode);
-  db.collection('users').doc(myCode).set({ code: myCode, friends: [], ts: firebase.firestore.Timestamp.now() }, { merge: true });
-  // 신규 사용자 첫 백업 트리거
+  db.collection('users').doc(myCode).set({ code: myCode, friends: [], uid: myUid, ts: firebase.firestore.Timestamp.now() }, { merge: true });
   try { performBackup(); } catch(e) {}
   showFriendList();
 }
@@ -3162,6 +3174,7 @@ async function performBackup() {
     // 백업 문서 set
     await db.collection('backups').doc(myCode).set({
       patternHash: patternHash,
+      uid: currentUser ? currentUser.uid : null,
       payload: payload,
       ts: firebase.firestore.Timestamp.now()
     });
@@ -3234,22 +3247,31 @@ async function applyCodeAfterPattern(inputCode, source, candidates) {
   var currentHash = await patternToHash(savedPattern);
 
   if (source === 'master') {
-    // 신규 또는 같은 패턴(드물게 마스터+같은 코드)의 본인 복원
+    var myUid = currentUser ? currentUser.uid : null;
     try {
+      // 선행 게이트: users/{code}.uid가 다른 계정이면 즉시 거부
+      var usersSnap = await db.collection('users').doc(inputCode).get();
+      if (usersSnap.exists) {
+        var ud = usersSnap.data() || {};
+        if (ud.uid && ud.uid !== myUid) {
+          return { ok: false, error: 'duplicate' };
+        }
+      }
+
       var snap = await db.collection('backups').doc(inputCode).get();
       if (!snap.exists) {
-        // 백업 없음 → 신규 사용자로 시작
         await _initNewUser(inputCode);
         return { ok: true, mode: 'new' };
       }
-      // 백업 있음 → patternHash 비교
+      // 백업 있음 → UID + patternHash 비교
       var data = snap.data();
+      if (data.uid && data.uid !== myUid) {
+        return { ok: false, error: 'duplicate' };
+      }
       if (data.patternHash === currentHash) {
-        // 동일 패턴+동일 코드 → 본인. 복원 (드문 케이스)
         var ok = await _restoreCode(inputCode, currentHash);
         if (ok) return { ok: true, mode: 'restored' };
       }
-      // 패턴 다른데 코드 중복 = 다른 사용자 → 거부
       return { ok: false, error: 'duplicate' };
     } catch(e) {
       return { ok: false, error: 'notFound' };
@@ -3290,12 +3312,12 @@ async function _restoreCode(code, expectedHash) {
 async function _initNewUser(code) {
   localStorage.setItem('myCode', code);
   localStorage.setItem('friends', '[]');
+  var myUid = currentUser ? currentUser.uid : null;
   try {
     await db.collection('users').doc(code).set({
-      code: code, friends: [], ts: firebase.firestore.Timestamp.now()
+      code: code, friends: [], uid: myUid, ts: firebase.firestore.Timestamp.now()
     });
   } catch(e) { console.log('[NEW] user create error:', e.message); }
-  // 첫 백업 트리거 (자기 코드를 patternIndex에 등록)
   try { await performBackup(); } catch(e) {}
 }
 
