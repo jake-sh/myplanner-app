@@ -2,9 +2,10 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // 인증된 사용자의 myCode를 userCodes 컬렉션에서 조회
+    // 현재 인증 사용자의 myCode 반환 (userCodes/{uid}.myCode)
     function getMyCode() {
-      return get(/databases/$(database)/documents/userCodes/$(request.auth.uid)).data.myCode;
+      let doc = get(/databases/$(database)/documents/userCodes/$(request.auth.uid));
+      return doc.data.get('myCode', null);
     }
 
     // 공유 문서 ID(sid)에 내 코드가 포함되어 있는지 확인
@@ -14,37 +15,67 @@ service cloud.firestore {
       return parts[0] == mc || parts[1] == mc;
     }
 
-    // UID ↔ myCode 매핑 (자기 자신만 읽기/쓰기)
+    // users/{code}.uid 반환 (코드 소유자 확인용)
+    function codeOwner(code) {
+      return exists(/databases/$(database)/documents/users/$(code))
+        ? get(/databases/$(database)/documents/users/$(code)).data.get('uid', null)
+        : null;
+    }
+
+    // ── UID ↔ myCode 매핑 ──────────────────────────────────────────────
+    // 쓰기 시 대상 코드가 이미 다른 UID에 귀속된 경우 거부 (서버 레벨 중복 방��)
     match /userCodes/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid && (
+        !request.resource.data.keys().hasAll(['myCode']) ||
+        codeOwner(request.resource.data.myCode) == null ||
+        codeOwner(request.resource.data.myCode) == request.auth.uid
+      );
     }
 
-    // 사용자 프로필 (자기 코드만)
+    // ── 사용자 프로��� ──────────────────────────────────────────────────
+    // get:    인증된 모든 사용자 허용 (친구 추가, 코드 중복 확인에 필요)
+    // list:   차단 (전체 코드 목록 열람 방지)
+    // create: 자신의 uid가 포함된 문서만 생성 가능
+    // update/delete: 본인 코드(getMyCode) 또는 uid 소유자만
     match /users/{code} {
-      allow read, write: if request.auth != null && getMyCode() == code;
+      allow get: if request.auth != null;
+      allow create: if request.auth != null &&
+        request.resource.data.get('uid', null) == request.auth.uid;
+      allow update: if request.auth != null && (
+        getMyCode() == code ||
+        resource.data.get('uid', null) == request.auth.uid ||
+        // 친구 추가 시 상대방 문서의 friends 필드만 arrayUnion 허용
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['friends']) &&
+         request.resource.data.friends.hasAll(resource.data.friends))
+      );
+      allow delete: if request.auth != null && (
+        getMyCode() == code ||
+        resource.data.get('uid', null) == request.auth.uid
+      );
     }
 
-    // 할 일 공유 문서 (codeA_todo_codeB)
+    // ── 할 일 공유 문서 (codeA_todo_codeB) ────────────────────────────
     match /todos/{sid} {
       allow read, write: if request.auth != null && isParty(sid, '_todo_');
     }
 
-    // 메모 공유 문서 (codeA_memo_codeB)
+    // ── 메모 공유 문�� (codeA_memo_codeB) ──────���─────────────────────
     match /memos_shared/{sid} {
       allow read, write: if request.auth != null && isParty(sid, '_memo_');
     }
 
-    // 달력 공유 문서 (codeA_cal_codeB)
+    // ── 달력 ���유 문서 (codeA_cal_codeB) ─────────────────────────────
     match /calendars/{sid} {
       allow read, write: if request.auth != null && isParty(sid, '_cal_');
     }
 
-    // 통계 공유 문서 (codeA_stat_codeB)
+    // ── 통계 공유 문서 (codeA_stat_codeB) ─────────────���──────────────
     match /stats/{sid} {
       allow read, write: if request.auth != null && isParty(sid, '_stat_');
     }
 
-    // 채팅방 (codeA_codeB)
+    // ── 채팅방 ────────────────────────────────────────────────────────
     match /rooms/{roomId} {
       allow read, write: if request.auth != null && isParty(roomId, '_');
       match /messages/{msgId} {
@@ -52,23 +83,28 @@ service cloud.firestore {
       }
     }
 
-    // 친구 요청 (to/from 필드로 관여 여부 확인)
+    // ── 친구/공유 요청 ───���────────────────────────────────────────────
     match /shareRequests/{docId} {
       allow read: if request.auth != null && (
         resource.data.to == getMyCode() || resource.data.from == getMyCode()
       );
       allow write: if request.auth != null && (
-        request.resource.data.to == getMyCode() || request.resource.data.from == getMyCode()
+        request.resource.data.to == getMyCode() ||
+        request.resource.data.from == getMyCode()
       );
       allow delete: if request.auth != null;
     }
 
-    // 백업 (자기 코드만)
+    // ── 백업 ────────────────────────────────────────��─────────────────
+    // 읽기/쓰기: getMyCode()==code (정상 흐름) OR codeOwner==auth.uid (캐시 손실 복원)
     match /backups/{code} {
-      allow read, write: if request.auth != null && getMyCode() == code;
+      allow read, write: if request.auth != null && (
+        getMyCode() == code ||
+        codeOwner(code) == request.auth.uid
+      );
     }
 
-    // 패턴 인덱스 (인증된 사용자 누구나 — 코드 복원용)
+    // ── 패턴 인덱스 (코드 복원용) ─────────────────────────────────────
     match /patternIndex/{hash} {
       allow read, write: if request.auth != null;
     }

@@ -1,4 +1,4 @@
-// ── FIREBASE ───────────────────────────────────────
+﻿// ── FIREBASE ───────────────────────────────────────
 const firebaseConfig = {
   apiKey: "AIzaSyDmyo0wXdWXXclODKQY9vFMoBXca3ObuvM",
   authDomain: "chat-f2661.firebaseapp.com",
@@ -3091,6 +3091,8 @@ async function saveMyCode() {
   } catch(e) { console.log('[saveMyCode] check error:', e.message); }
 
   myCode = code; localStorage.setItem('myCode', myCode);
+  // userCodes 먼저 설정해야 이후 Firestore rules(backups/users write)가 통과됨
+  if (myUid) db.collection('userCodes').doc(myUid).set({ myCode: myCode }).catch(function(){});
   db.collection('users').doc(myCode).set({ code: myCode, friends: [], uid: myUid, ts: firebase.firestore.Timestamp.now() }, { merge: true });
   try { performBackup(); } catch(e) {}
   showFriendList();
@@ -3317,6 +3319,7 @@ async function _initNewUser(code) {
   localStorage.setItem('myCode', code);
   localStorage.setItem('friends', '[]');
   var myUid = currentUser ? currentUser.uid : null;
+  if (myUid) await db.collection('userCodes').doc(myUid).set({ myCode: code }).catch(function(){});
   try {
     await db.collection('users').doc(code).set({
       code: code, friends: [], uid: myUid, ts: firebase.firestore.Timestamp.now()
@@ -3726,7 +3729,9 @@ async function _doRegenerateCode() {
   localStorage.setItem('myCode', myCode);
   localStorage.setItem('friends', '[]');
 
-  await db.collection('users').doc(myCode).set({ code: myCode, friends: [], ts: firebase.firestore.Timestamp.now() });
+  var _rgUid = currentUser ? currentUser.uid : null;
+  if (_rgUid) await db.collection('userCodes').doc(_rgUid).set({ myCode: myCode }).catch(function(){});
+  await db.collection('users').doc(myCode).set({ code: myCode, friends: [], uid: _rgUid, ts: firebase.firestore.Timestamp.now() });
   renderMyQr(); renderFriendList(); showAlert(__T('Code regenerated: ','코드 재생성: ','代码已重新生成: ','コード再生成: ') + myCode);
 }
 
@@ -3790,7 +3795,9 @@ async function changeCodeAndPurge() {
   localStorage.setItem('myCode', myCode);
   localStorage.setItem('friends', '[]');
 
-  await db.collection('users').doc(myCode).set({ code: myCode, friends: [], ts: firebase.firestore.Timestamp.now() });
+  var _ccUid = currentUser ? currentUser.uid : null;
+  if (_ccUid) await db.collection('userCodes').doc(_ccUid).set({ myCode: myCode }).catch(function(){});
+  await db.collection('users').doc(myCode).set({ code: myCode, friends: [], uid: _ccUid, ts: firebase.firestore.Timestamp.now() });
   // 새 백업 (patternIndex 자동 등록)
   try { await performBackup(); } catch(e) {}
   closeSecretSettings();
@@ -3843,8 +3850,10 @@ async function changeCodeAndKeep() {
   localStorage.setItem('myCode', myCode);
   localStorage.setItem('friends', '[]');
 
-  // 새 users 문서
-  await db.collection('users').doc(myCode).set({ code: myCode, friends: [], ts: firebase.firestore.Timestamp.now() });
+  // 새 users 문서 (userCodes 먼저 설정해야 rules 통과)
+  var _ckUid = currentUser ? currentUser.uid : null;
+  if (_ckUid) await db.collection('userCodes').doc(_ckUid).set({ myCode: myCode }).catch(function(){});
+  await db.collection('users').doc(myCode).set({ code: myCode, friends: [], uid: _ckUid, ts: firebase.firestore.Timestamp.now() });
   // 새 백업 (새 myCode로 patternIndex 등록 + 데이터는 그대로)
   try { await performBackup(); } catch(e) {}
   try { hideUploadStatus(); } catch(e) {}
