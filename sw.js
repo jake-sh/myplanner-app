@@ -1,4 +1,4 @@
-﻿const CACHE = 'myplanner-v499';
+const CACHE = 'myplanner-v4910';
 const PRECACHE = ['./', './index.html', './app.js', './style.css', './manifest.json'];
 
 self.addEventListener('install', e => {
@@ -11,7 +11,7 @@ self.addEventListener('activate', e => {
     caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
     .then(() => self.clients.claim())
     .then(() => {
-      // ??버전 ?�성 ?�림 ???�라?�언?��? ?�동 ?�로고침
+      // Notify clients a new version is active so they can auto-reload.
       return self.clients.matchAll({ type: 'window' }).then(clients => {
         clients.forEach(c => c.postMessage({ type: 'SW_ACTIVATED', version: CACHE }));
       });
@@ -22,9 +22,9 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // Firebase/Google API ?�청?� SW가 ?��? 가로채지 ?�고 ?�트?�크�?직행?�다.
-  // (?�증 ?�큰 갱신, Firestore ?�기 ?�이 SW�?거치�?변???�패?�면
-  //  미사????"URI Too Long", ?�증 ?�패, ?�기???�락??발생??
+  // Firebase/Google API requests must bypass the SW and go straight to network.
+  // (Auth token refresh and Firestore streams break if the SW rewrites them:
+  //  "URI Too Long", auth failures, dropped listeners.)
   const host = url.hostname;
   if (host.includes('googleapis.com') ||
       host.includes('firebaseio.com') ||
@@ -35,13 +35,13 @@ self.addEventListener('fetch', e => {
       host.includes('firestore') ||
       host.includes('identitytoolkit') ||
       host.includes('securetoken')) {
-    return; // respondWith ?�출 ??????브라?��? 기본 ?�트?�크 처리
+    return; // no respondWith -> browser default network handling
   }
 
-  // ?�?� POST share_target ?�신 ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
-  // manifest??share_target??POST ./share-receiver �??�어??
-  // �??�스?�도 URL???�닌 body(formData)???�리므�?"URI Too Long"???�다.
-  // formData�?꺼내 Cache???�시 ?�???? 짧�? URL�?redirect ???�라?�언?��? ?�어�?
+  // POST share_target receiver.
+  // The manifest share_target POSTs to ./share-receiver. GitHub Pages would
+  // reject the large formData body, so we stash it in Cache and redirect the
+  // client to a short URL it can pick up.
   if (e.request.method === 'POST' && url.pathname.endsWith('/share-receiver')) {
     e.respondWith((async () => {
       try {
@@ -57,22 +57,18 @@ self.addEventListener('fetch', e => {
           headers: { 'Content-Type': 'application/json' }
         }));
       } catch(err) {
-        // formData ?�싱 ?�패?�도 ?��? ?��?
+        // ignore formData parse failures
       }
-      // 짧�? URL�?redirect (303: POST ??GET ?�환)
+      // Redirect to a short URL (303: POST -> GET)
       return Response.redirect('./?share=1', 303);
     })());
     return;
   }
 
-  // share_target?�로 ?�어???�청?� 캐시 ?�회 + 쿼리?�트�??��?
-  // (구버??GET 방식 ?�환 ?��? ??manifest 갱신 ??기기 ?�??
+  // Legacy GET share_target: serve cached index.html, keep querystring on client.
   const isShareTarget = e.request.method === 'GET' &&
     (url.searchParams.has('title') || url.searchParams.has('text') || url.searchParams.has('url'));
   if (isShareTarget) {
-    // 캐시??index.html???�답?�고, 쿼리?�트링�? ?�라?�언?�의 location.search�??�아?�음.
-    // 캐시 miss(?�시�?미사?�으�?캐시 ?�리?? ?�에???��? ?�본 �?URL???�버�?보내지 ?�는??    // ??GitHub Pages가 �?쿼리?�트링을 414 "URI Too Long"?�로 거�??�기 ?�문.
-    // 쿼리�??� ./index.html�??�트?�크�??�청?�다 (주소�?쿼리?�트링�? ?��???.
     e.respondWith(
       caches.match('./index.html')
         .then(c => c || caches.match('./'))
@@ -81,17 +77,20 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
-  // navigation ?�청?� ?�트?�크 ?�선
+
+  // Navigation requests: network-first.
   if (e.request.mode === 'navigate') {
     e.respondWith(fetch(e.request).catch(() => caches.match('/myplanner-app/index.html')));
     return;
   }
-  // GET???�닌 ?�청(POST/PUT/PATCH/DELETE ???�기)?� 캐시 ?�?�이 ?�니므�??��?지 ?�음
+
+  // Non-GET (POST/PUT/PATCH/DELETE incl. writes) are not cacheable -> pass through.
   if (e.request.method !== 'GET') {
     return;
   }
-  // ?�심 ?�산(html/css/js)?� network-first ????�� 최신 반영, ?�프?�인??캐시 ?�백
-  // (cache-first�??�번 캐시????style.css/app.js가 계속 ?�빙?�어 변경이 ??보임)
+
+  // Core assets (html/css/js): network-first so changes deploy immediately,
+  // fall back to cache when offline.
   const isCore = url.pathname.endsWith('.css') ||
                  url.pathname.endsWith('.js') ||
                  url.pathname.endsWith('.html') ||
@@ -109,7 +108,7 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // ?�머지(?�트·?��?지 ????cache-first
+  // Everything else (fonts, images): cache-first.
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).then(resp => {
       if (resp && resp.status === 200 && e.request.url.startsWith(self.location.origin)) {
@@ -121,10 +120,11 @@ self.addEventListener('fetch', e => {
   );
 });
 
-// push 핸들러: iOS 등에서 FCM 전용 SW(firebase-messaging-sw.js) 등록이 실패해
-// 푸시 구독이 이 메인 sw.js에 묶이는 경우를 대비한 폴백.
-// 서버는 data-only 페이로드를 보내므로 FCM 자동표시가 없어 중복 알림이 생기지 않는다.
-// (구독은 getToken에 넘긴 SW 하나에만 묶이므로 onBackgroundMessage와 동시 발화하지 않음)
+// Push handler: fallback for iOS etc. where registering the dedicated FCM SW
+// (firebase-messaging-sw.js) fails and the push subscription binds to this
+// main sw.js instead. The server sends data-only payloads, so there is no FCM
+// auto-display and no duplicate notification. (A subscription binds to exactly
+// one SW, so this never fires alongside onBackgroundMessage.)
 self.addEventListener('push', e => {
   let d = {};
   try {
@@ -133,8 +133,8 @@ self.addEventListener('push', e => {
   } catch(err) {
     try { d = { body: e.data ? e.data.text() : '' }; } catch(e2) {}
   }
-  const title = d.title || '일정 알림';
-  const body = d.body || '새 메시지가 있어요';
+  const title = d.title || 'Planner';
+  const body = d.body || 'New message';
   e.waitUntil(
     self.registration.showNotification(title, {
       body: body,
@@ -147,11 +147,11 @@ self.addEventListener('push', e => {
 });
 
 self.addEventListener('message', e => {
-  if (e.data?.type === 'SHOW_NOTIFICATION') {
-    // 기존 ?�림 ?�고 ???�림 ?�시 (중복 방�?)
+  if (e.data && e.data.type === 'SHOW_NOTIFICATION') {
+    // Close existing notification then show the new one (avoid duplicates).
     self.registration.getNotifications({ tag: 'planner-notification' }).then(ns => {
       ns.forEach(n => n.close());
-      self.registration.showNotification(e.data.title || '?�림', {
+      self.registration.showNotification(e.data.title || 'Planner', {
         body: e.data.body || '',
         icon: '/myplanner-app/icons/icon-192.png',
         badge: '/myplanner-app/icons/icon-badge.png',
@@ -159,24 +159,24 @@ self.addEventListener('message', e => {
       });
     });
   }
-  if (e.data?.type === 'CLEAR_NOTIFICATIONS') {
+  if (e.data && e.data.type === 'CLEAR_NOTIFICATIONS') {
     self.registration.getNotifications().then(notifications => {
       notifications.forEach(n => n.close());
     });
   }
-  if (e.data?.type === 'SET_BADGE') { if (navigator.setAppBadge) navigator.setAppBadge(e.data.count); }
-  if (e.data?.type === 'CLEAR_BADGE') { if (navigator.clearAppBadge) navigator.clearAppBadge(); }
+  if (e.data && e.data.type === 'SET_BADGE') { if (navigator.setAppBadge) navigator.setAppBadge(e.data.count); }
+  if (e.data && e.data.type === 'CLEAR_BADGE') { if (navigator.clearAppBadge) navigator.clearAppBadge(); }
 });
 
 self.addEventListener('notificationclick', e => {
   e.notification.close();
   e.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-      // ?�린 �??�으�??�커??      for (const client of list) {
+      // Focus an open tab if there is one.
+      for (const client of list) {
         if ('focus' in client) return client.focus();
       }
       return self.clients.openWindow('/myplanner-app/');
     })
   );
 });
-
