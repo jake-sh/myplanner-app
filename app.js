@@ -4847,12 +4847,16 @@ let messaging = null;
 // iOS는 JS 콘솔 확인이 어려워, 어느 단계에서 막히는지 화면/서버에서 바로 보기 위함.
 // alert는 세션당 마지막 상태 1회만 표시 (디버그용). localStorage 'fcmDebug'='off'면 alert 끔.
 let _lastFcmStatus = '';
+let _fcmTrace = [];
+// 단계별 상태를 '누적'해서 기록 (마지막 에러가 이전 단계를 덮어써 원인이 사라지는 문제 방지).
+// tokenStatus에는 전체 경로가 " > "로 이어져 한 번에 어디서 막혔는지 보인다.
 async function _writeTokenStatus(status) {
-  _lastFcmStatus = status;
+  _fcmTrace.push(status);
+  _lastFcmStatus = _fcmTrace.join(' > ');
   try {
     if (!myCode) return;
     await db.collection('users').doc(myCode).set({
-      tokenStatus: status,
+      tokenStatus: _lastFcmStatus.slice(-450),
       tokenStatusAt: firebase.firestore.Timestamp.now()
     }, { merge: true });
   } catch(e) { console.log('tokenStatus write fail:', e.code || e.message); }
@@ -4870,8 +4874,9 @@ function _showFcmDebug() {
 
 // FCM 초기화 및 토큰 발급
 async function initFCM() {
+  _fcmTrace = [];
   try {
-    await _writeTokenStatus('init-start perm=' + (typeof Notification !== 'undefined' ? Notification.permission : 'no-Notification'));
+    await _writeTokenStatus('init perm=' + (typeof Notification !== 'undefined' ? Notification.permission : 'no-Notif'));
     if (typeof firebase !== 'undefined' && firebase.messaging && firebase.messaging.isSupported && firebase.messaging.isSupported()) {
       messaging = firebase.messaging();
       // 옛 버전에서 넓은 scope(/myplanner-app/)로 등록된 FCM SW가 있으면 해제.
@@ -4898,9 +4903,10 @@ async function initFCM() {
           '/myplanner-app/firebase-messaging-sw.js',
           { scope: '/myplanner-app/firebase-cloud-messaging-push-scope' }
         );
+        await _writeTokenStatus('fcmsw-reg-ok');
       } catch(regErr) {
         console.log('FCM SW register failed, fallback to default SW:', regErr.message);
-        await _writeTokenStatus('fcmsw-reg-fail:' + (regErr.name || '') + ' ' + String(regErr.message || '').slice(0, 90));
+        await _writeTokenStatus('fcmsw-reg-fail:' + (regErr.name || '') + ' ' + String(regErr.message || '').slice(0, 80));
       }
       // iOS에서는 좁은 scope의 FCM SW 등록이 실패할 수 있다. 이 경우 fcmSW가 없으면
       // getToken이 존재하지 않는 루트 /firebase-messaging-sw.js에 자체 등록을 시도해
@@ -4912,8 +4918,11 @@ async function initFCM() {
       if (!fcmSW) { try { fcmSW = await navigator.serviceWorker.getRegistration('/myplanner-app/'); } catch(e) {} }
       if (!fcmSW) {
         // 메인 sw.js를 직접 등록 (absolute path). 이미 등록돼 있으면 기존 등록을 반환.
-        try { fcmSW = await navigator.serviceWorker.register('/myplanner-app/sw.js'); } catch(e) {
-          await _writeTokenStatus('mainsw-reg-fail:' + (e.name || '') + ' ' + String(e.message || '').slice(0, 90));
+        try {
+          fcmSW = await navigator.serviceWorker.register('/myplanner-app/sw.js');
+          await _writeTokenStatus('mainsw-reg-ok');
+        } catch(e) {
+          await _writeTokenStatus('mainsw-reg-fail:' + (e.name || '') + ' ' + String(e.message || '').slice(0, 70));
         }
       }
       if (!fcmSW) {
@@ -4922,7 +4931,8 @@ async function initFCM() {
             navigator.serviceWorker.ready,
             new Promise(function(r) { setTimeout(function() { r(null); }, 8000); })
           ]);
-        } catch(e) {}
+          await _writeTokenStatus('ready=' + (fcmSW ? 'got' : 'timeout'));
+        } catch(e) { await _writeTokenStatus('ready-err:' + (e.name || e.message)); }
       }
       // SW가 active 상태가 되기 전에 getToken을 호출하면 Firebase가 의도한
       // SW에 푸시 구독을 제대로 묶지 못할 수 있음 → activate까지 명시적으로 대기.
