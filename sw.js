@@ -1,4 +1,4 @@
-﻿const CACHE = 'myplanner-v496';
+﻿const CACHE = 'myplanner-v497';
 const PRECACHE = ['./', './index.html', './app.js', './style.css', './manifest.json'];
 
 self.addEventListener('install', e => {
@@ -121,10 +121,30 @@ self.addEventListener('fetch', e => {
   );
 });
 
-// push ?�벤???�들???�음 (sw.js??FCM ?�림 ?�시 ?�당 ?�님).
-// FCM 백그?�운???�림?� firebase-messaging-sw.js??onBackgroundMessage가 ?�담.
-// ?�버??data-only ?�이로드�??�송 ??FCM ?�동?�시 ?�음 ??onBackgroundMessage ??곳에?�만 ?�시.
-// (?�전??sw.js push ?�들??+ onBackgroundMessage ?�쪽?�서 ?�시??2�??�던 문제 ?�정??
+// push 핸들러: iOS 등에서 FCM 전용 SW(firebase-messaging-sw.js) 등록이 실패해
+// 푸시 구독이 이 메인 sw.js에 묶이는 경우를 대비한 폴백.
+// 서버는 data-only 페이로드를 보내므로 FCM 자동표시가 없어 중복 알림이 생기지 않는다.
+// (구독은 getToken에 넘긴 SW 하나에만 묶이므로 onBackgroundMessage와 동시 발화하지 않음)
+self.addEventListener('push', e => {
+  let d = {};
+  try {
+    const json = e.data ? e.data.json() : {};
+    d = json.data || json || {};
+  } catch(err) {
+    try { d = { body: e.data ? e.data.text() : '' }; } catch(e2) {}
+  }
+  const title = d.title || '일정 알림';
+  const body = d.body || '새 메시지가 있어요';
+  e.waitUntil(
+    self.registration.showNotification(title, {
+      body: body,
+      icon: '/myplanner-app/icons/icon-192.png',
+      badge: '/myplanner-app/icons/icon-badge.png',
+      tag: 'planner-notification',
+      renotify: true
+    })
+  );
+});
 
 self.addEventListener('message', e => {
   if (e.data?.type === 'SHOW_NOTIFICATION') {

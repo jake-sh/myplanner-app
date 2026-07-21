@@ -4843,9 +4843,12 @@ const FCM_SERVER = 'https://sendpush-zd5g5jmsha-uc.a.run.app';
 let fcmToken = localStorage.getItem('fcmToken') || null;
 let messaging = null;
 
-// FCM 진단: 실패 원인을 Firestore users/{myCode}.tokenStatus에 기록.
-// iOS는 JS 콘솔 확인이 어려워, 어느 단계에서 막히는지 서버에서 바로 보기 위함.
+// FCM 진단: 실패 원인을 (1) 화면 alert (2) Firestore users/{myCode}.tokenStatus 양쪽에 기록.
+// iOS는 JS 콘솔 확인이 어려워, 어느 단계에서 막히는지 화면/서버에서 바로 보기 위함.
+// alert는 세션당 마지막 상태 1회만 표시 (디버그용). localStorage 'fcmDebug'='off'면 alert 끔.
+let _lastFcmStatus = '';
 async function _writeTokenStatus(status) {
+  _lastFcmStatus = status;
   try {
     if (!myCode) return;
     await db.collection('users').doc(myCode).set({
@@ -4853,6 +4856,16 @@ async function _writeTokenStatus(status) {
       tokenStatusAt: firebase.firestore.Timestamp.now()
     }, { merge: true });
   } catch(e) { console.log('tokenStatus write fail:', e.code || e.message); }
+}
+// initFCM 종료 시 최종 상태를 화면에 1회 표시 (디버그)
+let _fcmDebugShown = false;
+function _showFcmDebug() {
+  try {
+    if (localStorage.getItem('fcmDebug') === 'off') return;
+    if (_fcmDebugShown) return;
+    _fcmDebugShown = true;
+    alert('FCM 상태: ' + (_lastFcmStatus || '(initFCM 미실행)') + '\nmyCode=' + (myCode || '(없음)'));
+  } catch(e) {}
 }
 
 // FCM 초기화 및 토큰 발급
@@ -4887,7 +4900,22 @@ async function initFCM() {
         );
       } catch(regErr) {
         console.log('FCM SW register failed, fallback to default SW:', regErr.message);
-        try { fcmSW = await navigator.serviceWorker.getRegistration('/myplanner-app/'); } catch(e) {}
+      }
+      // iOS에서는 좁은 scope의 FCM SW 등록이 실패할 수 있다. 이 경우 fcmSW가 없으면
+      // getToken이 존재하지 않는 루트 /firebase-messaging-sw.js에 자체 등록을 시도해
+      // failed-service-worker-registration으로 실패한다. 따라서 활성화된 SW를 확실히 확보:
+      //  1) push-scope로 이미 등록된 것 조회
+      //  2) 그래도 없으면 navigator.serviceWorker.ready (활성 메인 sw.js) 사용
+      // 메인 sw.js로 폴백되면 백그라운드 푸시는 sw.js의 push 핸들러가 처리한다.
+      if (!fcmSW) { try { fcmSW = await navigator.serviceWorker.getRegistration('/myplanner-app/firebase-cloud-messaging-push-scope'); } catch(e) {} }
+      if (!fcmSW) { try { fcmSW = await navigator.serviceWorker.getRegistration('/myplanner-app/'); } catch(e) {} }
+      if (!fcmSW) {
+        try {
+          fcmSW = await Promise.race([
+            navigator.serviceWorker.ready,
+            new Promise(function(r) { setTimeout(function() { r(null); }, 5000); })
+          ]);
+        } catch(e) {}
       }
       // SW가 active 상태가 되기 전에 getToken을 호출하면 Firebase가 의도한
       // SW에 푸시 구독을 제대로 묶지 못할 수 있음 → activate까지 명시적으로 대기.
@@ -4959,8 +4987,9 @@ async function initFCM() {
   } catch(e) {
     _filePickerOpen = false;
     console.log('FCM init error:', e.code || e.name, e.message);
-    await _writeTokenStatus('error:' + (e.code || e.name || e.message));
+    await _writeTokenStatus('error:' + (e.code || e.name || e.message) + ' | ' + String(e.message || '').slice(0, 120));
   }
+  _showFcmDebug();
 }
 
 // 포그라운드 복귀 시 FCM 토큰을 재확인하여 서버에 반영

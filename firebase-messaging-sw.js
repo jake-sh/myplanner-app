@@ -1,5 +1,5 @@
 ﻿// FCM 백그?�운??메시지 ?�신 ?�담 ?�비?�워�?// ?�이 꺼져?�거??백그?�운?�일 ???�시�?받아 ?�림???�운??
-// SW_VERSION: v496 (data-only 방식 ??onBackgroundMessage ?��?)
+// SW_VERSION: v497 (data-only 방식 ??onBackgroundMessage ?��?)
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
 
