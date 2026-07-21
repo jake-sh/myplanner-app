@@ -1,5 +1,5 @@
-// FCM background message service worker (separate from the main sw.js).
-// SW_VERSION: v4910 (data-only via onBackgroundMessage only)
+﻿// FCM background message service worker (separate from the main sw.js).
+// SW_VERSION: v500 (data-only via onBackgroundMessage only)
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
 
