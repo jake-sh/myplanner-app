@@ -39,6 +39,9 @@ auth.onAuthStateChanged(async user => {
     return;
   }
   await linkUidToMyCode(user.uid);
+  // 로그인/재설치 직후 채팅 화면에 들어가지 않아도 FCM 토큰을 갱신
+  // (기존에는 enterChatApp에서만 호출되어 iOS 재설치 후 토큰이 안 바뀜)
+  try { initFCM(); } catch(e) {}
   var fn2 = function() { showScreen('planApp'); };
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', fn2, { once: true });
@@ -4900,10 +4903,15 @@ async function initFCM() {
         // getToken이 내부적으로 권한 요청 다이얼로그를 띄울 수 있음 → 메인 튕김 방지 플래그
         _filePickerOpen = true;
         _appWasHidden = false;
-        // 기존 토큰(특히 Spark 다운타임 등으로 무효화된 APNS 토큰)을 먼저 삭제하고
-        // 새 토큰을 발급받아 iOS에서 재설치 후 토큰이 갱신되지 않는 문제를 해결
-        try { await messaging.deleteToken(); } catch(e) {}
-        const token = await messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: fcmSW });
+        // iOS PWA에서는 deleteToken() 직후 getToken() 재구독이 APNS 재프로비저닝
+        // 지연으로 실패한다. 따라서 getToken을 먼저 시도하고, null일 때만
+        // deleteToken 후 잠깐 대기했다가 한 번 재시도한다.
+        let token = await messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: fcmSW });
+        if (!token) {
+          try { await messaging.deleteToken(); } catch(e) {}
+          await new Promise(function(r) { setTimeout(r, 500); });
+          token = await messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: fcmSW });
+        }
         setTimeout(function() {
           _filePickerOpen = false;
           _appWasHidden = false;
@@ -4911,6 +4919,9 @@ async function initFCM() {
         if (token) {
           fcmToken = token;
           localStorage.setItem('fcmToken', token);
+          // rules PERMISSION_DENIED 방지: uid↔myCode 매핑을 먼저 보정
+          // (refreshFCMToken과 동일하게 맞춰야 initFCM 저장이 거부되지 않음)
+          if (currentUser) await linkUidToMyCode(currentUser.uid);
           if (myCode) await db.collection('users').doc(myCode).set({
             fcmToken: token,
             lang: localStorage.getItem('lang') || 'ko',
@@ -4919,6 +4930,8 @@ async function initFCM() {
             tokenUpdatedAt: firebase.firestore.Timestamp.now()
           }, { merge: true });
           console.log('FCM token saved');
+        } else {
+          console.log('FCM: getToken returned null (iOS APNS 미발급 가능성)');
         }
       }
     } else {
@@ -4926,7 +4939,7 @@ async function initFCM() {
     }
   } catch(e) {
     _filePickerOpen = false;
-    console.log('FCM init error:', e.message);
+    console.log('FCM init error:', e.code || e.name, e.message);
   }
 }
 
