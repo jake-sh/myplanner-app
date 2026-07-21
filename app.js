@@ -4843,9 +4843,22 @@ const FCM_SERVER = 'https://sendpush-zd5g5jmsha-uc.a.run.app';
 let fcmToken = localStorage.getItem('fcmToken') || null;
 let messaging = null;
 
+// FCM 진단: 실패 원인을 Firestore users/{myCode}.tokenStatus에 기록.
+// iOS는 JS 콘솔 확인이 어려워, 어느 단계에서 막히는지 서버에서 바로 보기 위함.
+async function _writeTokenStatus(status) {
+  try {
+    if (!myCode) return;
+    await db.collection('users').doc(myCode).set({
+      tokenStatus: status,
+      tokenStatusAt: firebase.firestore.Timestamp.now()
+    }, { merge: true });
+  } catch(e) { console.log('tokenStatus write fail:', e.code || e.message); }
+}
+
 // FCM 초기화 및 토큰 발급
 async function initFCM() {
   try {
+    await _writeTokenStatus('init-start perm=' + (typeof Notification !== 'undefined' ? Notification.permission : 'no-Notification'));
     if (typeof firebase !== 'undefined' && firebase.messaging && firebase.messaging.isSupported && firebase.messaging.isSupported()) {
       messaging = firebase.messaging();
       // 옛 버전에서 넓은 scope(/myplanner-app/)로 등록된 FCM SW가 있으면 해제.
@@ -4899,6 +4912,7 @@ async function initFCM() {
       }
       if (Notification.permission !== 'granted') {
         console.log('FCM: notification permission not granted');
+        await _writeTokenStatus('perm-not-granted:' + Notification.permission);
       } else {
         // getToken이 내부적으로 권한 요청 다이얼로그를 띄울 수 있음 → 메인 튕김 방지 플래그
         _filePickerOpen = true;
@@ -4906,6 +4920,7 @@ async function initFCM() {
         // iOS PWA에서는 deleteToken() 직후 getToken() 재구독이 APNS 재프로비저닝
         // 지연으로 실패한다. 따라서 getToken을 먼저 시도하고, null일 때만
         // deleteToken 후 잠깐 대기했다가 한 번 재시도한다.
+        await _writeTokenStatus('getToken-try sw=' + (fcmSW ? (fcmSW.active ? 'active' : 'inactive') : 'none'));
         let token = await messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: fcmSW });
         if (!token) {
           try { await messaging.deleteToken(); } catch(e) {}
@@ -4927,19 +4942,24 @@ async function initFCM() {
             lang: localStorage.getItem('lang') || 'ko',
             notifApp: localStorage.getItem('notifApp') !== 'false',
             notifEvent: localStorage.getItem('notifEvent') !== 'false',
-            tokenUpdatedAt: firebase.firestore.Timestamp.now()
+            tokenUpdatedAt: firebase.firestore.Timestamp.now(),
+            tokenStatus: 'ok',
+            tokenStatusAt: firebase.firestore.Timestamp.now()
           }, { merge: true });
           console.log('FCM token saved');
         } else {
           console.log('FCM: getToken returned null (iOS APNS 미발급 가능성)');
+          await _writeTokenStatus('getToken-null');
         }
       }
     } else {
       console.log('FCM not supported, using SW notifications only');
+      await _writeTokenStatus('not-supported');
     }
   } catch(e) {
     _filePickerOpen = false;
     console.log('FCM init error:', e.code || e.name, e.message);
+    await _writeTokenStatus('error:' + (e.code || e.name || e.message));
   }
 }
 

@@ -59,7 +59,7 @@ service cloud.firestore {
          )) ||
         // 알림 관련 필드만 업데이트 (uid 미설정 레거시 계정도 허용)
         (request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['fcmToken', 'lang', 'notifApp', 'notifEvent', 'tokenUpdatedAt']) &&
+          .hasOnly(['fcmToken', 'lang', 'notifApp', 'notifEvent', 'tokenUpdatedAt', 'tokenStatus', 'tokenStatusAt']) &&
          (resource.data.get('uid', null) == null ||
           resource.data.get('uid', null) == request.auth.uid))
       );
