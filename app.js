@@ -4900,20 +4900,27 @@ async function initFCM() {
         );
       } catch(regErr) {
         console.log('FCM SW register failed, fallback to default SW:', regErr.message);
+        await _writeTokenStatus('fcmsw-reg-fail:' + (regErr.name || '') + ' ' + String(regErr.message || '').slice(0, 90));
       }
       // iOS에서는 좁은 scope의 FCM SW 등록이 실패할 수 있다. 이 경우 fcmSW가 없으면
       // getToken이 존재하지 않는 루트 /firebase-messaging-sw.js에 자체 등록을 시도해
-      // failed-service-worker-registration으로 실패한다. 따라서 활성화된 SW를 확실히 확보:
-      //  1) push-scope로 이미 등록된 것 조회
-      //  2) 그래도 없으면 navigator.serviceWorker.ready (활성 메인 sw.js) 사용
-      // 메인 sw.js로 폴백되면 백그라운드 푸시는 sw.js의 push 핸들러가 처리한다.
+      // failed-service-worker-registration으로 실패한다. 따라서 활성화된 SW를 확실히 확보.
+      // sw=none 진단으로, auth 직후 initFCM이 메인 sw.js 등록(index 로드 시)보다
+      // 먼저 도는 경우가 확인됨 → initFCM 안에서 메인 sw.js를 직접 등록해 확보한다.
+      // 메인 sw.js로 폴백되면 백그라운드 푸시는 sw.js의 push 핸들러(v4.9.7 추가)가 처리.
       if (!fcmSW) { try { fcmSW = await navigator.serviceWorker.getRegistration('/myplanner-app/firebase-cloud-messaging-push-scope'); } catch(e) {} }
       if (!fcmSW) { try { fcmSW = await navigator.serviceWorker.getRegistration('/myplanner-app/'); } catch(e) {} }
+      if (!fcmSW) {
+        // 메인 sw.js를 직접 등록 (absolute path). 이미 등록돼 있으면 기존 등록을 반환.
+        try { fcmSW = await navigator.serviceWorker.register('/myplanner-app/sw.js'); } catch(e) {
+          await _writeTokenStatus('mainsw-reg-fail:' + (e.name || '') + ' ' + String(e.message || '').slice(0, 90));
+        }
+      }
       if (!fcmSW) {
         try {
           fcmSW = await Promise.race([
             navigator.serviceWorker.ready,
-            new Promise(function(r) { setTimeout(function() { r(null); }, 5000); })
+            new Promise(function(r) { setTimeout(function() { r(null); }, 8000); })
           ]);
         } catch(e) {}
       }
