@@ -4915,7 +4915,8 @@ async function initFCM() {
             fcmToken: token,
             lang: localStorage.getItem('lang') || 'ko',
             notifApp: localStorage.getItem('notifApp') !== 'false',
-            notifEvent: localStorage.getItem('notifEvent') !== 'false'
+            notifEvent: localStorage.getItem('notifEvent') !== 'false',
+            tokenUpdatedAt: firebase.firestore.Timestamp.now()
           }, { merge: true });
           console.log('FCM token saved');
         }
