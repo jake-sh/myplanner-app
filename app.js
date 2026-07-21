@@ -4939,8 +4939,8 @@ async function refreshFCMToken() {
     if (token) {
       fcmToken = token;
       localStorage.setItem('fcmToken', token);
-      // 토큰이 같아도 tokenUpdatedAt을 갱신해 "최근까지 살아있는 토큰"임을 서버에 기록
-      // (단일 필드 덮어쓰기이므로 토큰 중복 등록 위험 없음)
+      // uid/userCodes 누락 계정(레거시) 보정 후 저장
+      if (currentUser) await linkUidToMyCode(currentUser.uid);
       await db.collection('users').doc(myCode).set({
         fcmToken: token,
         lang: localStorage.getItem('lang') || 'ko',
@@ -4948,7 +4948,6 @@ async function refreshFCMToken() {
         notifEvent: localStorage.getItem('notifEvent') !== 'false',
         tokenUpdatedAt: firebase.firestore.Timestamp.now()
       }, { merge: true });
-      console.log('FCM token refreshed');
     }
   } catch(e) {
     console.log('FCM token refresh error:', e.message);

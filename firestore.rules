@@ -52,13 +52,16 @@ service cloud.firestore {
         // 친구 추가/제거: friends 필드만 변경, 내 코드(getMyCode())가 추가·제거 대상일 때
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['friends']) &&
          (
-           // 추가: 내 코드가 새 목록에 있고 기존엔 없었음
            (!resource.data.get('friends', []).hasAll([getMyCode()]) &&
             request.resource.data.get('friends', []).hasAll([getMyCode()])) ||
-           // 제거: 내 코드가 기존엔 있었고 새 목록엔 없음
            (resource.data.get('friends', []).hasAll([getMyCode()]) &&
             !request.resource.data.get('friends', []).hasAll([getMyCode()]))
-         ))
+         )) ||
+        // 알림 관련 필드만 업데이트 (uid 미설정 레거시 계정도 허용)
+        (request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['fcmToken', 'lang', 'notifApp', 'notifEvent', 'tokenUpdatedAt']) &&
+         (resource.data.get('uid', null) == null ||
+          resource.data.get('uid', null) == request.auth.uid))
       );
       allow delete: if request.auth != null && (
         getMyCode() == code ||
