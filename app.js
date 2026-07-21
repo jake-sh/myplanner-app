@@ -4890,24 +4890,35 @@ async function initFCM() {
         });
       }
       _fcmSW = fcmSW; // refreshFCMToken이 동일한 SW를 재사용하도록 저장
-      // getToken이 내부적으로 권한 요청 다이얼로그를 띄울 수 있음 → 메인 튕김 방지 플래그
-      _filePickerOpen = true;
-      _appWasHidden = false;
-      const token = await messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: fcmSW });
-      setTimeout(function() {
-        _filePickerOpen = false;
+      // iOS 재설치 후 권한이 초기화되므로 명시적으로 요청
+      if (Notification.permission === 'default') {
+        await Notification.requestPermission();
+      }
+      if (Notification.permission !== 'granted') {
+        console.log('FCM: notification permission not granted');
+      } else {
+        // getToken이 내부적으로 권한 요청 다이얼로그를 띄울 수 있음 → 메인 튕김 방지 플래그
+        _filePickerOpen = true;
         _appWasHidden = false;
-      }, 1500);
-      if (token) {
-        fcmToken = token;
-        localStorage.setItem('fcmToken', token);
-        if (myCode) await db.collection('users').doc(myCode).set({
-          fcmToken: token,
-          lang: localStorage.getItem('lang') || 'ko',
-          notifApp: localStorage.getItem('notifApp') !== 'false',
-          notifEvent: localStorage.getItem('notifEvent') !== 'false'
-        }, { merge: true });
-        console.log('FCM token saved');
+        // 기존 토큰(특히 Spark 다운타임 등으로 무효화된 APNS 토큰)을 먼저 삭제하고
+        // 새 토큰을 발급받아 iOS에서 재설치 후 토큰이 갱신되지 않는 문제를 해결
+        try { await messaging.deleteToken(); } catch(e) {}
+        const token = await messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: fcmSW });
+        setTimeout(function() {
+          _filePickerOpen = false;
+          _appWasHidden = false;
+        }, 1500);
+        if (token) {
+          fcmToken = token;
+          localStorage.setItem('fcmToken', token);
+          if (myCode) await db.collection('users').doc(myCode).set({
+            fcmToken: token,
+            lang: localStorage.getItem('lang') || 'ko',
+            notifApp: localStorage.getItem('notifApp') !== 'false',
+            notifEvent: localStorage.getItem('notifEvent') !== 'false'
+          }, { merge: true });
+          console.log('FCM token saved');
+        }
       }
     } else {
       console.log('FCM not supported, using SW notifications only');
