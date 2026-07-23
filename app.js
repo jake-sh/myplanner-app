@@ -4873,7 +4873,22 @@ function _showFcmDebug() {
 }
 
 // FCM 초기화 및 토큰 발급
+// 중복 실행 방지: auth 직후(line 44)와 enterChatApp(line 3071) 두 곳에서 호출되어
+// 동시에 돌면 getToken/deleteToken과 공용 _fcmTrace가 충돌해 토큰 저장이
+// "됐다 안 됐다"(iOS 푸시 왔다안왔다) 하는 원인이 됨.
+//  - 이미 진행 중이면 그 Promise를 재사용
+//  - 이미 성공(토큰 확보)했으면 이후엔 refreshFCMToken이 갱신 담당하므로 skip
+let _initFCMInFlight = null;
+let _initFCMDone = false;
 async function initFCM() {
+  if (_initFCMDone) return;
+  if (_initFCMInFlight) return _initFCMInFlight;
+  _initFCMInFlight = (async function() {
+    try { await _initFCMImpl(); } finally { _initFCMInFlight = null; }
+  })();
+  return _initFCMInFlight;
+}
+async function _initFCMImpl() {
   _fcmTrace = [];
   try {
     await _writeTokenStatus('init perm=' + (typeof Notification !== 'undefined' ? Notification.permission : 'no-Notif'));
@@ -4991,6 +5006,8 @@ async function initFCM() {
             tokenStatus: 'ok',
             tokenStatusAt: firebase.firestore.Timestamp.now()
           }, { merge: true });
+          _fcmTrace.push('ok'); _lastFcmStatus = _fcmTrace.join(' > ');
+          _initFCMDone = true; // 성공 → 이후 중복 initFCM 실행 방지 (갱신은 refreshFCMToken)
           console.log('FCM token saved');
         } else {
           console.log('FCM: getToken returned null (iOS APNS 미발급 가능성)');
