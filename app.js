@@ -2917,6 +2917,18 @@ const CAL_COLORS = {
   done:'#FFB3B3', red:'#F5E84A'
 };
 
+// 날짜 마킹 파싱: 'pink'=채움 원, 'pink|o'=테두리만 원.
+// 구버전 호환: 배열[c1,c2](2색 분할)은 첫 색만 채움으로 취급.
+function parseHabitMark(raw){
+  if(!raw || raw==='clear') return null;
+  if(Array.isArray(raw)) raw = raw[0];
+  if(typeof raw!=='string' || !raw) return null;
+  var outline = raw.slice(-2)==='|o';
+  var color = outline ? raw.slice(0,-2) : raw;
+  if(!color) return null;
+  return { color: color, outline: outline };
+}
+
 function renderCalendar() {
   const now = new Date();
   const habits = JSON.parse(localStorage.getItem('habits') || '{}');
@@ -2944,23 +2956,24 @@ function renderCalendar() {
   for (let i = 0; i < firstDay; i++) html += '<div class="cal-empty"></div>';
   for (let d = 1; d <= daysInMonth; d++) {
     const today = d===now.getDate() && calMonth===now.getMonth() && calYear===now.getFullYear();
-    const raw = dayMap[d]; // string | [c1,c2] | undefined
-    const colors = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+    const raw = dayMap[d]; // 'pink' | 'pink|o' | [c1,c2](구버전) | undefined
+    const mark = parseHabitMark(raw);
     const dow = (firstDay+d-1)%7;
 
     let cls = ['cal-day', today ? 'cal-today' : '', dow===0?'sun':dow===6?'sat':''];
     let inlineStyle = '';
 
-    if (colors.length === 2) {
-      // 세로 반분할
-      const c1 = CAL_COLORS[colors[0]] || colors[0];
-      const c2 = CAL_COLORS[colors[1]] || colors[1];
-      inlineStyle = `style="background:linear-gradient(to right,${c1} 50%,${c2} 50%);color:#111!important"`;
-      cls.push('cal-split');
-    } else if (colors.length === 1) {
-      const bg = CAL_COLORS[colors[0]] || colors[0];
-      inlineStyle = `style="background:${bg};color:#111!important"`;
-      cls.push(`cal-color-${colors[0]}`);
+    if (mark) {
+      const bg = CAL_COLORS[mark.color] || mark.color;
+      if (mark.outline) {
+        // 테두리만 원 (안은 투명)
+        inlineStyle = `style="background:transparent;border:2.5px solid ${bg}"`;
+        cls.push('cal-outline');
+      } else {
+        // 안이 꽉찬 원
+        inlineStyle = `style="background:${bg};color:#111!important"`;
+        cls.push(`cal-color-${mark.color}`);
+      }
     }
 
     cls = cls.filter(Boolean).join(' ');
@@ -3012,26 +3025,16 @@ async function toggleHabit(day, e) {
   }
 
   if (selectedPalette === 'clear') {
-    // 지우개: 무조건 삭제
+    // 지우개(X): 무조건 삭제
     delete habits[key][day];
   } else {
-    const cur = habits[key][day];
-    const curColors = Array.isArray(cur) ? cur : (cur ? [cur] : []);
-
-    if (curColors.length === 0) {
-      // 빈 날 → 단색 마킹
+    const mark = parseHabitMark(habits[key][day]);
+    if (!mark || mark.color !== selectedPalette) {
+      // 빈 날이거나 다른 색 → 선택 색으로 '채운 원'
       habits[key][day] = selectedPalette;
-    } else if (curColors.length === 1) {
-      if (curColors[0] === selectedPalette) {
-        // 같은 색 재입력 → 무시
-        return;
-      } else {
-        // 다른 색 → 입력 순서대로 반반 분할
-        habits[key][day] = [curColors[0], selectedPalette];
-      }
     } else {
-      // 이미 2색 → 재입력 무시
-      return;
+      // 같은 색 재탭 → 채움 ↔ 테두리 토글 (삭제는 X로만)
+      habits[key][day] = mark.outline ? mark.color : (mark.color + '|o');
     }
   }
 
@@ -5023,7 +5026,7 @@ async function _initFCMImpl() {
     console.log('FCM init error:', e.code || e.name, e.message);
     await _writeTokenStatus('error:' + (e.code || e.name || e.message) + ' | ' + String(e.message || '').slice(0, 120));
   }
-  _showFcmDebug();
+  // 진단 팝업은 제거됨. tokenStatus는 Firestore에 계속 기록되어 나중에 푸시 진단에 사용 가능.
 }
 
 // 포그라운드 복귀 시 FCM 토큰을 재확인하여 서버에 반영

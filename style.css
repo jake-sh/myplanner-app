@@ -712,9 +712,24 @@ input:checked+.slider:before{transform:translateX(20px);}
 
 /* 팔레트 */
 .cal-palette{display:flex;gap:10px;justify-content:center;padding:16px 0 8px;flex-wrap:wrap;}
-.pal-btn{width:26px;height:26px;border-radius:50%;border:2px solid #E2E4F0;cursor:pointer;transition:transform .15s;padding:0;}
-.pal-btn.pal-active{border:2px solid var(--primary);transform:scale(1.2);}
-.pal-clear{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cline x1='4' y1='4' x2='16' y2='16' stroke='%23ccc' stroke-width='2'/%3E%3Cline x1='16' y1='4' x2='4' y2='16' stroke='%23ccc' stroke-width='2'/%3E%3C/svg%3E") center/16px no-repeat !important;}
+.pal-btn{width:34px;height:34px;border-radius:50%;border:2px solid #E2E4F0;cursor:pointer;transition:border-color .15s;padding:0;position:relative;}
+/* 선택 표시: 확대 대신 원 중앙에 SVG 체크(V) */
+.pal-btn.pal-active{border:2px solid var(--primary);}
+.pal-btn.pal-active::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7' fill='none' stroke='%23222' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:22px 22px;
+  pointer-events:none;
+}
+.pal-clear{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cline x1='4' y1='4' x2='16' y2='16' stroke='%23ccc' stroke-width='2'/%3E%3Cline x1='16' y1='4' x2='4' y2='16' stroke='%23ccc' stroke-width='2'/%3E%3C/svg%3E") center/20px no-repeat !important;}
+/* 지우개(X)는 선택돼도 체크 대신 테두리 링만 (X 아이콘 유지) */
+.pal-clear.pal-active::after{content:none;}
+/* 테두리만 원 마킹 — 안은 투명, 텍스트는 기본색 유지 */
+.cal-day.cal-outline{border-radius:50%;background:transparent!important;}
 
 /* 달력 날짜 */
 .cal-day{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;}
