@@ -2980,15 +2980,17 @@ function renderCalendar() {
     html += `<div class="${cls}" ${inlineStyle} ontouchend="toggleHabit(${d},event);" onclick="toggleHabit(${d},event);">${d}</div>`;
   }
   document.getElementById('calGrid').innerHTML = html;
-  // 파랑/보라 '채움(filled)'만 카운트 (테두리만 원은 제외)
-  let blueCount = 0, purpleCount = 0;
+  // 연두/파랑/보라 '채움(filled)'만 카운트 (테두리만 원은 제외)
+  let greenCount = 0, blueCount = 0, purpleCount = 0;
   Object.values(dayMap).forEach(function(v){
     var m = parseHabitMark(v);
     if (!m || m.outline) return;
-    if (m.color === 'blue') blueCount++;
+    if (m.color === 'green') greenCount++;
+    else if (m.color === 'blue') blueCount++;
     else if (m.color === 'purple') purpleCount++;
   });
-  const rate = Math.round((blueCount + purpleCount) / daysInMonth * 100);
+  const rate = Math.round((greenCount + blueCount + purpleCount) / daysInMonth * 100);
+  document.getElementById('calGreenCount').textContent = greenCount;
   document.getElementById('calBlueCount').textContent = blueCount;
   document.getElementById('calPurpleCount').textContent = purpleCount;
   document.getElementById('calRate').textContent = rate + '%';
@@ -6264,9 +6266,7 @@ function applyLang() {
   _setText('closeTimerBtn', __T('Cancel','취소','取消','キャンセル'));
 
   // 달력 통계
-  _setText('calBlueLabel', __T('Achieved','달성일','达成日','達成日'));
-  _setText('calPurpleLabel', __T('Achieved','달성일','达成日','達成日'));
-  _setText('calRateLabel', __T('Rate','달성률','达成率','達成率'));
+  // 캘린더 통계는 숫자만 색상 표시 (텍스트 라벨 없음)
 
   // 알림 토글
   _setText('notifEventLabel', __T('Event Alerts','이벤트 알림','事件提醒','イベント通知'));
