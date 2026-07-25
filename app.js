@@ -2930,6 +2930,7 @@ function parseHabitMark(raw){
 }
 
 function renderCalendar() {
+  initCalendarSwipe();
   const now = new Date();
   const habits = JSON.parse(localStorage.getItem('habits') || '{}');
   const key = `${calYear}-${calMonth}`;
@@ -3012,6 +3013,8 @@ function selectPalette(color) {
 let _habitLastTouch = 0; // 중복 이벤트(touchend+click) 방지용
 
 async function toggleHabit(day, e) {
+  // 좌우 스와이프(월 이동) 중이면 날짜 토글 무시
+  if (_calSwiped) return;
   // touchend 이후 300ms 내 click 이벤트 무시 (모바일 이중 호출 방지)
   const now = Date.now();
   if (e && e.type === 'touchend') {
@@ -3069,6 +3072,35 @@ function changeMonth(dir) {
   if (calMonth < 0) { calMonth = 11; calYear--; }
   if (calMonth > 11) { calMonth = 0; calYear++; }
   renderCalendar();
+}
+
+// 달력 좌우 스와이프로 월 이동 (왼쪽으로 밀면 다음 달, 오른쪽이면 이전 달)
+let _calSwipeX = 0, _calSwipeY = 0, _calSwiped = false;
+function initCalendarSwipe() {
+  const wrap = document.querySelector('.calendar-wrap');
+  if (!wrap || wrap._swipeBound) return;
+  wrap._swipeBound = true;
+  wrap.addEventListener('touchstart', function(e){
+    if (e.touches.length !== 1) return;
+    _calSwipeX = e.touches[0].clientX;
+    _calSwipeY = e.touches[0].clientY;
+    _calSwiped = false;
+  }, { passive: true });
+  wrap.addEventListener('touchmove', function(e){
+    if (e.touches.length !== 1) return;
+    var dx = e.touches[0].clientX - _calSwipeX;
+    var dy = e.touches[0].clientY - _calSwipeY;
+    // 가로 이동이 세로보다 크고 일정 거리 넘으면 스와이프로 간주 (→ 날짜 탭 억제)
+    if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) _calSwiped = true;
+  }, { passive: true });
+  wrap.addEventListener('touchend', function(e){
+    if (!_calSwiped) return;
+    var endX = e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : _calSwipeX;
+    var dx = endX - _calSwipeX;
+    if (Math.abs(dx) > 50) changeMonth(dx < 0 ? 1 : -1);
+    // 스와이프 직후 잔여 click(에뮬레이트)이 날짜를 토글하지 않도록 잠깐 유지
+    setTimeout(function(){ _calSwiped = false; }, 350);
+  }, { passive: true });
 }
 
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
