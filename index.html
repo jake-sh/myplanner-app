@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
   <meta name="apple-mobile-web-app-title" content="my planner"/>
-  <meta name="app-version" content="5.1.0"/>
+  <meta name="app-version" content="5.1.1"/>
   <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png"/>
   <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png"/>
-  <link rel="stylesheet" href="style.css?v=5.1.0"/>
+  <link rel="stylesheet" href="style.css?v=5.1.1"/>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400&family=Noto+Sans+KR:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet"/>
   <script>
     // 흰 화면 깜빡임 방지: CSS 로드 전에 배경색 즉시 적용
@@ -129,22 +129,27 @@
     </div>
 
 
-    <div class="settings-section" style="padding:8px 20px;"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:30px;"><span id="darkModeText" class="settings-label" style="margin-bottom:0;">다크 모드</span><label class="toggle" style="flex-shrink:0;"><input type="checkbox" id="darkModeToggle" onchange="setDarkMode(this.checked)"/><span class="slider"></span></label></div></div>
     <div class="settings-section">
-      <div id="themeColorLabel" class="settings-label">테마 색상</div>
-      <div id="themeRecentColors" class="theme-swatch-wrap"></div>
-    </div>
-    <div class="settings-section">
-      <div id="iconStyleLabel" class="settings-label">아이콘 스타일</div>
-      <div style="display:flex;gap:8px;margin-bottom:12px;">
-        <button id="iconStyleEmoji" class="style-select-btn" onclick="setIconStyle('emoji')">Emoji</button>
-        <button id="iconStyleSvg" class="style-select-btn" onclick="setIconStyle('svg')">SVG Line</button>
+      <!-- 다크 모드 -->
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:30px;"><span id="darkModeText" class="settings-label" style="margin-bottom:0;">다크 모드</span><label class="toggle" style="flex-shrink:0;"><input type="checkbox" id="darkModeToggle" onchange="setDarkMode(this.checked)"/><span class="slider"></span></label></div>
+      <!-- 테마 색상 -->
+      <div style="border-top:1px solid rgba(128,128,128,0.15);margin-top:14px;padding-top:14px;">
+        <div id="themeColorLabel" class="settings-label">테마 색상</div>
+        <div id="themeRecentColors" class="theme-swatch-wrap"></div>
       </div>
-      <div id="svgColorOption" style="display:none;">
-        <div id="svgColorLabel" class="settings-desc" style="margin-bottom:8px;">SVG 라인 색상</div>
-        <div style="display:flex;gap:8px;">
-          <button id="svgColorOn" class="style-select-btn" onclick="setSvgColor('on')">Individual</button>
-          <button id="svgColorOff" class="style-select-btn" onclick="setSvgColor('off')">Theme Color</button>
+      <!-- 아이콘 스타일 -->
+      <div style="border-top:1px solid rgba(128,128,128,0.15);margin-top:14px;padding-top:14px;">
+        <div id="iconStyleLabel" class="settings-label">아이콘 스타일</div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button id="iconStyleEmoji" class="style-select-btn" onclick="setIconStyle('emoji')">Emoji</button>
+          <button id="iconStyleSvg" class="style-select-btn" onclick="setIconStyle('svg')">SVG Line</button>
+        </div>
+        <div id="svgColorOption" style="display:none;">
+          <div id="svgColorLabel" class="settings-desc" style="margin-bottom:8px;">SVG 라인 색상</div>
+          <div style="display:flex;gap:8px;">
+            <button id="svgColorOn" class="style-select-btn" onclick="setSvgColor('on')">Individual</button>
+            <button id="svgColorOff" class="style-select-btn" onclick="setSvgColor('off')">Theme Color</button>
+          </div>
         </div>
       </div>
     </div>
@@ -686,7 +691,7 @@ try {
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script src="app.js?v=5.1.0"></script>
+<script src="app.js?v=5.1.1"></script>
 
 <!-- 이미지 뷰어 -->
 <div id="imgViewer" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:9999;flex-direction:column;align-items:center;justify-content:center;">
