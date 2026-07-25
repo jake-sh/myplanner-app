@@ -1043,10 +1043,9 @@ function _doDeleteAllTags() {
 
 // ── SETTINGS ───────────────────────────────────────
 function openSettings() {
-  var notifEventEl = document.getElementById('notifEvent');
-  var notifAppEl = document.getElementById('notifApp');
-  if (notifEventEl) notifEventEl.checked = localStorage.getItem('notifEvent') === 'true';
-  if (notifAppEl) notifAppEl.checked = localStorage.getItem('notifApp') === 'true';
+  // 통합 알림 토글: 앱 알림·이벤트 알림 둘 다 켜져 있어야 ON으로 표시
+  var notifAllEl = document.getElementById('notifAll');
+  if (notifAllEl) notifAllEl.checked = (localStorage.getItem('notifApp') !== 'false' && localStorage.getItem('notifEvent') !== 'false');
   var _aeEl = document.getElementById('accountEmailText');
   if (_aeEl && currentUser && currentUser.email) _aeEl.textContent = 'ID : ' + currentUser.email.split('@')[0];
   showScreen('settingsScreen');
@@ -5178,6 +5177,20 @@ function toggleSettingsNotif(type, enabled) {
   if (myCode) { try { db.collection('users').doc(myCode).set({ ['notif' + type.charAt(0).toUpperCase() + type.slice(1)]: enabled }, { merge: true }); } catch(e) {} }
 }
 
+// 통합 알림 토글: 앱 알림(notifApp)·이벤트/채팅 알림(notifEvent/notifEnabled)을 한 번에 on/off.
+// 로컬 게이팅과 서버(Cloud Function) 판단용 필드를 모두 동기화한다.
+function toggleAllNotif(enabled) {
+  localStorage.setItem('notifApp', enabled ? 'true' : 'false');
+  localStorage.setItem('notifEvent', enabled ? 'true' : 'false');
+  localStorage.setItem('notifEnabled', enabled ? 'true' : 'false');
+  notifEnabled = enabled;
+  if (myCode) {
+    try {
+      db.collection('users').doc(myCode).set({ notifApp: enabled, notifEvent: enabled }, { merge: true });
+    } catch(e) {}
+  }
+}
+
 function showUploadStatus(text) {
   let el = document.getElementById('uploadStatus');
   if (!el) { el = document.createElement('div'); el.id = 'uploadStatus'; document.body.appendChild(el); }
@@ -6134,6 +6147,7 @@ function applyLang() {
   _setText('themeColorPaletteLabel', __T('Select theme color','테마 색상 선택','选择主题色','テーマカラー選択'));
   _setText('themeColorPaletteCancelBtn', __T('Close','닫기','关闭','閉じる'));
   _setText('notifSectionLabel', __T('Notifications','알림','通知','通知'));
+  _setText('notifAllLabel', __T('Get notifications','알림 받기','接收通知','通知を受け取る'));
   _setText('langLabel', __T('Language','언어','语言','言語'));
   _setText('infoLabel', __T('Info','정보','信息','情報'));
   // meta[name=app-version]에서 버전 표시 (SW 캐시 의존 제거)
@@ -6148,8 +6162,6 @@ function applyLang() {
       if (elMain) elMain.textContent = formatted;
     }
   })();
-  _setText('notifEventLabel', __T('Event Alerts','이벤트 알림','事件提醒','イベント通知'));
-  _setText('notifAppLabel', __T('App Alerts','앱 알림','应用提醒','アプリ通知'));
   _setText('shareTargetLabel', __T('Share Target :','공유 대상 :','共享对象 :','共有相手 :'));
   _setText('shareTargetBtn', __T('Change','변경','更改','変更'));
   _setText('shareTargetModalTitle', __T('Select Share Target','공유 대상 선택','选择共享对象','共有相手を選択'));
@@ -6309,9 +6321,9 @@ function applyLang() {
   // 달력 통계
   // 캘린더 통계는 숫자만 색상 표시 (텍스트 라벨 없음)
 
-  // 알림 토글
-  _setText('notifEventLabel', __T('Event Alerts','이벤트 알림','事件提醒','イベント通知'));
-  _setText('notifAppLabel', __T('App Alerts','앱 알림','应用提醒','アプリ通知'));
+  // 알림 토글 (통합)
+  _setText('notifSectionLabel', __T('Notifications','알림','通知','通知'));
+  _setText('notifAllLabel', __T('Get notifications','알림 받기','接收通知','通知を受け取る'));
   _setText('shareTargetLabel', __T('Share Target :','공유 대상 :','共享对象 :','共有相手 :'));
   // 로그아웃 / 비밀번호 변경 / 계정삭제
   _setText('logoutBtn', __T('Logout','로그아웃','退出登录','ログアウト'));
