@@ -2937,7 +2937,7 @@ function getDayMarks(raw){
 // 마킹 배열 → 저장형 배열
 function marksToRaw(marks){ return marks.map(function(m){ return m.ring ? m.color+'|o' : m.color; }); }
 
-// 부채꼴(파이 조각) path 생성 (각도는 도 단위, 12시=-90°에서 시작)
+// 부채꼴(파이 조각) 채움 path (각도는 도 단위, 12시=-90°에서 시작)
 function _wedgePath(cx,cy,r,a0,a1){
   var rad=Math.PI/180;
   var x0=(cx+r*Math.cos(a0*rad)).toFixed(2), y0=(cy+r*Math.sin(a0*rad)).toFixed(2);
@@ -2945,7 +2945,16 @@ function _wedgePath(cx,cy,r,a0,a1){
   var large=(a1-a0)>180?1:0;
   return 'M '+cx+' '+cy+' L '+x0+' '+y0+' A '+r+' '+r+' 0 '+large+' 1 '+x1+' '+y1+' Z';
 }
+// 호(arc)만 그리는 path — 링 표시용 (중심으로 가는 반경선 없이 바깥 호만)
+function _arcPath(cx,cy,r,a0,a1){
+  var rad=Math.PI/180;
+  var x0=(cx+r*Math.cos(a0*rad)).toFixed(2), y0=(cy+r*Math.sin(a0*rad)).toFixed(2);
+  var x1=(cx+r*Math.cos(a1*rad)).toFixed(2), y1=(cy+r*Math.sin(a1*rad)).toFixed(2);
+  var large=(a1-a0)>180?1:0;
+  return 'M '+x0+' '+y0+' A '+r+' '+r+' 0 '+large+' 1 '+x1+' '+y1;
+}
 // 날짜 마킹 배열 → SVG (1개=원, 2개=세로 좌우 반, 3개=120°, 4개=90°)
+// 링 표시는 원의 호 라인만 띠로 (반경선 없음)
 function buildDaySVG(marks){
   if(!marks.length) return '';
   var N = marks.length, inner = '';
@@ -2959,7 +2968,7 @@ function buildDaySVG(marks){
       var m=marks[i], c=CAL_COLORS[m.color]||m.color;
       var a0=-90 + i*(360/N), a1=-90 + (i+1)*(360/N);
       inner += m.ring
-        ? '<path d="'+_wedgePath(50,50,43,a0,a1)+'" fill="none" stroke="'+c+'" stroke-width="5" stroke-linejoin="round"/>'
+        ? '<path d="'+_arcPath(50,50,43,a0,a1)+'" fill="none" stroke="'+c+'" stroke-width="6" stroke-linecap="butt"/>'
         : '<path d="'+_wedgePath(50,50,46,a0,a1)+'" fill="'+c+'"/>';
     }
   }
