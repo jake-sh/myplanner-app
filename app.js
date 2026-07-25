@@ -2933,10 +2933,11 @@ function openCalendar() {
 
 // 색상명 → hex 맵 (분할 gradient에 사용)
 const CAL_COLORS = {
-  pink:'#FFB3B3', yellow:'#F5E84A', green:'#8FF087',
-  blue:'#7EC8F5', purple:'#C3A8F0',
+  // 파스텔보다 살짝 진하게 (링 다색 구분 개선, 원색까지는 아님)
+  pink:'#FF9A9A', yellow:'#EDD83C', green:'#74E06B',
+  blue:'#63B8EE', purple:'#AE90E8',
   // 구버전 호환
-  done:'#FFB3B3', red:'#F5E84A'
+  done:'#FF9A9A', red:'#EDD83C'
 };
 
 // 날짜 마킹 파싱 → 최대 4개 조각 배열 [{color, ring}, ...]
