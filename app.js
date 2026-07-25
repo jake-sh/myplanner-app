@@ -511,6 +511,8 @@ function showScreen(id) {
   if (!currentUser && _PROTECTED_SCREENS.indexOf(id) >= 0) id = 'loginScreen';
   var target = document.getElementById(id);
   if (!target) return;
+  // 달력 이탈 시 선택된 팔레트 해제 (다음 진입에서 실수 마킹 방지)
+  if (id !== 'calendarScreen' && typeof clearPaletteSelection === 'function') clearPaletteSelection();
   // 인라인 display:flex 가 CSS display:none을 덮어쓰는 문제 → display를 직접 강제 제어
   document.querySelectorAll('.screen').forEach(function(s) {
     s.classList.remove('active');
@@ -2887,6 +2889,7 @@ function getSharedCalId() {
 }
 
 function openCalendar() {
+  clearPaletteSelection(); // 진입 시 팔레트 아무것도 선택 안 됨
   showScreen('calendarScreen');
   if (calListener) { calListener(); calListener = null; }
   const sid = getSharedCalId();
@@ -2997,7 +3000,13 @@ function renderCalendar() {
   document.getElementById('calRate').textContent = rate + '%';
 }
 
-let selectedPalette = 'pink';
+let selectedPalette = null; // 기본 선택 없음 (달력 진입 시 실수 마킹 방지)
+
+// 팔레트 선택 해제 (달력 진입/이탈 시 호출)
+function clearPaletteSelection() {
+  selectedPalette = null;
+  document.querySelectorAll('.pal-btn').forEach(b => b.classList.remove('pal-active'));
+}
 
 function selectPalette(color) {
   if (selectedPalette === color) {
