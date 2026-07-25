@@ -571,10 +571,24 @@ if (window.visualViewport) {
 }
 
 // ── PATTERN ────────────────────────────────────────
+// 탭으로 앱을 열지 말지 판정용: 시작 카드를 벗어났으면 앱 열지 않음
+// (패턴 드래그는 2개 이상 dot이 찍히므로 이 플래그와 무관하게 정상 동작)
+let _tapStartDot = null, _leftStartCard = false;
+function _updateLeftStartCard(x, y) {
+  if (_tapStartDot === null) return;
+  var el = document.querySelector('#menuGrid [data-dot="' + _tapStartDot + '"]');
+  if (!el) return;
+  var r = el.getBoundingClientRect();
+  var inside = x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+  if (!inside) _leftStartCard = true;
+}
+
 function dotStart(e, dot) {
   e.preventDefault();
   isDragging = true;
   currentPattern = [dot];
+  _tapStartDot = dot;
+  _leftStartCard = false;
   highlightDot(dot, true);
   document.addEventListener('touchmove', onTouchMove, { passive: false });
   document.addEventListener('touchend', onDragEnd, { once: true });
@@ -586,11 +600,13 @@ function onTouchMove(e) {
   e.preventDefault();
   const t = e.touches[0];
   checkDot(t.clientX, t.clientY);
+  _updateLeftStartCard(t.clientX, t.clientY);
 }
 
 function onMouseMove(e) {
   if (!isDragging) return;
   checkDot(e.clientX, e.clientY);
+  _updateLeftStartCard(e.clientX, e.clientY);
 }
 
 function onDragEnd() {
@@ -609,9 +625,13 @@ function onDragEnd() {
   // 탭 = 1개 또는 같은 dot만 반복된 경우 (미세한 움직임 허용)
   const uniqueDots = [...new Set(patternCopy)];
   if (uniqueDots.length <= 1) {
+    // 시작 카드 밖으로 이동했다가 놓으면 앱 열지 않음 (드래그 취소)
+    if (_leftStartCard) { _tapStartDot = null; return; }
+    _tapStartDot = null;
     openFeature(tapped);
     return;
   }
+  _tapStartDot = null;
 
   // [캐시 + myCode 있음] = 평소 흐름. 저장된 패턴과 일치하면 즉시 진입, 아니면 조용히 무시
   if (myCode) {
