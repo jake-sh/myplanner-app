@@ -2919,16 +2919,51 @@ const CAL_COLORS = {
   done:'#FFB3B3', red:'#F5E84A'
 };
 
-// 날짜 마킹 파싱: 'pink'=채움 원, 'pink|o'=테두리만 원.
-// 구버전 호환: 배열[c1,c2](2색 분할)은 첫 색만 채움으로 취급.
-function parseHabitMark(raw){
-  if(!raw || raw==='clear') return null;
-  if(Array.isArray(raw)) raw = raw[0];
-  if(typeof raw!=='string' || !raw) return null;
-  var outline = raw.slice(-2)==='|o';
-  var color = outline ? raw.slice(0,-2) : raw;
-  if(!color) return null;
-  return { color: color, outline: outline };
+// 날짜 마킹 파싱 → 최대 4개 조각 배열 [{color, ring}, ...]
+// 저장형: 'blue'=채움, 'blue|o'=링. 하루에 여러 개면 배열 ['blue','purple|o',...].
+// 구버전 호환: 단일 문자열/구버전 2색 배열 모두 이 함수로 정규화.
+function getDayMarks(raw){
+  if(!raw || raw==='clear') return [];
+  var arr = Array.isArray(raw) ? raw : [raw];
+  var out = [];
+  arr.forEach(function(e){
+    if(typeof e!=='string' || !e) return;
+    var ring = e.slice(-2)==='|o';
+    var color = ring ? e.slice(0,-2) : e;
+    if(color && out.length<4 && !out.some(function(m){return m.color===color;})) out.push({color:color, ring:ring});
+  });
+  return out;
+}
+// 마킹 배열 → 저장형 배열
+function marksToRaw(marks){ return marks.map(function(m){ return m.ring ? m.color+'|o' : m.color; }); }
+
+// 부채꼴(파이 조각) path 생성 (각도는 도 단위, 12시=-90°에서 시작)
+function _wedgePath(cx,cy,r,a0,a1){
+  var rad=Math.PI/180;
+  var x0=(cx+r*Math.cos(a0*rad)).toFixed(2), y0=(cy+r*Math.sin(a0*rad)).toFixed(2);
+  var x1=(cx+r*Math.cos(a1*rad)).toFixed(2), y1=(cy+r*Math.sin(a1*rad)).toFixed(2);
+  var large=(a1-a0)>180?1:0;
+  return 'M '+cx+' '+cy+' L '+x0+' '+y0+' A '+r+' '+r+' 0 '+large+' 1 '+x1+' '+y1+' Z';
+}
+// 날짜 마킹 배열 → SVG (1개=원, 2개=세로 좌우 반, 3개=120°, 4개=90°)
+function buildDaySVG(marks){
+  if(!marks.length) return '';
+  var N = marks.length, inner = '';
+  if(N===1){
+    var m0=marks[0], c0=CAL_COLORS[m0.color]||m0.color;
+    inner = m0.ring
+      ? '<circle cx="50" cy="50" r="43" fill="none" stroke="'+c0+'" stroke-width="6"/>'
+      : '<circle cx="50" cy="50" r="46" fill="'+c0+'"/>';
+  } else {
+    for(var i=0;i<N;i++){
+      var m=marks[i], c=CAL_COLORS[m.color]||m.color;
+      var a0=-90 + i*(360/N), a1=-90 + (i+1)*(360/N);
+      inner += m.ring
+        ? '<path d="'+_wedgePath(50,50,43,a0,a1)+'" fill="none" stroke="'+c+'" stroke-width="5" stroke-linejoin="round"/>'
+        : '<path d="'+_wedgePath(50,50,46,a0,a1)+'" fill="'+c+'"/>';
+    }
+  }
+  return '<svg class="cal-day-svg" viewBox="0 0 100 100" aria-hidden="true">'+inner+'</svg>';
 }
 
 function renderCalendar() {
@@ -2959,38 +2994,26 @@ function renderCalendar() {
   for (let i = 0; i < firstDay; i++) html += '<div class="cal-empty"></div>';
   for (let d = 1; d <= daysInMonth; d++) {
     const today = d===now.getDate() && calMonth===now.getMonth() && calYear===now.getFullYear();
-    const raw = dayMap[d]; // 'pink' | 'pink|o' | [c1,c2](구버전) | undefined
-    const mark = parseHabitMark(raw);
+    const marks = getDayMarks(dayMap[d]);
     const dow = (firstDay+d-1)%7;
 
     let cls = ['cal-day', today ? 'cal-today' : '', dow===0?'sun':dow===6?'sat':''];
-    let inlineStyle = '';
-
-    if (mark) {
-      const bg = CAL_COLORS[mark.color] || mark.color;
-      if (mark.outline) {
-        // 테두리만 원 (안은 투명)
-        inlineStyle = `style="background:transparent;border:2.5px solid ${bg}"`;
-        cls.push('cal-outline');
-      } else {
-        // 안이 꽉찬 원
-        inlineStyle = `style="background:${bg};color:#111!important"`;
-        cls.push(`cal-color-${mark.color}`);
-      }
-    }
+    // 채운 조각이 하나라도 있으면 숫자를 진하게(파스텔 위 가독성)
+    if (marks.some(function(m){return !m.ring;})) cls.push('cal-has-fill');
 
     cls = cls.filter(Boolean).join(' ');
-    html += `<div class="${cls}" ${inlineStyle} ontouchend="toggleHabit(${d},event);" onclick="toggleHabit(${d},event);">${d}</div>`;
+    html += `<div class="${cls}" ontouchend="toggleHabit(${d},event);" onclick="toggleHabit(${d},event);">${buildDaySVG(marks)}<span class="cal-day-num">${d}</span></div>`;
   }
   document.getElementById('calGrid').innerHTML = html;
-  // 연두/파랑/보라 '채움(filled)'만 카운트 (테두리만 원은 제외)
+  // 연두/파랑/보라 '채움(filled)' 조각만 카운트 (링은 제외, 하루 다색 각각 카운트)
   let greenCount = 0, blueCount = 0, purpleCount = 0;
   Object.values(dayMap).forEach(function(v){
-    var m = parseHabitMark(v);
-    if (!m || m.outline) return;
-    if (m.color === 'green') greenCount++;
-    else if (m.color === 'blue') blueCount++;
-    else if (m.color === 'purple') purpleCount++;
+    getDayMarks(v).forEach(function(m){
+      if (m.ring) return;
+      if (m.color === 'green') greenCount++;
+      else if (m.color === 'blue') blueCount++;
+      else if (m.color === 'purple') purpleCount++;
+    });
   });
   const rate = Math.round((greenCount + blueCount + purpleCount) / daysInMonth * 100);
   document.getElementById('calGreenCount').textContent = greenCount;
@@ -3043,17 +3066,23 @@ async function toggleHabit(day, e) {
   }
 
   if (selectedPalette === 'clear') {
-    // 지우개(X): 무조건 삭제
+    // 지우개(X): 그 날 모든 색 삭제
     delete habits[key][day];
   } else {
-    const mark = parseHabitMark(habits[key][day]);
-    if (!mark || mark.color !== selectedPalette) {
-      // 빈 날이거나 다른 색 → 선택 색으로 '채운 원'
-      habits[key][day] = selectedPalette;
+    var marks = getDayMarks(habits[key][day]);
+    var idx = -1;
+    for (var i = 0; i < marks.length; i++) { if (marks[i].color === selectedPalette) { idx = i; break; } }
+    if (idx === -1) {
+      // 그 날에 없는 색 → 채움으로 추가 (최대 4개)
+      if (marks.length >= 4) return;
+      marks.push({ color: selectedPalette, ring: false });
     } else {
-      // 같은 색 재탭 → 채움 ↔ 테두리 토글 (삭제는 X로만)
-      habits[key][day] = mark.outline ? mark.color : (mark.color + '|o');
+      // 같은 색 재탭 → 채움 → 링 → 제거 순환 (제거 시 그 색만)
+      if (!marks[idx].ring) marks[idx].ring = true;   // 채움 → 링
+      else marks.splice(idx, 1);                       // 링 → 제거
     }
+    if (marks.length === 0) delete habits[key][day];
+    else habits[key][day] = marksToRaw(marks);
   }
 
   localStorage.setItem('habits', JSON.stringify(habits));
@@ -6147,7 +6176,6 @@ function applyLang() {
   _setText('themeColorPaletteLabel', __T('Select theme color','테마 색상 선택','选择主题色','テーマカラー選択'));
   _setText('themeColorPaletteCancelBtn', __T('Close','닫기','关闭','閉じる'));
   _setText('notifSectionLabel', __T('Notifications','알림','通知','通知'));
-  _setText('notifAllLabel', __T('Get notifications','알림 받기','接收通知','通知を受け取る'));
   _setText('langLabel', __T('Language','언어','语言','言語'));
   _setText('infoLabel', __T('Info','정보','信息','情報'));
   // meta[name=app-version]에서 버전 표시 (SW 캐시 의존 제거)
@@ -6323,7 +6351,6 @@ function applyLang() {
 
   // 알림 토글 (통합)
   _setText('notifSectionLabel', __T('Notifications','알림','通知','通知'));
-  _setText('notifAllLabel', __T('Get notifications','알림 받기','接收通知','通知を受け取る'));
   _setText('shareTargetLabel', __T('Share Target :','공유 대상 :','共享对象 :','共有相手 :'));
   // 로그아웃 / 비밀번호 변경 / 계정삭제
   _setText('logoutBtn', __T('Logout','로그아웃','退出登录','ログアウト'));
