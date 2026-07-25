@@ -2980,13 +2980,18 @@ function renderCalendar() {
     html += `<div class="${cls}" ${inlineStyle} ontouchend="toggleHabit(${d},event);" onclick="toggleHabit(${d},event);">${d}</div>`;
   }
   document.getElementById('calGrid').innerHTML = html;
-  const doneCount = Object.values(dayMap).filter(v => v && v !== 'clear' && !(Array.isArray(v) && v.length === 0)).length;
-  const sorted = Object.keys(dayMap).map(Number).sort((a,b)=>b-a);
-  let streak = 0;
-  if (sorted.length) { streak = 1; for (let i=0;i<sorted.length-1;i++){if(sorted[i]-sorted[i+1]===1)streak++;else break;} }
-  document.getElementById('calDoneCount').textContent = doneCount;
-  document.getElementById('calRate').textContent = Math.round(doneCount/daysInMonth*100)+'%';
-  document.getElementById('calStreak').textContent = streak;
+  // 파랑/보라 '채움(filled)'만 카운트 (테두리만 원은 제외)
+  let blueCount = 0, purpleCount = 0;
+  Object.values(dayMap).forEach(function(v){
+    var m = parseHabitMark(v);
+    if (!m || m.outline) return;
+    if (m.color === 'blue') blueCount++;
+    else if (m.color === 'purple') purpleCount++;
+  });
+  const rate = Math.round((blueCount + purpleCount) / daysInMonth * 100);
+  document.getElementById('calBlueCount').textContent = blueCount;
+  document.getElementById('calPurpleCount').textContent = purpleCount;
+  document.getElementById('calRate').textContent = rate + '%';
 }
 
 let selectedPalette = 'pink';
@@ -6259,9 +6264,9 @@ function applyLang() {
   _setText('closeTimerBtn', __T('Cancel','취소','取消','キャンセル'));
 
   // 달력 통계
-  _setText('calAchievedLabel', __T('Achieved','달성일','达成日','達成日'));
+  _setText('calBlueLabel', __T('Achieved','달성일','达成日','達成日'));
+  _setText('calPurpleLabel', __T('Achieved','달성일','达成日','達成日'));
   _setText('calRateLabel', __T('Rate','달성률','达成率','達成率'));
-  _setText('calStreakLabel', __T('Streak','연속 달성','连续达成','連続達成'));
 
   // 알림 토글
   _setText('notifEventLabel', __T('Event Alerts','이벤트 알림','事件提醒','イベント通知'));
