@@ -2780,12 +2780,8 @@ function _shareChoiceMemo() {
   _saveSharedToMemoFromPending();
   _pendingShare = null;
   _closeShareChoice();
-  // 저장 후 즉시 원래 앱으로 복귀 (PWA share_target이면 window.close 동작)
+  // 저장 후 즉시 원래 앱으로 복귀 (토스트 없음)
   try { window.close(); } catch(e) {}
-  try {
-    showUploadStatus(__T('Saved to memo','메모에 저장됨','已保存到备忘','メモに保存しました'));
-    setTimeout(function() { try { hideUploadStatus(); } catch(e) {} }, 1500);
-  } catch(e) {}
 }
 
 async function _shareChoiceChat() {
@@ -2793,18 +2789,8 @@ async function _shareChoiceChat() {
   _pendingShare = null;
   _closeShareChoice();
   var target = getShareTarget();
-  // 공유 대상 미설정/미준비 → 채팅으로 이동해 직접 선택 (폴백)
-  if (!target || !myCode || !body) {
-    _pendingShareToChat = body;
-    try { enterChatApp(); } catch(e) {}
-    if (!target) {
-      try {
-        showUploadStatus(__T('Set a share target first','공유 대상을 먼저 지정하세요','请先指定共享对象','共有相手を先に指定してください'));
-        setTimeout(function(){ try { hideUploadStatus(); } catch(e) {} }, 1800);
-      } catch(e) {}
-    }
-    return;
-  }
+  // 대상 없거나 미준비면 조용히 종료 (To Direct 버튼은 대상 있을 때만 노출됨)
+  if (!target || !myCode || !body) { try { window.close(); } catch(e) {} return; }
   // share target에게 즉시 전송 후 원래 앱으로 복귀 (UI 이동/확인 없음)
   try {
     var roomId = [myCode, target].sort().join('_');
@@ -2813,12 +2799,8 @@ async function _shareChoiceChat() {
       ts: firebase.firestore.Timestamp.now(), deleteAt: null
     });
   } catch(e) { console.log('share to chat error:', e && e.message); }
-  // 즉시 원래 앱으로 복귀 (PWA share_target이면 window.close 동작)
+  // 즉시 원래 앱으로 복귀 (토스트 없음)
   try { window.close(); } catch(e) {}
-  try {
-    showUploadStatus(__T('Shared to chat','채팅으로 공유됨','已分享到聊天','チャットに共有しました'));
-    setTimeout(function(){ try { hideUploadStatus(); } catch(e) {} }, 1500);
-  } catch(e) {}
 }
 
 function _showShareChoice() {
@@ -2840,11 +2822,15 @@ function _showShareChoice() {
   memoBtn.style.cssText = 'flex:1;padding:12px;border:none;border-radius:12px;background:rgba(255,255,255,0.10);color:var(--text,#f1f5f9);font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;';
   memoBtn.textContent = __T('To Memo','메모공유','备忘共享','メモ共有');
   memoBtn.onclick = _shareChoiceMemo;
-  var chatBtn = document.createElement('button');
-  chatBtn.style.cssText = 'flex:1;padding:12px;border:none;border-radius:12px;background:var(--primary,#6C63FF);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;';
-  chatBtn.textContent = __T('To Direct','바로공유','直接共享','直接共有');
-  chatBtn.onclick = _shareChoiceChat;
-  btnWrap.appendChild(memoBtn); btnWrap.appendChild(chatBtn);
+  btnWrap.appendChild(memoBtn);
+  // 바로공유(To Direct)는 Share Target이 있을 때만 표시
+  if (getShareTarget()) {
+    var chatBtn = document.createElement('button');
+    chatBtn.style.cssText = 'flex:1;padding:12px;border:none;border-radius:12px;background:var(--primary,#6C63FF);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;';
+    chatBtn.textContent = __T('To Direct','바로공유','直接共享','直接共有');
+    chatBtn.onclick = _shareChoiceChat;
+    btnWrap.appendChild(chatBtn);
+  }
   box.appendChild(t); box.appendChild(preview); box.appendChild(btnWrap);
   ov.appendChild(box);
   document.body.appendChild(ov);
