@@ -739,9 +739,9 @@ input:checked+.slider:before{transform:translateX(20px);}
 .cal-day{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;}
 
 /* 오늘: box-shadow 링으로 표시 — 마킹 배경과 공존 가능 */
+/* 오늘 표시: 테마색이 아닌 고정 회색 링 (마킹 동그라미와 구분) */
 .cal-day.cal-today{
-  box-shadow:0 0 0 2.5px var(--primary) !important;
-  color:var(--primary) !important;
+  box-shadow:0 0 0 2.5px #9AA0A6 !important;
   font-weight:800 !important;
 }
 /* 오늘이면서 마킹 없을 때만 배경 투명 */
@@ -939,7 +939,7 @@ body.dark-mode .cal-stat-box {
 body.dark-mode .cal-stat-label { color:#888; }
 body.dark-mode .cal-title,
 body.dark-mode .cal-day { color:#F1F1F1; }
-body.dark-mode .cal-day.cal-today { color:var(--primary) !important; }
+body.dark-mode .cal-day.cal-today { color:#F1F1F1 !important; }
 body.dark-mode .cal-day.cal-color-pink,
 body.dark-mode .cal-day.cal-color-yellow,
 body.dark-mode .cal-day.cal-color-green,
