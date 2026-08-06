@@ -2784,12 +2784,37 @@ function _shareChoiceMemo() {
   setTimeout(function() { try { hideUploadStatus(); } catch(e) {} }, 1500);
 }
 
-function _shareChoiceChat() {
-  _pendingShareToChat = _pendingShare ? _pendingShare.body : null;
+async function _shareChoiceChat() {
+  var body = _pendingShare ? _pendingShare.body : null;
   _pendingShare = null;
   _closeShareChoice();
-  // 채팅으로 이동 → 친구 선택 후 openChat에서 입력창에 자동 삽입
-  try { enterChatApp(); } catch(e) {}
+  var target = getShareTarget();
+  // 공유 대상 미설정/미준비 → 채팅으로 이동해 직접 선택 (폴백)
+  if (!target || !myCode || !body) {
+    _pendingShareToChat = body;
+    try { enterChatApp(); } catch(e) {}
+    if (!target) {
+      try {
+        showUploadStatus(__T('Set a share target first','공유 대상을 먼저 지정하세요','请先指定共享对象','共有相手を先に指定してください'));
+        setTimeout(function(){ try { hideUploadStatus(); } catch(e) {} }, 1800);
+      } catch(e) {}
+    }
+    return;
+  }
+  // share target에게 즉시 전송 후 원래 앱으로 복귀 (UI 이동/확인 없음)
+  try {
+    var roomId = [myCode, target].sort().join('_');
+    await db.collection('rooms').doc(roomId).collection('messages').add({
+      sender: myCode, receiverId: target, text: body, type: 'text',
+      ts: firebase.firestore.Timestamp.now(), deleteAt: null
+    });
+  } catch(e) { console.log('share to chat error:', e && e.message); }
+  // 즉시 원래 앱으로 복귀 (PWA share_target이면 window.close 동작)
+  try { window.close(); } catch(e) {}
+  try {
+    showUploadStatus(__T('Shared to chat','채팅으로 공유됨','已分享到聊天','チャットに共有しました'));
+    setTimeout(function(){ try { hideUploadStatus(); } catch(e) {} }, 1500);
+  } catch(e) {}
 }
 
 function _showShareChoice() {
@@ -2813,7 +2838,8 @@ function _showShareChoice() {
   memoBtn.onclick = _shareChoiceMemo;
   var chatBtn = document.createElement('button');
   chatBtn.style.cssText = 'flex:1;padding:12px;border:none;border-radius:12px;background:var(--primary,#6C63FF);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;';
-  chatBtn.textContent = __T('To Chat','바로 공유','直接共享','直接共有');
+  var _tg = getShareTarget();
+  chatBtn.textContent = __T('To Chat','바로 공유','直接共享','直接共有') + (_tg ? ' (' + _tg + ')' : '');
   chatBtn.onclick = _shareChoiceChat;
   btnWrap.appendChild(memoBtn); btnWrap.appendChild(chatBtn);
   box.appendChild(t); box.appendChild(preview); box.appendChild(btnWrap);
