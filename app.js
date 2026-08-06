@@ -2780,8 +2780,12 @@ function _shareChoiceMemo() {
   _saveSharedToMemoFromPending();
   _pendingShare = null;
   _closeShareChoice();
-  try { showUploadStatus(__T('Saved to memo','메모에 저장됨','已保存到备忘','メモに保存しました')); } catch(e) {}
-  setTimeout(function() { try { hideUploadStatus(); } catch(e) {} }, 1500);
+  // 저장 후 즉시 원래 앱으로 복귀 (PWA share_target이면 window.close 동작)
+  try { window.close(); } catch(e) {}
+  try {
+    showUploadStatus(__T('Saved to memo','메모에 저장됨','已保存到备忘','メモに保存しました'));
+    setTimeout(function() { try { hideUploadStatus(); } catch(e) {} }, 1500);
+  } catch(e) {}
 }
 
 async function _shareChoiceChat() {
@@ -2834,12 +2838,11 @@ function _showShareChoice() {
   btnWrap.style.cssText = 'display:flex;gap:10px;';
   var memoBtn = document.createElement('button');
   memoBtn.style.cssText = 'flex:1;padding:12px;border:none;border-radius:12px;background:rgba(255,255,255,0.10);color:var(--text,#f1f5f9);font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;';
-  memoBtn.textContent = __T('To Memo','메모 공유','备忘共享','メモへ共有');
+  memoBtn.textContent = __T('To Memo','메모공유','备忘共享','メモ共有');
   memoBtn.onclick = _shareChoiceMemo;
   var chatBtn = document.createElement('button');
   chatBtn.style.cssText = 'flex:1;padding:12px;border:none;border-radius:12px;background:var(--primary,#6C63FF);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;';
-  var _tg = getShareTarget();
-  chatBtn.textContent = __T('To Chat','바로 공유','直接共享','直接共有') + (_tg ? ' (' + _tg + ')' : '');
+  chatBtn.textContent = __T('To Direct','바로공유','直接共享','直接共有');
   chatBtn.onclick = _shareChoiceChat;
   btnWrap.appendChild(memoBtn); btnWrap.appendChild(chatBtn);
   box.appendChild(t); box.appendChild(preview); box.appendChild(btnWrap);
