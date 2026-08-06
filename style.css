@@ -482,6 +482,8 @@ input:checked+.slider:before{transform:translateX(20px);}
   align-self:flex-start;border-bottom-left-radius:4px;
 }
 .msg-bubble.system-msg{background:transparent;color:#64748b;font-size:12px;align-self:center;}
+/* 채팅 링크: 말풍선 글자색 상속 + 밑줄 */
+.msg-link{color:inherit;text-decoration:underline;word-break:break-all;}
 .msg-time{font-size:10px;opacity:.6;margin-top:4px;}
 .chat-input-bar{
   display:flex;align-items:center;gap:8px;

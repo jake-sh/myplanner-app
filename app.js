@@ -2738,39 +2738,87 @@ async function handleShareIntent() {
       .replace(/>/g, '&gt;')
       .replace(/\n/g, '<br>');
 
-    const memos = JSON.parse(localStorage.getItem('memos') || '[]');
-    const date = new Date().toLocaleDateString(_locForLang(localStorage.getItem('lang')||'ko'));
-    var now = Date.now();
-    memos.unshift({
-      id: now + '_' + Math.random().toString(36).slice(2,8),
-      owner: myCode || '',
-      shared: false,
-      title: title, body: safeBody, date: date,
-      ts: now
-    });
-    localStorage.setItem('memos', JSON.stringify(memos));
-
-    // URL에서 공유 파라미터 제거 (새로고침 시 중복 저장 방지)
+    // URL에서 공유 파라미터 제거 (새로고침 시 중복 처리 방지)
     try {
       const cleanUrl = window.location.pathname + window.location.hash;
       window.history.replaceState({}, '', cleanUrl);
     } catch(e) {}
 
-    // 원래 앱으로 복귀: PWA에서 열렸으면 창 닫기 시도
-    // (Android Chrome PWA는 share_target으로 들어오면 window.close()가 동작함)
-    // 실패 시 planApp 메인 화면에 머무름 (눈에 띄지 않게 토스트만)
-    setTimeout(function() {
-      try { window.close(); } catch(e) {}
-      // window.close()가 막힌 환경 대응: 작은 안내 토스트
-      try { showUploadStatus(__T('Saved to memo','메모에 저장됨','已保存到备忘','メモに保存しました')); } catch(e) {}
-      setTimeout(function() { try { hideUploadStatus(); } catch(e) {} }, 1500);
-    }, 50);
-
+    // 메모공유 / 바로공유(채팅) 선택 모달 표시
+    _pendingShare = { title: title, body: body, safeBody: safeBody };
+    _showShareChoice();
     return true;
   } catch(e) {
     console.log('share intent error:', e && e.message);
     return false;
   }
+}
+
+// ── 공유 대상 선택 (메모 / 채팅) ─────────────────────────────
+var _pendingShare = null;        // { title, body, safeBody }
+var _pendingShareToChat = null;  // 바로공유 선택 시 채팅 입력창에 넣을 텍스트
+
+function _saveSharedToMemoFromPending() {
+  var p = _pendingShare; if (!p) return;
+  var memos = JSON.parse(localStorage.getItem('memos') || '[]');
+  var date = new Date().toLocaleDateString(_locForLang(localStorage.getItem('lang')||'ko'));
+  var now = Date.now();
+  memos.unshift({
+    id: now + '_' + Math.random().toString(36).slice(2,8),
+    owner: myCode || '', shared: false,
+    title: p.title, body: p.safeBody, date: date, ts: now
+  });
+  localStorage.setItem('memos', JSON.stringify(memos));
+}
+
+function _closeShareChoice() {
+  var el = document.getElementById('shareChoiceOverlay');
+  if (el) el.remove();
+}
+
+function _shareChoiceMemo() {
+  _saveSharedToMemoFromPending();
+  _pendingShare = null;
+  _closeShareChoice();
+  try { showUploadStatus(__T('Saved to memo','메모에 저장됨','已保存到备忘','メモに保存しました')); } catch(e) {}
+  setTimeout(function() { try { hideUploadStatus(); } catch(e) {} }, 1500);
+}
+
+function _shareChoiceChat() {
+  _pendingShareToChat = _pendingShare ? _pendingShare.body : null;
+  _pendingShare = null;
+  _closeShareChoice();
+  // 채팅으로 이동 → 친구 선택 후 openChat에서 입력창에 자동 삽입
+  try { enterChatApp(); } catch(e) {}
+}
+
+function _showShareChoice() {
+  _closeShareChoice();
+  var ov = document.createElement('div');
+  ov.id = 'shareChoiceOverlay';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:100000;display:flex;align-items:center;justify-content:center;';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:var(--card,#1e2235);color:var(--text,#f1f5f9);border-radius:20px;padding:24px 22px;width:82%;max-width:320px;box-shadow:0 12px 40px rgba(0,0,0,0.4);';
+  var t = document.createElement('div');
+  t.style.cssText = 'font-size:16px;font-weight:700;text-align:center;margin-bottom:6px;';
+  t.textContent = __T('Where to share?','어디로 공유할까요?','分享到哪里？','どこへ共有しますか？');
+  var preview = document.createElement('div');
+  preview.style.cssText = 'font-size:12px;color:var(--subtext,#94a3b8);text-align:center;margin-bottom:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+  preview.textContent = ((_pendingShare && _pendingShare.body) || '').slice(0, 60);
+  var btnWrap = document.createElement('div');
+  btnWrap.style.cssText = 'display:flex;gap:10px;';
+  var memoBtn = document.createElement('button');
+  memoBtn.style.cssText = 'flex:1;padding:12px;border:none;border-radius:12px;background:rgba(255,255,255,0.10);color:var(--text,#f1f5f9);font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;';
+  memoBtn.textContent = __T('To Memo','메모 공유','备忘共享','メモへ共有');
+  memoBtn.onclick = _shareChoiceMemo;
+  var chatBtn = document.createElement('button');
+  chatBtn.style.cssText = 'flex:1;padding:12px;border:none;border-radius:12px;background:var(--primary,#6C63FF);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;';
+  chatBtn.textContent = __T('To Chat','바로 공유','直接共享','直接共有');
+  chatBtn.onclick = _shareChoiceChat;
+  btnWrap.appendChild(memoBtn); btnWrap.appendChild(chatBtn);
+  box.appendChild(t); box.appendChild(preview); box.appendChild(btnWrap);
+  ov.appendChild(box);
+  document.body.appendChild(ov);
 }
 
 // ── 메모 이미지 업로드 ────────────────────────────────────────
@@ -4083,6 +4131,14 @@ function openChat(friendCode) {
   listenRoomSettings();
   // [c] markMessagesRead는 listenMessages 첫 스냅샷 후 자동 호출됨
   // (진입 직후 호출하면 batch update가 즉시 onSnapshot을 재트리거하여 빈 화면 구간이 길어짐)
+  // 바로공유로 들어온 경우: 채팅 입력창에 공유 내용 자동 삽입 (전송은 사용자가)
+  if (_pendingShareToChat) {
+    var _shareTxt = _pendingShareToChat; _pendingShareToChat = null;
+    setTimeout(function() {
+      var inp = document.getElementById('msgInput');
+      if (inp) { inp.value = _shareTxt; try { inp.dispatchEvent(new Event('input')); } catch(e) {} inp.focus(); }
+    }, 300);
+  }
 }
 
 function backToFriendList() {
@@ -4367,6 +4423,26 @@ function listenMessages() {
     });
 }
 
+// 텍스트 내 URL을 클릭 가능한 <a>로 변환해 el에 추가 (XSS 방지 위해 DOM 노드로 구성)
+// target=_blank 새 컨텍스트로 열려 OS가 인스타/유튜브 등 해당 앱 또는 브라우저로 처리
+function _appendLinkified(el, text) {
+  var re = /(https?:\/\/[^\s]+)/g;
+  var last = 0, m;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) el.appendChild(document.createTextNode(text.slice(last, m.index)));
+    var a = document.createElement('a');
+    a.href = m[0];
+    a.textContent = m[0];
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.className = 'msg-link';
+    a.addEventListener('click', function(ev) { ev.stopPropagation(); });
+    el.appendChild(a);
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) el.appendChild(document.createTextNode(text.slice(last)));
+}
+
 function renderMessage(data, id, beforeNode) {
   const list = document.getElementById('messageList');
   const mine = data.sender === myCode;
@@ -4415,7 +4491,8 @@ function renderMessage(data, id, beforeNode) {
     vid.src = data.url; vid.controls = true; vid.className = 'msg-media';
     bubble.appendChild(vid);
   } else {
-    bubble.textContent = data.text;
+    // 텍스트: URL은 클릭 가능한 링크로 (클릭 시 새 컨텍스트 → OS가 해당 앱/브라우저로 열기)
+    _appendLinkified(bubble, data.text || '');
   }
 
   // 시간+카운트다운
