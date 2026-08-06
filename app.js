@@ -9,6 +9,9 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+// 오프라인 지속성: 채팅방 재진입 시 로컬 캐시에서 즉시 렌더 → 로딩 지연 완화
+// (멀티탭 안전 옵션. 미지원/이미 활성/멀티탭 충돌 시 조용히 무시)
+try { db.enablePersistence({ synchronizeTabs: true }).catch(function(){}); } catch(e) {}
 const auth = firebase.auth();
 const storage = firebase.storage();
 
@@ -4344,10 +4347,12 @@ function listenMessages() {
       let hasNewMsg = false;
       let myNewMsg = false;
       const changes = snap.docChanges();
+      // 서버 확정 스냅샷 여부. fromCache=true는 로컬/펜딩(전송 직후) 스냅샷이라
+      // 이걸 "서버 전체"로 오인해 캐시 DOM을 지우면 순서가 뒤바뀐다 → 서버일 때만 프루닝.
+      const isServerSnap = !snap.metadata.fromCache;
 
-      // 첫 스냅샷이면 서버에 있는 ID 집합을 만들어두고, 캐시로 그려놨지만
-      // 서버에 없는(이미 삭제된) 메시지 노드를 제거한다.
-      if (firstLoad) {
+      // 서버 스냅샷 + 첫 로드일 때만: 캐시로 그렸지만 서버에 없는(삭제된) 노드 제거
+      if (firstLoad && isServerSnap) {
         var serverIds = new Set();
         snap.docs.forEach(function(d){ serverIds.add(d.id); });
         // 캐시로 그려둔 노드 중 서버에 없는 것 제거
@@ -4393,11 +4398,9 @@ function listenMessages() {
             return;
           }
 
-          // newIndex 위치에 정확히 삽입
-          // (newIndex는 정렬된 결과 기준 인덱스. 동등 정렬을 위해 list.children에 매핑)
-          const children = list.children;
-          const beforeNode = (change.newIndex >= 0 && change.newIndex < children.length)
-            ? children[change.newIndex] : null;
+          // ts 기준 정렬 삽입 (DOM이 캐시/증분으로 변형돼도 순서 보장.
+          // newIndex는 스냅샷 인덱스라 캐시 DOM과 어긋날 수 있어 사용하지 않음)
+          const beforeNode = _insertBeforeByTs(list, _msgTsMillis(data));
           renderMessage(data, id, beforeNode);
           if (!deleteTimers[id]) scheduleAutoDelete(id, data);
         }
@@ -4425,17 +4428,41 @@ function listenMessages() {
       // 첫 로드, 내 메시지, 또는 이미 맨 아래에 있던 경우 → 맨 아래로 스크롤
       if (firstLoad || myNewMsg || atBottom) list.scrollTop = list.scrollHeight;
 
-      // [c] 첫 스냅샷이 그려진 다음에야 읽음 처리(batch update)를 호출
-      // → 진입 직후 빈 화면 구간 제거, modified 이벤트는 (a) 증분 렌더에서 본문 재렌더 안 함
-      if (firstLoad) {
+      // [c] 첫 '서버' 스냅샷이 그려진 다음에야 읽음 처리(batch update)를 호출
+      // (fromCache 스냅샷에서 호출하면 서버 데이터 도착 전이라 부정확)
+      if (firstLoad && isServerSnap) {
         markMessagesRead();
       }
 
-      firstLoad = false;
+      // firstLoad는 '서버' 스냅샷을 받은 뒤에만 내린다.
+      // (전송 직후 로컬 스냅샷에서 내리면 프루닝/알림 판정이 어긋남)
+      if (isServerSnap) firstLoad = false;
 
       // [d] 캐시 저장 (debounce로 부담 최소화)
       _scheduleCacheSave();
     });
+}
+
+// 메시지 ts를 millis로 정규화 (Firestore Timestamp / {seconds,nanoseconds} / 숫자 / 캐시 대응)
+// ts를 알 수 없으면 +Infinity → 맨 아래로 배치(위로 튀지 않게)
+function _msgTsMillis(data) {
+  var t = data && data.ts;
+  if (t == null) return Infinity;
+  if (typeof t.toMillis === 'function') return t.toMillis();
+  if (typeof t.seconds === 'number') return t.seconds * 1000 + (typeof t.nanoseconds === 'number' ? Math.floor(t.nanoseconds / 1e6) : 0);
+  if (typeof t._seconds === 'number') return t._seconds * 1000 + (typeof t._nanoseconds === 'number' ? Math.floor(t._nanoseconds / 1e6) : 0);
+  if (typeof t === 'number') return t;
+  return Infinity;
+}
+// ts 기준 삽입 위치(해당 ts보다 큰 첫 노드) 반환 — 없으면 null(맨 끝에 append)
+function _insertBeforeByTs(list, ts) {
+  var kids = list.children;
+  for (var i = 0; i < kids.length; i++) {
+    var kt = parseFloat(kids[i].dataset ? kids[i].dataset.ts : '');
+    if (isNaN(kt)) continue;
+    if (kt > ts) return kids[i];
+  }
+  return null;
 }
 
 // 텍스트 내 URL을 클릭 가능한 <a>로 변환해 el에 추가 (XSS 방지 위해 DOM 노드로 구성)
@@ -4465,6 +4492,7 @@ function renderMessage(data, id, beforeNode) {
     const sysDiv = document.createElement('div');
     sysDiv.className = 'msg-bubble system-msg';
     sysDiv.id = 'msg-' + id;
+    sysDiv.dataset.ts = _msgTsMillis(data);
     sysDiv.textContent = data.text;
     if (beforeNode) list.insertBefore(sysDiv, beforeNode);
     else list.appendChild(sysDiv);
@@ -4475,6 +4503,7 @@ function renderMessage(data, id, beforeNode) {
   const row = document.createElement('div');
   row.className = `msg-row ${mine ? 'msg-row-mine' : 'msg-row-theirs'}`;
   row.id = 'msg-' + id;
+  row.dataset.ts = _msgTsMillis(data);
 
   // 말풍선
   const bubble = document.createElement('div');
