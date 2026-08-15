@@ -1,4 +1,4 @@
-﻿const CACHE = 'myplanner-v5.2.1';
+﻿const CACHE = 'myplanner-v5.2.2';
 const PRECACHE = ['./', './index.html', './app.js', './style.css', './manifest.json'];
 
 self.addEventListener('install', e => {
@@ -126,18 +126,10 @@ self.addEventListener('fetch', e => {
 // auto-display and no duplicate notification. (A subscription binds to exactly
 // one SW, so this never fires alongside onBackgroundMessage.)
 self.addEventListener('push', e => {
-  let d = {};
-  try {
-    const json = e.data ? e.data.json() : {};
-    d = json.data || json || {};
-  } catch(err) {
-    try { d = { body: e.data ? e.data.text() : '' }; } catch(e2) {}
-  }
-  const title = d.title || 'Planner';
-  const body = d.body || 'New message';
+  // 문구 없이 공란으로 통일 (payload 무시)
   e.waitUntil(
-    self.registration.showNotification(title, {
-      body: body,
+    self.registration.showNotification('', {
+      body: '',
       icon: '/myplanner-app/icons/icon-192.png',
       badge: '/myplanner-app/icons/icon-badge.png',
       tag: 'planner-notification',
@@ -149,10 +141,11 @@ self.addEventListener('push', e => {
 self.addEventListener('message', e => {
   if (e.data && e.data.type === 'SHOW_NOTIFICATION') {
     // Close existing notification then show the new one (avoid duplicates).
+    // 문구 없이 공란으로 통일 (전달된 title/body 무시)
     self.registration.getNotifications({ tag: 'planner-notification' }).then(ns => {
       ns.forEach(n => n.close());
-      self.registration.showNotification(e.data.title || 'Planner', {
-        body: e.data.body || '',
+      self.registration.showNotification('', {
+        body: '',
         icon: '/myplanner-app/icons/icon-192.png',
         badge: '/myplanner-app/icons/icon-badge.png',
         tag: 'planner-notification'
