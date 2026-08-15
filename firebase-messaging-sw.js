@@ -1,5 +1,5 @@
 ﻿// FCM background message service worker (separate from the main sw.js).
-// SW_VERSION: v5.2.0 (data-only via onBackgroundMessage only)
+// SW_VERSION: v5.2.1 (data-only via onBackgroundMessage only)
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
 
@@ -51,7 +51,11 @@ self.addEventListener('notificationclick', function(e) {
   e.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(cls) {
       for (var i = 0; i < cls.length; i++) {
-        if (cls[i].url.includes('/myplanner-app') && 'focus' in cls[i]) return cls[i].focus();
+        if (cls[i].url.includes('/myplanner-app') && 'focus' in cls[i]) {
+          // 페이지에 알림 열림 신호 → 프라이버시 검은 화면 해제
+          try { cls[i].postMessage({ type: 'NOTIF_OPEN' }); } catch(err) {}
+          return cls[i].focus();
+        }
       }
       if (clients.openWindow) return clients.openWindow('/myplanner-app/');
     })

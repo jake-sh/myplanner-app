@@ -955,6 +955,27 @@ window.addEventListener('focus', function() {
   }
 });
 
+// 프라이버시 검은 화면 강제 해제 헬퍼
+function _hidePrivacyScreen() {
+  var el = document.getElementById('privacyScreen');
+  if (el && el.style.display !== 'none') {
+    el.style.display = 'none';
+    if (isAutoLockOn()) { try { showScreen(currentUser ? 'planApp' : 'loginScreen'); } catch(e) {} }
+  }
+}
+// [A] 알림 탭으로 앱이 열리면 SW가 NOTIF_OPEN을 보냄 → 검은 화면 확실히 해제
+// (client.focus() 프로그램 포커스는 focus/visibilitychange가 안정적으로 안 떠서
+//  기존 숨김 로직이 실행 안 되던 문제를 SW 신호로 직접 해결)
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'NOTIF_OPEN') _hidePrivacyScreen();
+  });
+}
+// [B] 안전망: 아무 포인터/터치 입력이 오면 검은 화면 즉시 해제
+['pointerdown', 'touchstart'].forEach(function(ev) {
+  document.addEventListener(ev, _hidePrivacyScreen, { passive: true, capture: true });
+});
+
 // ── TAG ──────────────────────────────────────────────
 function _locForLang(lang) {
   if (lang === 'en') return 'en-US';

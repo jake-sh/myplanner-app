@@ -1,4 +1,4 @@
-﻿const CACHE = 'myplanner-v5.2.0';
+﻿const CACHE = 'myplanner-v5.2.1';
 const PRECACHE = ['./', './index.html', './app.js', './style.css', './manifest.json'];
 
 self.addEventListener('install', e => {
@@ -172,9 +172,13 @@ self.addEventListener('notificationclick', e => {
   e.notification.close();
   e.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-      // Focus an open tab if there is one.
+      // Focus an open tab if there is one. Signal the page so it can clear the
+      // privacy/black overlay (programmatic focus doesn't reliably fire focus events).
       for (const client of list) {
-        if ('focus' in client) return client.focus();
+        if ('focus' in client) {
+          try { client.postMessage({ type: 'NOTIF_OPEN' }); } catch(err) {}
+          return client.focus();
+        }
       }
       return self.clients.openWindow('/myplanner-app/');
     })
