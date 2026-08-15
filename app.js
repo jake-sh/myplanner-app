@@ -4727,12 +4727,6 @@ function renderMessage(data, id, beforeNode) {
   } else {
     // 텍스트: URL은 클릭 가능한 링크로 (클릭 시 새 컨텍스트 → OS가 해당 앱/브라우저로 열기)
     _appendLinkified(bubble, data.text || '');
-    if (data.edited) {
-      const ed = document.createElement('span');
-      ed.className = 'msg-edited';
-      ed.textContent = ' ' + __T('(edited)', '(수정됨)', '(已编辑)', '(編集済)');
-      bubble.appendChild(ed);
-    }
   }
 
   // 롱프레스 컨텍스트 메뉴 부착
