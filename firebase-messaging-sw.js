@@ -1,5 +1,5 @@
 ﻿// FCM background message service worker (separate from the main sw.js).
-// SW_VERSION: v5.2.2 (data-only via onBackgroundMessage only)
+// SW_VERSION: v5.2.3 (data-only via onBackgroundMessage only)
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
 
@@ -22,9 +22,11 @@ const messaging = firebase.messaging();
 // The server sends data only (no notification payload) so FCM does not
 // auto-display; we show exactly one notification here.
 messaging.onBackgroundMessage(function(payload) {
-  // 문구 없이 공란으로 통일 (서버가 보낸 title/body 무시)
-  return self.registration.showNotification('', {
-    body: '',
+  // 서버가 data로 보낸 문구를 표시 (앱 알림: 할일/달력/메모/통계).
+  // 채팅은 함수가 notification 방식(공란)으로 보내 이 핸들러를 거치지 않음.
+  var d = payload.data || {};
+  return self.registration.showNotification(d.title || '', {
+    body: d.body || '',
     icon: '/myplanner-app/icons/icon-192.png',
     badge: '/myplanner-app/icons/icon-badge.png',
     tag: 'planner-notification',
