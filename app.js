@@ -4181,6 +4181,8 @@ function openChat(friendCode) {
 }
 
 function backToFriendList() {
+  _closeMsgMenu();
+  _cancelReplyEdit();
   // [d] 보류된 캐시 저장이 있으면 즉시 flush
   if (_cacheSaveTimer) { clearTimeout(_cacheSaveTimer); _cacheSaveTimer = null; }
   if (chatRoomId) _saveChatCache(chatRoomId);
@@ -4426,11 +4428,21 @@ function listenMessages() {
           if (!deleteTimers[id]) scheduleAutoDelete(id, data);
         }
         else if (change.type === 'modified') {
-          // 카운트다운/자동삭제 타이머만 갱신 (메시지 내용은 immutable)
+          // 텍스트/수정여부가 바뀌었으면(=메시지 수정) 노드 재렌더
+          const prev = _cachedMessages[id];
+          const changedText = prev && (prev.text !== data.text || prev.edited !== data.edited);
+          _cachedMessages[id] = data;
+          if (changedText) {
+            const existing = document.getElementById('msg-' + id);
+            if (existing) {
+              existing.remove();
+              renderMessage(data, id, _insertBeforeByTs(list, _msgTsMillis(data)));
+            }
+          }
+          // 카운트다운/자동삭제 타이머 갱신
           if (deleteTimers[id]) { clearTimeout(deleteTimers[id]); delete deleteTimers[id]; }
           scheduleAutoDelete(id, data);
           startCountdown(id, data.deleteAt);
-          _cachedMessages[id] = data;
         }
         else if (change.type === 'removed') {
           // 해당 노드만 제거 + 타이머 정리
@@ -4506,6 +4518,155 @@ function _appendLinkified(el, text) {
   if (last < text.length) el.appendChild(document.createTextNode(text.slice(last)));
 }
 
+// ── 말풍선 롱프레스 메뉴 (복사/답장/수정/삭제) ──────────────
+var _replyingTo = null;    // { id, sender, text }
+var _editingMsgId = null;  // 수정 중인 메시지 id
+
+function _msgMenuLabel(k) {
+  if (k === 'copy') return __T('Copy', '복사', '复制', 'コピー');
+  if (k === 'reply') return __T('Reply', '답장', '回复', '返信');
+  if (k === 'edit') return __T('Edit', '수정', '编辑', '編集');
+  return __T('Delete', '삭제', '删除', '削除');
+}
+function _msgPreviewText(data) {
+  if (data.type === 'image') return __T('Photo', '사진', '图片', '写真');
+  if (data.type === 'video') return __T('Video', '동영상', '视频', '動画');
+  if (data.type === 'album') return __T('Photos', '사진 여러 장', '多张图片', '複数の写真');
+  return data.text || '';
+}
+function _closeMsgMenu() {
+  var m = document.getElementById('msgCtxMenu');
+  if (m) m.remove();
+  document.removeEventListener('pointerdown', _msgMenuOutside, true);
+  document.removeEventListener('scroll', _closeMsgMenu, true);
+}
+function _msgMenuOutside(e) {
+  var m = document.getElementById('msgCtxMenu');
+  if (m && !m.contains(e.target)) _closeMsgMenu();
+}
+function _showMsgMenu(data, id, mine, x, y) {
+  _closeMsgMenu();
+  if (navigator.vibrate) { try { navigator.vibrate(12); } catch(e) {} }
+  var isText = (!data.type || data.type === 'text');
+  var menu = document.createElement('div');
+  menu.id = 'msgCtxMenu';
+  menu.className = 'msg-ctx-menu';
+  var items = [];
+  if (isText) items.push(['copy', function() { _msgCopy(data); }]);
+  items.push(['reply', function() { _msgReply(data, id); }]);
+  if (isText && mine) items.push(['edit', function() { _msgEdit(data, id); }]);
+  items.push(['del', function() { _msgDelete(id, data); }]);
+  items.forEach(function(it) {
+    var b = document.createElement('button');
+    b.className = 'msg-ctx-item' + (it[0] === 'del' ? ' danger' : '');
+    b.textContent = _msgMenuLabel(it[0]);
+    b.onclick = function() { _closeMsgMenu(); it[1](); };
+    menu.appendChild(b);
+  });
+  document.body.appendChild(menu);
+  var mw = menu.offsetWidth, mh = menu.offsetHeight;
+  var px = Math.min(x, window.innerWidth - mw - 12);
+  var py = Math.min(y, window.innerHeight - mh - 12);
+  menu.style.left = Math.max(8, px) + 'px';
+  menu.style.top = Math.max(8, py) + 'px';
+  setTimeout(function() {
+    document.addEventListener('pointerdown', _msgMenuOutside, true);
+    document.addEventListener('scroll', _closeMsgMenu, true);
+  }, 0);
+}
+function _fallbackCopy(t) {
+  try {
+    var ta = document.createElement('textarea');
+    ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+  } catch(e) {}
+}
+function _msgCopy(data) {
+  var t = data.text || '';
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(t).catch(function() { _fallbackCopy(t); });
+    } else { _fallbackCopy(t); }
+  } catch(e) { _fallbackCopy(t); }
+}
+function _msgReply(data, id) {
+  _editingMsgId = null;
+  _replyingTo = { id: id, sender: data.sender || '', text: _msgPreviewText(data) };
+  _showReplyEditBanner('reply');
+  var inp = document.getElementById('msgInput'); if (inp) inp.focus();
+}
+function _msgEdit(data, id) {
+  _replyingTo = null;
+  _editingMsgId = id;
+  var inp = document.getElementById('msgInput');
+  if (inp) { inp.value = data.text || ''; try { inp.dispatchEvent(new Event('input')); } catch(e) {} inp.focus(); }
+  _showReplyEditBanner('edit');
+}
+function _msgDelete(id, data) {
+  if (!chatRoomId) return;
+  var node = document.getElementById('msg-' + id);
+  if (node) node.remove();
+  if (deleteTimers[id]) { clearTimeout(deleteTimers[id]); delete deleteTimers[id]; }
+  if (countdownTimers[id]) { clearInterval(countdownTimers[id]); delete countdownTimers[id]; }
+  if (typeof seenMsgIds !== 'undefined' && seenMsgIds.delete) seenMsgIds.delete(id);
+  if (_cachedMessages) delete _cachedMessages[id];
+  if (data) {
+    if (data.storagePath) storage.ref(data.storagePath).delete().catch(function() {});
+    if (data.storagePaths) data.storagePaths.forEach(function(p) { storage.ref(p).delete().catch(function() {}); });
+  }
+  db.collection('rooms').doc(chatRoomId).collection('messages').doc(id).delete().catch(function() {});
+}
+function _showReplyEditBanner(mode) {
+  var b = document.getElementById('replyEditBanner');
+  if (!b) return;
+  var label = document.getElementById('rebLabel');
+  var prev = document.getElementById('rebPreview');
+  if (mode === 'edit') {
+    if (label) label.textContent = __T('Editing', '수정', '编辑', '編集');
+    if (prev) prev.textContent = '';
+  } else {
+    if (label) label.textContent = __T('Reply', '답장', '回复', '返信');
+    if (prev) prev.textContent = _replyingTo ? _replyingTo.text : '';
+  }
+  b.style.display = 'flex';
+}
+function _cancelReplyEdit() {
+  if (_editingMsgId) {
+    var inp = document.getElementById('msgInput');
+    if (inp) { inp.value = ''; inp.style.height = 'auto'; }
+  }
+  _replyingTo = null; _editingMsgId = null;
+  var b = document.getElementById('replyEditBanner');
+  if (b) b.style.display = 'none';
+}
+function _scrollToMsg(id) {
+  var el = document.getElementById('msg-' + id);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.add('msg-flash');
+    setTimeout(function() { el.classList.remove('msg-flash'); }, 1200);
+  }
+}
+// 말풍선에 롱프레스(터치 유지/마우스 길게) 감지 → 컨텍스트 메뉴
+function _attachBubbleMenu(bubble, data, id, mine) {
+  var timer = null, sx = 0, sy = 0, fired = false;
+  function begin(x, y) {
+    sx = x; sy = y; fired = false;
+    timer = setTimeout(function() { fired = true; _showMsgMenu(data, id, mine, sx, sy); }, 500);
+  }
+  function clear() { if (timer) { clearTimeout(timer); timer = null; } }
+  bubble.addEventListener('touchstart', function(e) { if (e.touches.length === 1) begin(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+  bubble.addEventListener('touchmove', function(e) {
+    if (timer && e.touches[0] && (Math.abs(e.touches[0].clientX - sx) > 10 || Math.abs(e.touches[0].clientY - sy) > 10)) clear();
+  }, { passive: true });
+  bubble.addEventListener('touchend', function(e) { clear(); if (fired) e.preventDefault(); });
+  bubble.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+  bubble.addEventListener('mousedown', function(e) { begin(e.clientX, e.clientY); });
+  bubble.addEventListener('mouseup', clear);
+  bubble.addEventListener('mouseleave', clear);
+}
+
 function renderMessage(data, id, beforeNode) {
   const list = document.getElementById('messageList');
   const mine = data.sender === myCode;
@@ -4530,6 +4691,14 @@ function renderMessage(data, id, beforeNode) {
   const bubble = document.createElement('div');
   bubble.className = `msg-bubble ${mine ? 'mine' : 'theirs'}`;
   bubble.style.fontSize = (localStorage.getItem('chatFontSize') || '18') + 'px';
+  // 답장 인용 (원본 미리보기) — 클릭 시 원본으로 스크롤
+  if (data.replyTo) {
+    const q = document.createElement('div');
+    q.className = 'msg-reply-quote';
+    q.textContent = (data.replyTo.sender ? data.replyTo.sender + ': ' : '') + (data.replyTo.text || '');
+    q.addEventListener('click', function(e) { e.stopPropagation(); _scrollToMsg(data.replyTo.id); });
+    bubble.appendChild(q);
+  }
   if (data.type === 'album' && data.urls && data.urls.length > 0) {
     bubble.classList.add('media-bubble');
     const urls = data.urls;
@@ -4558,7 +4727,16 @@ function renderMessage(data, id, beforeNode) {
   } else {
     // 텍스트: URL은 클릭 가능한 링크로 (클릭 시 새 컨텍스트 → OS가 해당 앱/브라우저로 열기)
     _appendLinkified(bubble, data.text || '');
+    if (data.edited) {
+      const ed = document.createElement('span');
+      ed.className = 'msg-edited';
+      ed.textContent = ' ' + __T('(edited)', '(수정됨)', '(已编辑)', '(編集済)');
+      bubble.appendChild(ed);
+    }
   }
+
+  // 롱프레스 컨텍스트 메뉴 부착
+  _attachBubbleMenu(bubble, data, id, mine);
 
   // 시간+카운트다운
   const meta = document.createElement('div');
@@ -4699,18 +4877,30 @@ async function handleFileSelect(e) {
 async function sendMessage() {
   const input = document.getElementById('msgInput'); const text = input.value.trim();
   if (!text || !chatRoomId) return;
+  const editing = _editingMsgId;   // 수정 중이면 해당 id
+  const reply = _replyingTo;       // 답장 중이면 원본 정보
   input.value = '';
   // textarea 높이 초기화
   input.style.height = 'auto';
   // 키패드 유지 - 포커스 즉시 복원
   input.focus();
-  await db.collection('rooms').doc(chatRoomId).collection('messages').add({
+  _cancelReplyEdit(); // 배너/상태 초기화 (input은 이미 비움)
+
+  if (editing) {
+    // 기존 메시지 텍스트만 수정 (새 메시지 추가 아님)
+    await db.collection('rooms').doc(chatRoomId).collection('messages').doc(editing)
+      .update({ text: text, edited: true }).catch(function() {});
+    return;
+  }
+
+  const msg = {
     sender: myCode, receiverId: activeFriendCode, text, type: 'text',
     ts: firebase.firestore.Timestamp.now(),
     deleteAt: null
-  });
+  };
+  if (reply) msg.replyTo = { id: reply.id, sender: reply.sender, text: (reply.text || '').slice(0, 80) };
+  await db.collection('rooms').doc(chatRoomId).collection('messages').add(msg);
   // 푸시는 서버의 onNewMessage(Firestore 트리거)가 자동 발송하므로 앱에서 직접 호출하지 않음
-  // (앱에서 sendFCMPush를 또 호출하면 푸시가 2번 발송되어 알림이 2개가 됨)
 }
 
 async function deleteAllNow() {
