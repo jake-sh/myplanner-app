@@ -1531,6 +1531,10 @@ function applyDarkMode() {
   // 다크: body.dark-mode .plan-header/.sub-header 오버라이드 #000000
   var themeMeta = document.querySelector('meta[name="theme-color"]');
   if (themeMeta) themeMeta.setAttribute('content', enabled ? '#000000' : '#FFFFFF');
+  // html(=documentElement) 배경도 다크로. --bg는 body에만 재정의돼서 html 요소는
+  // :root의 밝은 --bg를 그대로 쓴다 → edge-to-edge(안드로이드 15) 상태바가 투명해지면
+  // 그 뒤의 html 흰 배경이 비쳐 상태바가 흰색으로 보이던 버그를 여기서 차단.
+  document.documentElement.style.background = enabled ? '#000000' : '';
   var toggle = document.getElementById('darkModeToggle');
   if (toggle) toggle.checked = enabled;
   applyIconStyle();
