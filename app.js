@@ -1525,8 +1525,12 @@ function applyDarkMode() {
   } else {
     document.body.classList.remove('dark-mode');
   }
-  // 상태바 theme-color는 index.html의 prefers-color-scheme 미디어쿼리 meta가 담당
-  // (설치 PWA/WebAPK가 JS 동적 변경은 무시하지만 미디어쿼리 meta는 존중 — 폰 다크모드 연동)
+  // 현재 색상 스킴을 앱 토글에 맞춤 → 크롬 Auto Dark(강제 다크) 차단 + UA 표면(상태바 등) 대응.
+  // (앱이 color-scheme 미선언이라 크롬이 라이트 앱을 네이비로 강제 다크하던 게 원인)
+  document.documentElement.style.colorScheme = enabled ? 'dark' : 'light';
+  // 상태바 theme-color도 앱 다크 토글에 맞춤
+  var themeMeta = document.querySelector('meta[name="theme-color"]');
+  if (themeMeta) themeMeta.setAttribute('content', enabled ? '#000000' : '#FFFFFF');
   var toggle = document.getElementById('darkModeToggle');
   if (toggle) toggle.checked = enabled;
   applyIconStyle();
