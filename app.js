@@ -5858,9 +5858,9 @@ function renderStatsUI() {
     row.addEventListener('touchmove', function() { clearTimeout(_lpTimer); _lpTimer = null; }, { passive: true });
   });
 
-  // 그래프: 리스트와 동일한 최근 10개만 표시
+  // 그래프: 리스트 개수 선택(10/30/50/전체)과 동일한 개수만 표시
   if (entries.length > 0) {
-    var chartEntries = entries.slice(-100); // 최근 100개
+    var chartEntries = entries.slice(-_listLimit);
     if (isWeightTab) {
       chartEntries = chartEntries.map(function(e) {
         return Object.assign({}, e, { value: weightDisplay(e) });
@@ -5899,7 +5899,7 @@ function drawSC(canvas, entries, cat, chartH) {
   var dpr = window.devicePixelRatio || 1;
   var wrap = canvas.parentElement;
   var visibleW = wrap.clientWidth;
-  var MIN_GAP = 28;
+  var MIN_GAP = entries.length <= 10 ? 28 : entries.length <= 30 ? 18 : entries.length <= 50 ? 12 : 8;
   var pL=8, pR=20, yW=40;
   var W = entries.length > 1
     ? Math.max(visibleW, (entries.length - 1) * MIN_GAP + pL + pR)
