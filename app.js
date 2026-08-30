@@ -1531,10 +1531,6 @@ function applyDarkMode() {
   // 다크: body.dark-mode .plan-header/.sub-header 오버라이드 #000000
   var themeMeta = document.querySelector('meta[name="theme-color"]');
   if (themeMeta) themeMeta.setAttribute('content', enabled ? '#000000' : '#FFFFFF');
-  // html(=documentElement)에도 dark-mode 클래스 → CSS로 html 배경만 검정 처리.
-  // (--bg는 body에만 재정의돼 html 요소는 :root 밝은 배경 유지 → edge-to-edge에서
-  //  투명 상태바 뒤로 흰 html 배경이 비치던 버그 차단. 인라인 대신 클래스로 라이트모드 보존.)
-  document.documentElement.classList.toggle('dark-mode', enabled);
   var toggle = document.getElementById('darkModeToggle');
   if (toggle) toggle.checked = enabled;
   applyIconStyle();
