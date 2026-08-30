@@ -1534,9 +1534,10 @@ function applyDarkMode() {
   // 현재 색상 스킴을 앱 토글에 맞춤 → 크롬 Auto Dark(강제 다크) 차단 + UA 표면(상태바 등) 대응.
   // (앱이 color-scheme 미선언이라 크롬이 라이트 앱을 네이비로 강제 다크하던 게 원인)
   document.documentElement.style.colorScheme = enabled ? 'dark' : 'light';
-  // 상태바 theme-color도 앱 다크 토글에 맞춤
+  // 상태바는 라이트/다크 무관하게 항상 블랙 배경 + 흰 아이콘으로 고정.
+  // (검정 theme-color → OS가 흰 상태바 아이콘 선택. manifest theme_color도 #000으로 고정)
   var themeMeta = document.querySelector('meta[name="theme-color"]');
-  if (themeMeta) themeMeta.setAttribute('content', enabled ? '#000000' : '#FFFFFF');
+  if (themeMeta) themeMeta.setAttribute('content', '#000000');
   var toggle = document.getElementById('darkModeToggle');
   if (toggle) toggle.checked = enabled;
   applyIconStyle();
