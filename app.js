@@ -1525,12 +1525,8 @@ function applyDarkMode() {
   } else {
     document.body.classList.remove('dark-mode');
   }
-  // 상태바(theme-color)를 헤더 배경색(--card)과 정확히 맞춤. 미묘하게라도
-  // 색이 다르면 상태바와 헤더 사이에 경계선처럼 보임 (Android standalone PWA).
-  // 라이트: .plan-header/.sub-header 기본 배경 #FFFFFF
-  // 다크: body.dark-mode .plan-header/.sub-header 오버라이드 #000000
-  var themeMeta = document.querySelector('meta[name="theme-color"]');
-  if (themeMeta) themeMeta.setAttribute('content', enabled ? '#000000' : '#FFFFFF');
+  // 상태바 theme-color는 index.html의 prefers-color-scheme 미디어쿼리 meta가 담당
+  // (설치 PWA/WebAPK가 JS 동적 변경은 무시하지만 미디어쿼리 meta는 존중 — 폰 다크모드 연동)
   var toggle = document.getElementById('darkModeToggle');
   if (toggle) toggle.checked = enabled;
   applyIconStyle();
