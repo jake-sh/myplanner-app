@@ -5902,14 +5902,9 @@ function drawSC(canvas, entries, cat, chartH) {
   var wrap = canvas.parentElement;
   var visibleW = wrap.clientWidth;
   var pL=8, pR=20, yW=40;
-  // 가로 축 밀도: 화면 폭에 맞춰 점 간격을 좁혀 스크롤 없이 선택한 개수를 전부 보여준다.
-  // 점이 너무 많아 최소 간격(6px) 밑으로 내려갈 때만 가로 스크롤을 허용한다.
-  var ABS_MIN_GAP = 6, MAX_GAP = 28;
-  var idealGap = entries.length > 1 ? (visibleW - pL - pR) / (entries.length - 1) : MAX_GAP;
-  var GAP = Math.max(ABS_MIN_GAP, Math.min(idealGap, MAX_GAP));
-  var W = entries.length > 1
-    ? Math.max(visibleW, (entries.length - 1) * GAP + pL + pR)
-    : visibleW;
+  // 가로 축은 항상 화면 폭 전체를 사용 (스크롤 없음). 점이 적으면 넓게,
+  // 많으면 촘촘하게 자동으로 맞춰진다 (간격 = 폭/개수, makePts 참고).
+  var W = visibleW;
   var H = chartH || 160;
   canvas.width = W*dpr; canvas.height = H*dpr;
   canvas.style.width = W+'px'; canvas.style.height = H+'px';
@@ -5967,8 +5962,8 @@ function drawSC(canvas, entries, cat, chartH) {
     else smoothPath(pts);
     ctx.stroke(); ctx.setLineDash([]);
     pts.forEach(function(p,i){
-      ctx.beginPath(); ctx.arc(p.x,p.y,3.5,0,Math.PI*2);
-      ctx.fillStyle='#1A1A1A'; ctx.fill(); ctx.strokeStyle=color; ctx.lineWidth=2; ctx.stroke();
+      ctx.beginPath(); ctx.arc(p.x,p.y,2,0,Math.PI*2);
+      ctx.fillStyle=color; ctx.fill();
       if(entries.length<=10 || i%Math.ceil(entries.length/8)===0){
         ctx.fillStyle='#334155'; ctx.font='8px sans-serif'; ctx.textAlign='center';
         ctx.fillText(entries[i].date.slice(5), p.x, H-2);
