@@ -73,6 +73,8 @@
 }
 
 html,body{height:100%;font-size:18px;font-family:'Open Sans',sans-serif;font-weight:400;background:var(--bg);color:var(--text);overflow:hidden;} #widgetClock{font-family:'Open Sans',sans-serif;}
+/* 다크: html 요소 배경도 검정 (edge-to-edge 투명 상태바/네비바 뒤가 흰색으로 비치는 것 차단). --bg는 body에만 재정의돼 html은 밝은 배경이 남기 때문. */
+html.dark-mode{background:#000000;}
 
 .screen{position:fixed;inset:0;display:none;flex-direction:column;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;z-index:1;} #chatApp{overflow:hidden;}
 #planApp{overflow-y:hidden;}

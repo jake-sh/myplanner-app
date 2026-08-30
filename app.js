@@ -1531,10 +1531,10 @@ function applyDarkMode() {
   // 다크: body.dark-mode .plan-header/.sub-header 오버라이드 #000000
   var themeMeta = document.querySelector('meta[name="theme-color"]');
   if (themeMeta) themeMeta.setAttribute('content', enabled ? '#000000' : '#FFFFFF');
-  // html(=documentElement) 배경도 다크로. --bg는 body에만 재정의돼서 html 요소는
-  // :root의 밝은 --bg를 그대로 쓴다 → edge-to-edge(안드로이드 15) 상태바가 투명해지면
-  // 그 뒤의 html 흰 배경이 비쳐 상태바가 흰색으로 보이던 버그를 여기서 차단.
-  document.documentElement.style.background = enabled ? '#000000' : '';
+  // html(=documentElement)에도 dark-mode 클래스 → CSS로 html 배경만 검정 처리.
+  // (--bg는 body에만 재정의돼 html 요소는 :root 밝은 배경 유지 → edge-to-edge에서
+  //  투명 상태바 뒤로 흰 html 배경이 비치던 버그 차단. 인라인 대신 클래스로 라이트모드 보존.)
+  document.documentElement.classList.toggle('dark-mode', enabled);
   var toggle = document.getElementById('darkModeToggle');
   if (toggle) toggle.checked = enabled;
   applyIconStyle();
