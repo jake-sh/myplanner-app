@@ -5901,10 +5901,14 @@ function drawSC(canvas, entries, cat, chartH) {
   var dpr = window.devicePixelRatio || 1;
   var wrap = canvas.parentElement;
   var visibleW = wrap.clientWidth;
-  var MIN_GAP = entries.length <= 10 ? 28 : entries.length <= 30 ? 18 : entries.length <= 50 ? 12 : 8;
   var pL=8, pR=20, yW=40;
+  // 가로 축 밀도: 화면 폭에 맞춰 점 간격을 좁혀 스크롤 없이 선택한 개수를 전부 보여준다.
+  // 점이 너무 많아 최소 간격(6px) 밑으로 내려갈 때만 가로 스크롤을 허용한다.
+  var ABS_MIN_GAP = 6, MAX_GAP = 28;
+  var idealGap = entries.length > 1 ? (visibleW - pL - pR) / (entries.length - 1) : MAX_GAP;
+  var GAP = Math.max(ABS_MIN_GAP, Math.min(idealGap, MAX_GAP));
   var W = entries.length > 1
-    ? Math.max(visibleW, (entries.length - 1) * MIN_GAP + pL + pR)
+    ? Math.max(visibleW, (entries.length - 1) * GAP + pL + pR)
     : visibleW;
   var H = chartH || 160;
   canvas.width = W*dpr; canvas.height = H*dpr;
