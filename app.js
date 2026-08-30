@@ -1525,6 +1525,12 @@ function applyDarkMode() {
   } else {
     document.body.classList.remove('dark-mode');
   }
+  // [핵심] index.html 부트스크립트가 <html>에 박아둔 인라인 배경/--bg를 토글마다 재동기화.
+  // 이걸 안 하면 다크로 로드 후 라이트로 토글해도 html 인라인 --bg(네이비)가 남아
+  // .screen{background:var(--bg)}가 라이트에서도 네이비로 보이던 버그 발생.
+  var _rootBg = enabled ? '#000000' : '#F8F9FF';
+  document.documentElement.style.background = _rootBg;
+  document.documentElement.style.setProperty('--bg', _rootBg);
   // 현재 색상 스킴을 앱 토글에 맞춤 → 크롬 Auto Dark(강제 다크) 차단 + UA 표면(상태바 등) 대응.
   // (앱이 color-scheme 미선언이라 크롬이 라이트 앱을 네이비로 강제 다크하던 게 원인)
   document.documentElement.style.colorScheme = enabled ? 'dark' : 'light';
