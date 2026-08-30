@@ -3030,6 +3030,8 @@ const CAL_COLORS = {
   // 파스텔보다 살짝 진하게 (링 다색 구분 개선, 원색까지는 아님)
   pink:'#FF9A9A', yellow:'#EDD83C', green:'#74E06B',
   blue:'#63B8EE', purple:'#AE90E8',
+  // 색상환에서 기존 5색과 겹치지 않는 위치(청록/마젠타)로 선정, 구분성 확보
+  teal:'#2DD4BF', magenta:'#E879F9',
   // 구버전 호환
   done:'#FF9A9A', red:'#EDD83C'
 };
