@@ -5753,7 +5753,7 @@ function renderStatsUI() {
   var _wrapSt = 'overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;flex:1;min-width:0;';
   var _subLbl = 'font-size:11px;color:#334155;margin-bottom:6px;font-weight:600;';
   var _chartRow = 'display:flex;align-items:flex-start;';
-  var _ycSt = 'flex-shrink:0;';
+  var _ycSt = 'flex-shrink:0;width:40px;'; // 40 = drawSC의 yW. JS가 리사이즈하기 전 캔버스 기본폭(300px)이 flex 폭 측정에 끼어드는 것 방지
   var chartHtml = '<div style="background:' + boxBg + ';border:1.5px solid ' + boxBd + ';border-radius:16px;padding:16px;margin-bottom:16px;"><div style="font-size:14px;font-weight:700;color:' + titleCl + ';">' + cat.emoji + ' ' + statLabel(curSC) + '</div>';
   if (curSC !== 'exercise') {
     chartHtml += '<div style="font-size:11px;color:#334155;margin-bottom:12px;">' + __T('Unit: ','단위: ','单位: ','単位: ') + statUnit(curSC) + '</div>';
@@ -5904,7 +5904,8 @@ function drawSC(canvas, entries, cat, chartH) {
   var pL=8, pR=20, yW=40;
   // 가로 축은 항상 화면 폭 전체를 사용 (스크롤 없음). 점이 적으면 넓게,
   // 많으면 촘촘하게 자동으로 맞춰진다 (간격 = 폭/개수, makePts 참고).
-  var W = visibleW;
+  // 폭 측정이 레이아웃 타이밍 문제로 0에 가깝게 나오는 경우를 대비한 안전장치.
+  var W = visibleW > 20 ? visibleW : 300;
   var H = chartH || 160;
   canvas.width = W*dpr; canvas.height = H*dpr;
   canvas.style.width = W+'px'; canvas.style.height = H+'px';
@@ -5954,15 +5955,16 @@ function drawSC(canvas, entries, cat, chartH) {
     };});
   }
 
+  var LINE_W = 2.5;
   function drawLine(vals, color, dashed) {
     var pts = makePts(vals);
-    ctx.beginPath(); ctx.strokeStyle=color; ctx.lineWidth=2.5; ctx.lineJoin='round';
+    ctx.beginPath(); ctx.strokeStyle=color; ctx.lineWidth=LINE_W; ctx.lineJoin='round';
     if(dashed) ctx.setLineDash([4,4]); else ctx.setLineDash([]);
     if(pts.length===1){ctx.moveTo(pts[0].x,pts[0].y);ctx.lineTo(pts[0].x,pts[0].y);}
     else smoothPath(pts);
     ctx.stroke(); ctx.setLineDash([]);
     pts.forEach(function(p,i){
-      ctx.beginPath(); ctx.arc(p.x,p.y,2,0,Math.PI*2);
+      ctx.beginPath(); ctx.arc(p.x,p.y,LINE_W*1.5,0,Math.PI*2);
       ctx.fillStyle=color; ctx.fill();
       if(entries.length<=10 || i%Math.ceil(entries.length/8)===0){
         ctx.fillStyle='#334155'; ctx.font='8px sans-serif'; ctx.textAlign='center';
