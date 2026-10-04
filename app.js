@@ -2879,7 +2879,8 @@ async function uploadMemoImg(file) {
     }
     if (!currentUser) { showAlert(__T('Auth failed - refresh and retry','인증 실패 - 새로고침 후 다시 시도하세요','认证失败 - 请刷新后重试','認証失敗 - 更新後再試行してください')); return; }
     const path = 'memo_images/' + Date.now() + '_' + Math.random().toString(36).substr(2,6);
-    const snap = await storage.ref().child(path).put(file);
+    const uploadFile = await _compressImage(file);
+    const snap = await storage.ref().child(path).put(uploadFile);
     const url = await snap.ref.getDownloadURL();
     insertImgAtCursor(url);
   } catch(err) {
@@ -2900,7 +2901,8 @@ async function uploadMemoImgAtRange(file, savedRange) {
     }
     if (!currentUser) { showAlert(__T('Auth failed - refresh and retry','인증 실패 - 새로고침 후 다시 시도하세요','认证失败 - 请刷新后重试','認証失敗 - 更新後再試行してください')); return; }
     const path = 'memo_images/' + Date.now() + '_' + Math.random().toString(36).substr(2,6);
-    const snap = await storage.ref().child(path).put(file);
+    const uploadFile = await _compressImage(file);
+    const snap = await storage.ref().child(path).put(uploadFile);
     const url = await snap.ref.getDownloadURL();
 
     // 저장된 Range가 있으면 selection을 복원 후 삽입,
@@ -4814,7 +4816,7 @@ function scheduleAutoDelete(msgId, data) {
   }, delay);
 }
 
-// 채팅 이미지 전송 전 리사이즈+재압축 (용량/전송속도/Storage 비용 절감 목적)
+// 이미지 업로드 전 리사이즈+재압축 (채팅/메모 공용, 용량/전송속도/Storage 비용 절감 목적)
 // GIF(애니메이션 깨짐), 이미 작은 파일, 디코드 실패(예: HEIC 미지원)는 원본 그대로 반환.
 function _compressImage(file, maxDim, quality) {
   maxDim = maxDim || 1600;
