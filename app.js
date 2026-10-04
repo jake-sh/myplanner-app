@@ -4814,6 +4814,36 @@ function scheduleAutoDelete(msgId, data) {
   }, delay);
 }
 
+// 채팅 이미지 전송 전 리사이즈+재압축 (용량/전송속도/Storage 비용 절감 목적)
+// GIF(애니메이션 깨짐), 이미 작은 파일, 디코드 실패(예: HEIC 미지원)는 원본 그대로 반환.
+function _compressImage(file, maxDim, quality) {
+  maxDim = maxDim || 1600;
+  quality = quality || 0.8;
+  if (!file.type || !file.type.startsWith('image/') || file.type === 'image/gif' || file.size < 500 * 1024) {
+    return Promise.resolve(file);
+  }
+  return new Promise(function(resolve) {
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function() {
+      URL.revokeObjectURL(url);
+      var scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+      var cw = Math.max(1, Math.round(img.width * scale));
+      var ch = Math.max(1, Math.round(img.height * scale));
+      var canvas = document.createElement('canvas');
+      canvas.width = cw; canvas.height = ch;
+      canvas.getContext('2d').drawImage(img, 0, 0, cw, ch);
+      canvas.toBlob(function(blob) {
+        if (!blob || blob.size >= file.size) { resolve(file); return; }
+        var base = (file.name || 'image').replace(/\.[^.]+$/, '');
+        resolve(new File([blob], base + '.jpg', { type: 'image/jpeg' }));
+      }, 'image/jpeg', quality);
+    };
+    img.onerror = function() { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+}
+
 async function handleFileSelect(e) {
   const files = Array.from(e.target.files);
   if (!files.length || !chatRoomId) return;
@@ -4836,8 +4866,9 @@ async function handleFileSelect(e) {
     if (!isVideo && !isImage) { showAlert(__T('Only images or videos can be sent','이미지 또는 영상만 전송 가능합니다','只能发送图片或视频','画像または動画のみ送信可能です')); return; }
     showUploadStatus(__T('Uploading...','업로드 중...','正在上传...','アップロード中...'));
     try {
+      const uploadFile = isImage ? await _compressImage(file) : file;
       const path = `media/${chatRoomId}/${Date.now()}`;
-      const snap = await storage.ref().child(path).put(file);
+      const snap = await storage.ref().child(path).put(uploadFile);
       const url = await snap.ref.getDownloadURL();
       await db.collection('rooms').doc(chatRoomId).collection('messages').add({
         sender: myCode, receiverId: activeFriendCode,
@@ -4861,8 +4892,9 @@ async function handleFileSelect(e) {
     const urls = [];
     const paths = [];
     for (let i = 0; i < imageFiles.length; i++) {
+      const uploadFile = await _compressImage(imageFiles[i]);
       const path = `media/${chatRoomId}/${Date.now()}_${i}`;
-      const snap = await storage.ref().child(path).put(imageFiles[i]);
+      const snap = await storage.ref().child(path).put(uploadFile);
       urls.push(await snap.ref.getDownloadURL());
       paths.push(path);
       showUploadStatus(__T('Uploading...','업로드 중...','正在上传...','アップロード中...') + ` (${i+1}/${imageFiles.length})`);
