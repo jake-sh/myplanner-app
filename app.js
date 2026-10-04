@@ -6367,6 +6367,15 @@ let _zPinchAnchorX = 0, _zPinchAnchorY = 0; // 뷰포트 중심 기준 핀치 �
 let _zPanStartX = 0, _zPanStartY = 0, _zPanStartTX = 0, _zPanStartTY = 0;
 let _zLastTapTime = 0, _zLastTapX = 0, _zLastTapY = 0;
 const Z_MAX = 4, Z_DBL_TAP = 2.5;
+// 앨범(복수 이미지) 슬라이드 트랙 드래그 상태
+let _trackDragging = false;
+
+function _applyTrack(dxPx, smooth) {
+  const track = document.getElementById('imgViewerTrack');
+  if (!track) return;
+  track.style.transition = smooth ? 'transform .25s ease' : 'none';
+  track.style.transform = 'translateX(calc(-33.3333% + ' + dxPx + 'px))';
+}
 
 function _pinchDist(touches) {
   return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
@@ -6420,12 +6429,15 @@ function openImgViewer(urls, idx) {
       if (_zScale > 1.01) {
         _zPanStartX = e.touches[0].clientX; _zPanStartY = e.touches[0].clientY;
         _zPanStartTX = _zTX; _zPanStartTY = _zTY;
+      } else if (viewerUrls.length > 1) {
+        _trackDragging = true;
       }
     }
   };
   area.ontouchmove = function(e) {
     if (e.touches.length === 2) {
       e.preventDefault();
+      if (_trackDragging) { _trackDragging = false; _applyTrack(0, false); } // 핀치 시작 시 슬라이드 드래그는 취소
       const dist = _pinchDist(e.touches);
       if (_zPinchStartDist > 0) {
         const newScale = Math.min(Z_MAX, Math.max(1, _zPinchStartScale * (dist / _zPinchStartDist)));
@@ -6437,6 +6449,15 @@ function openImgViewer(urls, idx) {
       _zTX = _zPanStartTX + (e.touches[0].clientX - _zPanStartX);
       _zTY = _zPanStartTY + (e.touches[0].clientY - _zPanStartY);
       _applyZoom(false);
+    } else if (e.touches.length === 1 && _trackDragging) {
+      const dx = e.touches[0].clientX - swipeSX;
+      const dy = e.touches[0].clientY - swipeSY;
+      // 세로 스크롤 의도가 뚜렷하면 슬라이드 드래그 취소(세로 제스처와 충돌 방지)
+      if (Math.abs(dy) > Math.abs(dx) * 1.5 && Math.abs(dy) > 20) {
+        _trackDragging = false; _applyTrack(0, true); return;
+      }
+      e.preventDefault();
+      _applyTrack(dx, false);
     }
   };
   area.ontouchend = function(e) {
@@ -6451,6 +6472,7 @@ function openImgViewer(urls, idx) {
     const moved = Math.hypot(dx, dy) > 10;
 
     if (!moved) {
+      if (_trackDragging) { _trackDragging = false; _applyTrack(0, false); }
       // 제자리 탭 → 더블탭 확대/축소 토글 판정
       const now = Date.now();
       const sameSpot = Math.hypot(t.clientX - _zLastTapX, t.clientY - _zLastTapY) < 40;
@@ -6468,10 +6490,19 @@ function openImgViewer(urls, idx) {
       return;
     }
 
-    // 확대 상태에서는(팬 중) 스와이프로 이미지 전환하지 않음
+    // 확대 상태에서는(팬 중) 슬라이드하지 않음
     if (_zScale > 1.01) return;
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
-      changeViewerImg(dx < 0 ? 1 : -1);
+
+    if (_trackDragging) {
+      _trackDragging = false;
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+        const dir = dx < 0 ? 1 : -1;
+        const areaW = area.clientWidth;
+        _applyTrack(dir === 1 ? -areaW : areaW, true);
+        setTimeout(function() { changeViewerImg(dir); }, 250);
+      } else {
+        _applyTrack(0, true);
+      }
     }
   };
   // 배경(이미지 바깥 여백) 탭으로 닫기 — 이미지 자체를 탭했을 때는 안 닫힘(확대 제스처와 분리)
@@ -6491,10 +6522,13 @@ function changeViewerImg(dir) {
 }
 
 function updateViewer() {
-  const url = viewerUrls[viewerIdx];
-  document.getElementById('imgViewerImg').src = url;
-  document.getElementById('imgViewerCounter').textContent = viewerUrls.length > 1 ? (viewerIdx+1) + ' / ' + viewerUrls.length : '';
+  const n = viewerUrls.length;
+  document.getElementById('imgViewerImg').src = viewerUrls[viewerIdx];
+  document.getElementById('imgViewerImgPrev').src = viewerUrls[(viewerIdx - 1 + n) % n];
+  document.getElementById('imgViewerImgNext').src = viewerUrls[(viewerIdx + 1) % n];
+  document.getElementById('imgViewerCounter').textContent = n > 1 ? (viewerIdx+1) + ' / ' + n : '';
   _resetZoom();
+  _applyTrack(0, false);
 }
 
 // Save 버튼: 브라우저로 열지 않고 blob으로 직접 받아 즉시 저장
