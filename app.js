@@ -6548,7 +6548,19 @@ function updateViewer() {
   _applyTrack(0, false);
 }
 
-// Save 버튼: 브라우저로 열지 않고 blob으로 직접 받아 즉시 저장
+function _extFromMime(mime) {
+  if (!mime) return 'jpg';
+  if (mime.indexOf('png') >= 0) return 'png';
+  if (mime.indexOf('gif') >= 0) return 'gif';
+  if (mime.indexOf('webp') >= 0) return 'webp';
+  return 'jpg';
+}
+
+// Save 버튼: 브라우저로 열지 않고 blob으로 직접 받아 즉시 저장.
+// 확장자는 압축을 건너뛴 원본 파일의 실제 포맷(blob.type)을 따름 — 하드코딩된
+// .jpg와 실제 내용(PNG 등)이 다르면 iOS가 "image_1.jpg.png"처럼 확장자를 덧붙이고
+// 파일 미리보기 화면만 뜨고 사진앱에 바로 저장이 안 됨.
+// 파일 공유가 가능한 환경(iOS Safari 등)에서는 네이티브 공유 시트(사진에 저장 포함)를 우선 사용.
 async function downloadViewerImage() {
   const url = viewerUrls[viewerIdx];
   const btn = document.getElementById('imgViewerDownload');
@@ -6557,14 +6569,27 @@ async function downloadViewerImage() {
     btn.textContent = '...';
     const res = await fetch(url);
     const blob = await res.blob();
-    const blobUrl = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = 'image_' + (viewerIdx + 1) + '.jpg';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 10000);
+    const mime = blob.type || 'image/jpeg';
+    const filename = 'image_' + (viewerIdx + 1) + '.' + _extFromMime(mime);
+    const file = new File([blob], filename, { type: mime });
+
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file] });
+      } catch (shareErr) {
+        if (shareErr && shareErr.name !== 'AbortError') throw shareErr;
+        // AbortError(사용자가 공유 시트 취소)는 실패가 아니므로 폴백하지 않음
+      }
+    } else {
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 10000);
+    }
   } catch (err) {
     // 실패 시(네트워크/CORS 등) 기존 방식으로 폴백
     window.open(url, '_blank');
