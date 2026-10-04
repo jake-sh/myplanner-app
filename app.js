@@ -6359,6 +6359,26 @@ setInterval(loadWeather, 30 * 60 * 1000);
 let viewerUrls = [];
 let viewerIdx = 0;
 let swipeSX = 0, swipeSY = 0;
+// 핀치줌/팬 상태 (이미지 중심 기준 scale + 이동량)
+let _zScale = 1, _zTX = 0, _zTY = 0;
+let _zPinchStartDist = 0, _zPinchStartScale = 1;
+let _zPanStartX = 0, _zPanStartY = 0, _zPanStartTX = 0, _zPanStartTY = 0;
+let _zLastTapTime = 0, _zLastTapX = 0, _zLastTapY = 0;
+const Z_MAX = 4, Z_DBL_TAP = 2.5;
+
+function _pinchDist(touches) {
+  return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
+}
+function _applyZoom(smooth) {
+  const img = document.getElementById('imgViewerImg');
+  if (!img) return;
+  img.style.transition = smooth ? 'transform .2s ease' : 'none';
+  img.style.transform = 'translate(' + _zTX + 'px,' + _zTY + 'px) scale(' + _zScale + ')';
+}
+function _resetZoom() {
+  _zScale = 1; _zTX = 0; _zTY = 0;
+  _applyZoom(false);
+}
 
 function openImgViewer(urls, idx) {
   viewerUrls = urls;
@@ -6369,21 +6389,71 @@ function openImgViewer(urls, idx) {
   // 뒤로가기로 뷰어 닫기
   history.pushState({ imgViewer: true }, '');
 
-  // 스와이프 이벤트
+  // 스와이프(이미지 전환) + 핀치줌 + 팬 + 더블탭 확대 이벤트
   const area = document.getElementById('imgViewerSwipe');
   area.ontouchstart = function(e) {
-    swipeSX = e.touches[0].clientX;
-    swipeSY = e.touches[0].clientY;
+    if (e.touches.length === 2) {
+      _zPinchStartDist = _pinchDist(e.touches);
+      _zPinchStartScale = _zScale;
+    } else if (e.touches.length === 1) {
+      if (_zScale > 1.01) {
+        _zPanStartX = e.touches[0].clientX; _zPanStartY = e.touches[0].clientY;
+        _zPanStartTX = _zTX; _zPanStartTY = _zTY;
+      } else {
+        swipeSX = e.touches[0].clientX;
+        swipeSY = e.touches[0].clientY;
+      }
+    }
+  };
+  area.ontouchmove = function(e) {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const dist = _pinchDist(e.touches);
+      if (_zPinchStartDist > 0) {
+        _zScale = Math.min(Z_MAX, Math.max(1, _zPinchStartScale * (dist / _zPinchStartDist)));
+        _applyZoom(false);
+      }
+    } else if (e.touches.length === 1 && _zScale > 1.01) {
+      e.preventDefault();
+      _zTX = _zPanStartTX + (e.touches[0].clientX - _zPanStartX);
+      _zTY = _zPanStartTY + (e.touches[0].clientY - _zPanStartY);
+      _applyZoom(false);
+    }
   };
   area.ontouchend = function(e) {
-    const dx = e.changedTouches[0].clientX - swipeSX;
-    const dy = e.changedTouches[0].clientY - swipeSY;
+    const t = e.changedTouches[0];
+    // 핀치가 끝났는데 1배 밑으로 내려갔으면 보정
+    if (_zScale < 1) { _zScale = 1; _applyZoom(true); }
+
+    if (e.touches.length > 0) return; // 아직 손가락이 남아있으면(핀치 해제 중) 탭/스와이프 판정 안 함
+
+    const dx = t.clientX - swipeSX;
+    const dy = t.clientY - swipeSY;
+    const moved = Math.hypot(dx, dy) > 10;
+
+    if (!moved) {
+      // 제자리 탭 → 더블탭 확대/축소 토글 판정
+      const now = Date.now();
+      const sameSpot = Math.hypot(t.clientX - _zLastTapX, t.clientY - _zLastTapY) < 40;
+      if (now - _zLastTapTime < 300 && sameSpot) {
+        if (_zScale > 1.01) { _zScale = 1; _zTX = 0; _zTY = 0; } else { _zScale = Z_DBL_TAP; }
+        _applyZoom(true);
+        _zLastTapTime = 0;
+        return;
+      }
+      _zLastTapTime = now; _zLastTapX = t.clientX; _zLastTapY = t.clientY;
+      return;
+    }
+
+    // 확대 상태에서는(팬 중) 스와이프로 이미지 전환하지 않음
+    if (_zScale > 1.01) return;
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
       changeViewerImg(dx < 0 ? 1 : -1);
     }
   };
-  // 배경 탭으로 닫기
+  // 배경(이미지 바깥 여백) 탭으로 닫기 — 이미지 자체를 탭했을 때는 안 닫힘(확대 제스처와 분리)
   viewer.onclick = function(e) {
+    if (_zScale > 1.01) return;
     if (e.target === viewer || e.target.id === 'imgViewerSwipe') closeImgViewer();
   };
 }
@@ -6401,10 +6471,32 @@ function updateViewer() {
   const url = viewerUrls[viewerIdx];
   document.getElementById('imgViewerImg').src = url;
   document.getElementById('imgViewerCounter').textContent = viewerUrls.length > 1 ? (viewerIdx+1) + ' / ' + viewerUrls.length : '';
-  // 다운로드 버튼
-  const dl = document.getElementById('imgViewerDownload');
-  dl.href = url;
-  dl.download = 'image_' + (viewerIdx+1) + '.jpg';
+  _resetZoom();
+}
+
+// Save 버튼: 브라우저로 열지 않고 blob으로 직접 받아 즉시 저장
+async function downloadViewerImage() {
+  const url = viewerUrls[viewerIdx];
+  const btn = document.getElementById('imgViewerDownload');
+  const original = btn.textContent;
+  try {
+    btn.textContent = '...';
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = 'image_' + (viewerIdx + 1) + '.jpg';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 10000);
+  } catch (err) {
+    // 실패 시(네트워크/CORS 등) 기존 방식으로 폴백
+    window.open(url, '_blank');
+  } finally {
+    btn.textContent = original;
+  }
 }
 
 // ── i18n ──────────────────────────────────────────────
