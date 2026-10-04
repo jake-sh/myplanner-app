@@ -6461,12 +6461,15 @@ function openImgViewer(urls, idx) {
       _zTY = _zPanStartTY + (e.touches[0].clientY - _zPanStartY);
       _applyZoom(false);
     } else if (e.touches.length === 1 && _trackDragging) {
-      const dx = e.touches[0].clientX - swipeSX;
+      let dx = e.touches[0].clientX - swipeSX;
       const dy = e.touches[0].clientY - swipeSY;
       // 세로 스크롤 의도가 뚜렷하면 슬라이드 드래그 취소(세로 제스처와 충돌 방지)
       if (Math.abs(dy) > Math.abs(dx) * 1.5 && Math.abs(dy) > 20) {
         _trackDragging = false; _applyTrack(0, true); return;
       }
+      // 첫 장에서 오른쪽(이전), 마지막 장에서 왼쪽(다음)으로는 순환하지 않고 멈춤
+      if (viewerIdx === 0 && dx > 0) dx = 0;
+      if (viewerIdx === viewerUrls.length - 1 && dx < 0) dx = 0;
       e.preventDefault();
       _applyTrack(dx, false);
     }
@@ -6506,8 +6509,9 @@ function openImgViewer(urls, idx) {
 
     if (_trackDragging) {
       _trackDragging = false;
-      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
-        const dir = dx < 0 ? 1 : -1;
+      const dir = dx < 0 ? 1 : -1;
+      const atEnd = (dir === 1 && viewerIdx === viewerUrls.length - 1) || (dir === -1 && viewerIdx === 0);
+      if (!atEnd && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
         const areaW = area.clientWidth;
         _applyTrack(dir === 1 ? -areaW : areaW, true);
         setTimeout(function() { changeViewerImg(dir); }, 250);
@@ -6528,15 +6532,17 @@ function closeImgViewer() {
 }
 
 function changeViewerImg(dir) {
-  viewerIdx = (viewerIdx + dir + viewerUrls.length) % viewerUrls.length;
+  const next = viewerIdx + dir;
+  if (next < 0 || next >= viewerUrls.length) return; // 양 끝에서는 순환하지 않음
+  viewerIdx = next;
   updateViewer();
 }
 
 function updateViewer() {
   const n = viewerUrls.length;
   document.getElementById('imgViewerImg').src = viewerUrls[viewerIdx];
-  document.getElementById('imgViewerImgPrev').src = viewerUrls[(viewerIdx - 1 + n) % n];
-  document.getElementById('imgViewerImgNext').src = viewerUrls[(viewerIdx + 1) % n];
+  document.getElementById('imgViewerImgPrev').src = viewerUrls[viewerIdx > 0 ? viewerIdx - 1 : viewerIdx];
+  document.getElementById('imgViewerImgNext').src = viewerUrls[viewerIdx < n - 1 ? viewerIdx + 1 : viewerIdx];
   document.getElementById('imgViewerCounter').textContent = n > 1 ? (viewerIdx+1) + ' / ' + n : '';
   _resetZoom();
   _applyTrack(0, false);
