@@ -6356,18 +6356,32 @@ async function loadWeather() {
 setInterval(loadWeather, 30 * 60 * 1000);
 
 // 이미지 뷰어
+// transform: translate(tx,ty) scale(s) — CSS 합성 순서상 translate는 scale 영향을
+// 받지 않는 "화면 고정 오프셋"이다(핵심: 이 전제가 깨지면 핀치/팬 중 위치가 튄다).
 let viewerUrls = [];
 let viewerIdx = 0;
 let swipeSX = 0, swipeSY = 0;
-// 핀치줌/팬 상태 (이미지 중심 기준 scale + 이동량)
 let _zScale = 1, _zTX = 0, _zTY = 0;
-let _zPinchStartDist = 0, _zPinchStartScale = 1;
+let _zPinchStartDist = 0, _zPinchStartScale = 1, _zPinchStartTX = 0, _zPinchStartTY = 0;
+let _zPinchAnchorX = 0, _zPinchAnchorY = 0; // 뷰포트 중심 기준 핀치 중점(화면 px)
 let _zPanStartX = 0, _zPanStartY = 0, _zPanStartTX = 0, _zPanStartTY = 0;
 let _zLastTapTime = 0, _zLastTapX = 0, _zLastTapY = 0;
 const Z_MAX = 4, Z_DBL_TAP = 2.5;
 
 function _pinchDist(touches) {
   return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
+}
+function _pinchMid(touches) {
+  return { x: (touches[0].clientX + touches[1].clientX) / 2, y: (touches[0].clientY + touches[1].clientY) / 2 };
+}
+// anchorX,anchorY(뷰포트 중심 기준 화면 px)가 가리키는 "이미지 속 지점"이 newScale로
+// 바뀐 뒤에도 같은 화면 위치에 남도록 tx,ty를 재계산 (핀치/더블탭 공용)
+function _zoomTo(newScale, anchorX, anchorY, baseScale, baseTX, baseTY) {
+  const cx = (anchorX - baseTX) / baseScale;
+  const cy = (anchorY - baseTY) / baseScale;
+  _zScale = newScale;
+  _zTX = anchorX - newScale * cx;
+  _zTY = anchorY - newScale * cy;
 }
 function _applyZoom(smooth) {
   const img = document.getElementById('imgViewerImg');
@@ -6393,15 +6407,19 @@ function openImgViewer(urls, idx) {
   const area = document.getElementById('imgViewerSwipe');
   area.ontouchstart = function(e) {
     if (e.touches.length === 2) {
+      const mid = _pinchMid(e.touches);
+      _zPinchAnchorX = mid.x - window.innerWidth / 2;
+      _zPinchAnchorY = mid.y - window.innerHeight / 2;
       _zPinchStartDist = _pinchDist(e.touches);
       _zPinchStartScale = _zScale;
+      _zPinchStartTX = _zTX; _zPinchStartTY = _zTY;
     } else if (e.touches.length === 1) {
+      // 탭/스와이프 판정용 시작점은 확대 여부와 무관하게 항상 기록
+      swipeSX = e.touches[0].clientX;
+      swipeSY = e.touches[0].clientY;
       if (_zScale > 1.01) {
         _zPanStartX = e.touches[0].clientX; _zPanStartY = e.touches[0].clientY;
         _zPanStartTX = _zTX; _zPanStartTY = _zTY;
-      } else {
-        swipeSX = e.touches[0].clientX;
-        swipeSY = e.touches[0].clientY;
       }
     }
   };
@@ -6410,7 +6428,8 @@ function openImgViewer(urls, idx) {
       e.preventDefault();
       const dist = _pinchDist(e.touches);
       if (_zPinchStartDist > 0) {
-        _zScale = Math.min(Z_MAX, Math.max(1, _zPinchStartScale * (dist / _zPinchStartDist)));
+        const newScale = Math.min(Z_MAX, Math.max(1, _zPinchStartScale * (dist / _zPinchStartDist)));
+        _zoomTo(newScale, _zPinchAnchorX, _zPinchAnchorY, _zPinchStartScale, _zPinchStartTX, _zPinchStartTY);
         _applyZoom(false);
       }
     } else if (e.touches.length === 1 && _zScale > 1.01) {
@@ -6422,8 +6441,8 @@ function openImgViewer(urls, idx) {
   };
   area.ontouchend = function(e) {
     const t = e.changedTouches[0];
-    // 핀치가 끝났는데 1배 밑으로 내려갔으면 보정
-    if (_zScale < 1) { _zScale = 1; _applyZoom(true); }
+    // 핀치가 끝났는데 1배 밑으로 내려갔으면 중앙 기준으로 보정
+    if (_zScale < 1) { _zScale = 1; _zTX = 0; _zTY = 0; _applyZoom(true); }
 
     if (e.touches.length > 0) return; // 아직 손가락이 남아있으면(핀치 해제 중) 탭/스와이프 판정 안 함
 
@@ -6436,7 +6455,11 @@ function openImgViewer(urls, idx) {
       const now = Date.now();
       const sameSpot = Math.hypot(t.clientX - _zLastTapX, t.clientY - _zLastTapY) < 40;
       if (now - _zLastTapTime < 300 && sameSpot) {
-        if (_zScale > 1.01) { _zScale = 1; _zTX = 0; _zTY = 0; } else { _zScale = Z_DBL_TAP; }
+        if (_zScale > 1.01) {
+          _zScale = 1; _zTX = 0; _zTY = 0;
+        } else {
+          _zoomTo(Z_DBL_TAP, t.clientX - window.innerWidth / 2, t.clientY - window.innerHeight / 2, 1, 0, 0);
+        }
         _applyZoom(true);
         _zLastTapTime = 0;
         return;
