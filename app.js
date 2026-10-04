@@ -6392,9 +6392,20 @@ function _zoomTo(newScale, anchorX, anchorY, baseScale, baseTX, baseTY) {
   _zTX = anchorX - newScale * cx;
   _zTY = anchorY - newScale * cy;
 }
+// 이미지 가장자리가 화면 안쪽으로 빈 공간을 만들며 들어오지 않도록 팬 범위 제한.
+// scale=1(화면 맞춤 최소크기)에서는 항상 maxTX/maxTY가 0이 되어 자동으로 중앙 고정됨.
+function _clampPan() {
+  const img = document.getElementById('imgViewerImg');
+  if (!img) return;
+  const maxTX = Math.max(0, (img.clientWidth * _zScale - window.innerWidth) / 2);
+  const maxTY = Math.max(0, (img.clientHeight * _zScale - window.innerHeight) / 2);
+  _zTX = Math.min(maxTX, Math.max(-maxTX, _zTX));
+  _zTY = Math.min(maxTY, Math.max(-maxTY, _zTY));
+}
 function _applyZoom(smooth) {
   const img = document.getElementById('imgViewerImg');
   if (!img) return;
+  _clampPan();
   img.style.transition = smooth ? 'transform .2s ease' : 'none';
   img.style.transform = 'translate(' + _zTX + 'px,' + _zTY + 'px) scale(' + _zScale + ')';
 }
